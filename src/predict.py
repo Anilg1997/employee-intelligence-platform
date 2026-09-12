@@ -5,7 +5,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = BASE_DIR / "models" / "employee_attrition_model.pkl"
 
-FINAL_THRESHOLD = 0.60
+FINAL_THRESHOLD = 0.55
 
 def load_model():
     return joblib.load(MODEL_PATH)
