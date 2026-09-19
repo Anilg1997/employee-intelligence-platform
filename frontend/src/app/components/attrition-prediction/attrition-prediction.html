@@ -1,0 +1,27 @@
+<div class="prediction-container">
+
+  <h2>Employee Attrition Prediction</h2>
+
+  <p>Select an imported employee and run the trained attrition model.</p>
+
+  <label for="predictionEmployee">Employee</label>
+  <select id="predictionEmployee" [(ngModel)]="selectedEmployeeId">
+    @for (employee of employees; track employee.id) {
+      <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option>
+    }
+  </select>
+
+  <button type="button" [disabled]="loading || !selectedEmployeeId" (click)="predict()">
+    {{ loading ? 'Predicting...' : 'Predict attrition' }}
+  </button>
+
+  @if (prediction) {
+    <div class="prediction-result" [class.risk]="prediction.attrition_prediction === 'Yes'">
+      <strong>{{ prediction.attrition_prediction === 'Yes' ? 'Higher risk' : 'Lower risk' }}</strong>
+      <span>{{ (prediction.attrition_probability * 100).toFixed(1) }}% probability</span>
+    </div>
+  }
+
+  @if (errorMessage) { <p class="error">{{ errorMessage }}</p> }
+
+</div>

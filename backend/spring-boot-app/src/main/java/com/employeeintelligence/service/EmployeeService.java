@@ -34,6 +34,38 @@ public Employee updateEmployee(Long id, Employee updatedEmployee) {
     existingEmployee.setDepartment(updatedEmployee.getDepartment());
     existingEmployee.setJobRole(updatedEmployee.getJobRole());
     existingEmployee.setAge(updatedEmployee.getAge());
+    existingEmployee.setAttrition(updatedEmployee.getAttrition());
+    existingEmployee.setBusinessTravel(updatedEmployee.getBusinessTravel());
+    existingEmployee.setDailyRate(updatedEmployee.getDailyRate());
+    existingEmployee.setDistanceFromHome(updatedEmployee.getDistanceFromHome());
+    existingEmployee.setEducation(updatedEmployee.getEducation());
+    existingEmployee.setEducationField(updatedEmployee.getEducationField());
+    existingEmployee.setEmployeeCount(updatedEmployee.getEmployeeCount());
+    existingEmployee.setEmployeeNumber(updatedEmployee.getEmployeeNumber());
+    existingEmployee.setEnvironmentSatisfaction(updatedEmployee.getEnvironmentSatisfaction());
+    existingEmployee.setGender(updatedEmployee.getGender());
+    existingEmployee.setHourlyRate(updatedEmployee.getHourlyRate());
+    existingEmployee.setJobInvolvement(updatedEmployee.getJobInvolvement());
+    existingEmployee.setJobLevel(updatedEmployee.getJobLevel());
+    existingEmployee.setJobSatisfaction(updatedEmployee.getJobSatisfaction());
+    existingEmployee.setMaritalStatus(updatedEmployee.getMaritalStatus());
+    existingEmployee.setMonthlyIncome(updatedEmployee.getMonthlyIncome());
+    existingEmployee.setMonthlyRate(updatedEmployee.getMonthlyRate());
+    existingEmployee.setNumCompaniesWorked(updatedEmployee.getNumCompaniesWorked());
+    existingEmployee.setOver18(updatedEmployee.getOver18());
+    existingEmployee.setOverTime(updatedEmployee.getOverTime());
+    existingEmployee.setPercentSalaryHike(updatedEmployee.getPercentSalaryHike());
+    existingEmployee.setPerformanceRating(updatedEmployee.getPerformanceRating());
+    existingEmployee.setRelationshipSatisfaction(updatedEmployee.getRelationshipSatisfaction());
+    existingEmployee.setStandardHours(updatedEmployee.getStandardHours());
+    existingEmployee.setStockOptionLevel(updatedEmployee.getStockOptionLevel());
+    existingEmployee.setTotalWorkingYears(updatedEmployee.getTotalWorkingYears());
+    existingEmployee.setTrainingTimesLastYear(updatedEmployee.getTrainingTimesLastYear());
+    existingEmployee.setWorkLifeBalance(updatedEmployee.getWorkLifeBalance());
+    existingEmployee.setYearsAtCompany(updatedEmployee.getYearsAtCompany());
+    existingEmployee.setYearsInCurrentRole(updatedEmployee.getYearsInCurrentRole());
+    existingEmployee.setYearsSinceLastPromotion(updatedEmployee.getYearsSinceLastPromotion());
+    existingEmployee.setYearsWithCurrManager(updatedEmployee.getYearsWithCurrManager());
 
     return employeeRepository.save(existingEmployee);
 }

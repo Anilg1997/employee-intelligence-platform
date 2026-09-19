@@ -1,104 +1,187 @@
 package com.employeeintelligence.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public class MlPredictionRequest {
 
+    @NotNull
+    @Min(18)
+    @Max(60)
     @JsonProperty("Age")
-    private int age;
+    private Integer age;
 
+    @NotBlank
     @JsonProperty("BusinessTravel")
     private String businessTravel;
 
+    @NotNull
+    @Min(102)
+    @Max(1499)
     @JsonProperty("DailyRate")
-    private int dailyRate;
+    private Integer dailyRate;
 
+    @NotBlank
     @JsonProperty("Department")
     private String department;
 
+    @NotNull
+    @Min(1)
+    @Max(29)
     @JsonProperty("DistanceFromHome")
-    private int distanceFromHome;
+    private Integer distanceFromHome;
 
+    @NotNull
+    @Min(1)
+    @Max(5)
     @JsonProperty("Education")
-    private int education;
+    private Integer education;
 
+    @NotBlank
     @JsonProperty("EducationField")
     private String educationField;
 
+    @NotNull
+    @Min(1)
+    @Max(4)
     @JsonProperty("EnvironmentSatisfaction")
-    private int environmentSatisfaction;
+    private Integer environmentSatisfaction;
 
+    @NotBlank
     @JsonProperty("Gender")
     private String gender;
 
+    @NotNull
+    @Min(30)
+    @Max(100)
     @JsonProperty("HourlyRate")
-    private int hourlyRate;
+    private Integer hourlyRate;
 
+    @NotNull
+    @Min(1)
+    @Max(4)
     @JsonProperty("JobInvolvement")
-    private int jobInvolvement;
+    private Integer jobInvolvement;
 
+    @NotNull
+    @Min(1)
+    @Max(5)
     @JsonProperty("JobLevel")
-    private int jobLevel;
+    private Integer jobLevel;
 
+    @NotBlank
     @JsonProperty("JobRole")
     private String jobRole;
 
+    @NotNull
+    @Min(1)
+    @Max(4)
     @JsonProperty("JobSatisfaction")
-    private int jobSatisfaction;
+    private Integer jobSatisfaction;
 
+    @NotBlank
     @JsonProperty("MaritalStatus")
     private String maritalStatus;
 
+    @NotNull
+    @Min(1009)
+    @Max(19999)
     @JsonProperty("MonthlyIncome")
-    private int monthlyIncome;
+    private Integer monthlyIncome;
 
+    @NotNull
+    @Min(2094)
+    @Max(26999)
     @JsonProperty("MonthlyRate")
-    private int monthlyRate;
+    private Integer monthlyRate;
 
+    @NotNull
+    @Min(0)
+    @Max(9)
     @JsonProperty("NumCompaniesWorked")
-    private int numCompaniesWorked;
+    private Integer numCompaniesWorked;
 
+    @NotBlank
     @JsonProperty("OverTime")
     private String overTime;
 
+    @NotNull
+    @Min(11)
+    @Max(25)
     @JsonProperty("PercentSalaryHike")
-    private int percentSalaryHike;
+    private Integer percentSalaryHike;
 
+    @NotNull
+    @Min(3)
+    @Max(4)
     @JsonProperty("PerformanceRating")
-    private int performanceRating;
+    private Integer performanceRating;
 
+    @NotNull
+    @Min(1)
+    @Max(4)
     @JsonProperty("RelationshipSatisfaction")
-    private int relationshipSatisfaction;
+    private Integer relationshipSatisfaction;
 
+    @NotNull
+    @Min(0)
+    @Max(3)
     @JsonProperty("StockOptionLevel")
-    private int stockOptionLevel;
+    private Integer stockOptionLevel;
 
+    @NotNull
+    @Min(0)
+    @Max(40)
     @JsonProperty("TotalWorkingYears")
-    private int totalWorkingYears;
+    private Integer totalWorkingYears;
 
+    @NotNull
+    @Min(0)
+    @Max(6)
     @JsonProperty("TrainingTimesLastYear")
-    private int trainingTimesLastYear;
+    private Integer trainingTimesLastYear;
 
+    @NotNull
+    @Min(1)
+    @Max(4)
     @JsonProperty("WorkLifeBalance")
-    private int workLifeBalance;
+    private Integer workLifeBalance;
 
+    @NotNull
+    @Min(0)
+    @Max(40)
     @JsonProperty("YearsAtCompany")
-    private int yearsAtCompany;
+    private Integer yearsAtCompany;
 
+    @NotNull
+    @Min(0)
+    @Max(18)
     @JsonProperty("YearsInCurrentRole")
-    private int yearsInCurrentRole;
+    private Integer yearsInCurrentRole;
 
+    @NotNull
+    @Min(0)
+    @Max(15)
     @JsonProperty("YearsSinceLastPromotion")
-    private int yearsSinceLastPromotion;
+    private Integer yearsSinceLastPromotion;
 
+    @NotNull
+    @Min(0)
+    @Max(17)
     @JsonProperty("YearsWithCurrManager")
-    private int yearsWithCurrManager;
+    private Integer yearsWithCurrManager;
 
-    public int getAge() {
+
+    // Getters and Setters
+
+    public Integer getAge() {
         return age;
     }
 
-    public void setAge(int age) {
+    public void setAge(Integer age) {
         this.age = age;
     }
 
@@ -110,11 +193,11 @@ public class MlPredictionRequest {
         this.businessTravel = businessTravel;
     }
 
-    public int getDailyRate() {
+    public Integer getDailyRate() {
         return dailyRate;
     }
 
-    public void setDailyRate(int dailyRate) {
+    public void setDailyRate(Integer dailyRate) {
         this.dailyRate = dailyRate;
     }
 
@@ -126,19 +209,19 @@ public class MlPredictionRequest {
         this.department = department;
     }
 
-    public int getDistanceFromHome() {
+    public Integer getDistanceFromHome() {
         return distanceFromHome;
     }
 
-    public void setDistanceFromHome(int distanceFromHome) {
+    public void setDistanceFromHome(Integer distanceFromHome) {
         this.distanceFromHome = distanceFromHome;
     }
 
-    public int getEducation() {
+    public Integer getEducation() {
         return education;
     }
 
-    public void setEducation(int education) {
+    public void setEducation(Integer education) {
         this.education = education;
     }
 
@@ -150,11 +233,11 @@ public class MlPredictionRequest {
         this.educationField = educationField;
     }
 
-    public int getEnvironmentSatisfaction() {
+    public Integer getEnvironmentSatisfaction() {
         return environmentSatisfaction;
     }
 
-    public void setEnvironmentSatisfaction(int environmentSatisfaction) {
+    public void setEnvironmentSatisfaction(Integer environmentSatisfaction) {
         this.environmentSatisfaction = environmentSatisfaction;
     }
 
@@ -166,27 +249,27 @@ public class MlPredictionRequest {
         this.gender = gender;
     }
 
-    public int getHourlyRate() {
+    public Integer getHourlyRate() {
         return hourlyRate;
     }
 
-    public void setHourlyRate(int hourlyRate) {
+    public void setHourlyRate(Integer hourlyRate) {
         this.hourlyRate = hourlyRate;
     }
 
-    public int getJobInvolvement() {
+    public Integer getJobInvolvement() {
         return jobInvolvement;
     }
 
-    public void setJobInvolvement(int jobInvolvement) {
+    public void setJobInvolvement(Integer jobInvolvement) {
         this.jobInvolvement = jobInvolvement;
     }
 
-    public int getJobLevel() {
+    public Integer getJobLevel() {
         return jobLevel;
     }
 
-    public void setJobLevel(int jobLevel) {
+    public void setJobLevel(Integer jobLevel) {
         this.jobLevel = jobLevel;
     }
 
@@ -198,11 +281,11 @@ public class MlPredictionRequest {
         this.jobRole = jobRole;
     }
 
-    public int getJobSatisfaction() {
+    public Integer getJobSatisfaction() {
         return jobSatisfaction;
     }
 
-    public void setJobSatisfaction(int jobSatisfaction) {
+    public void setJobSatisfaction(Integer jobSatisfaction) {
         this.jobSatisfaction = jobSatisfaction;
     }
 
@@ -214,27 +297,27 @@ public class MlPredictionRequest {
         this.maritalStatus = maritalStatus;
     }
 
-    public int getMonthlyIncome() {
+    public Integer getMonthlyIncome() {
         return monthlyIncome;
     }
 
-    public void setMonthlyIncome(int monthlyIncome) {
+    public void setMonthlyIncome(Integer monthlyIncome) {
         this.monthlyIncome = monthlyIncome;
     }
 
-    public int getMonthlyRate() {
+    public Integer getMonthlyRate() {
         return monthlyRate;
     }
 
-    public void setMonthlyRate(int monthlyRate) {
+    public void setMonthlyRate(Integer monthlyRate) {
         this.monthlyRate = monthlyRate;
     }
 
-    public int getNumCompaniesWorked() {
+    public Integer getNumCompaniesWorked() {
         return numCompaniesWorked;
     }
 
-    public void setNumCompaniesWorked(int numCompaniesWorked) {
+    public void setNumCompaniesWorked(Integer numCompaniesWorked) {
         this.numCompaniesWorked = numCompaniesWorked;
     }
 
@@ -246,91 +329,91 @@ public class MlPredictionRequest {
         this.overTime = overTime;
     }
 
-    public int getPercentSalaryHike() {
+    public Integer getPercentSalaryHike() {
         return percentSalaryHike;
     }
 
-    public void setPercentSalaryHike(int percentSalaryHike) {
+    public void setPercentSalaryHike(Integer percentSalaryHike) {
         this.percentSalaryHike = percentSalaryHike;
     }
 
-    public int getPerformanceRating() {
+    public Integer getPerformanceRating() {
         return performanceRating;
     }
 
-    public void setPerformanceRating(int performanceRating) {
+    public void setPerformanceRating(Integer performanceRating) {
         this.performanceRating = performanceRating;
     }
 
-    public int getRelationshipSatisfaction() {
+    public Integer getRelationshipSatisfaction() {
         return relationshipSatisfaction;
     }
 
-    public void setRelationshipSatisfaction(int relationshipSatisfaction) {
+    public void setRelationshipSatisfaction(Integer relationshipSatisfaction) {
         this.relationshipSatisfaction = relationshipSatisfaction;
     }
 
-    public int getStockOptionLevel() {
+    public Integer getStockOptionLevel() {
         return stockOptionLevel;
     }
 
-    public void setStockOptionLevel(int stockOptionLevel) {
+    public void setStockOptionLevel(Integer stockOptionLevel) {
         this.stockOptionLevel = stockOptionLevel;
     }
 
-    public int getTotalWorkingYears() {
+    public Integer getTotalWorkingYears() {
         return totalWorkingYears;
     }
 
-    public void setTotalWorkingYears(int totalWorkingYears) {
+    public void setTotalWorkingYears(Integer totalWorkingYears) {
         this.totalWorkingYears = totalWorkingYears;
     }
 
-    public int getTrainingTimesLastYear() {
+    public Integer getTrainingTimesLastYear() {
         return trainingTimesLastYear;
     }
 
-    public void setTrainingTimesLastYear(int trainingTimesLastYear) {
+    public void setTrainingTimesLastYear(Integer trainingTimesLastYear) {
         this.trainingTimesLastYear = trainingTimesLastYear;
     }
 
-    public int getWorkLifeBalance() {
+    public Integer getWorkLifeBalance() {
         return workLifeBalance;
     }
 
-    public void setWorkLifeBalance(int workLifeBalance) {
+    public void setWorkLifeBalance(Integer workLifeBalance) {
         this.workLifeBalance = workLifeBalance;
     }
 
-    public int getYearsAtCompany() {
+    public Integer getYearsAtCompany() {
         return yearsAtCompany;
     }
 
-    public void setYearsAtCompany(int yearsAtCompany) {
+    public void setYearsAtCompany(Integer yearsAtCompany) {
         this.yearsAtCompany = yearsAtCompany;
     }
 
-    public int getYearsInCurrentRole() {
+    public Integer getYearsInCurrentRole() {
         return yearsInCurrentRole;
     }
 
-    public void setYearsInCurrentRole(int yearsInCurrentRole) {
+    public void setYearsInCurrentRole(Integer yearsInCurrentRole) {
         this.yearsInCurrentRole = yearsInCurrentRole;
     }
 
-    public int getYearsSinceLastPromotion() {
+    public Integer getYearsSinceLastPromotion() {
         return yearsSinceLastPromotion;
     }
 
-    public void setYearsSinceLastPromotion(int yearsSinceLastPromotion) {
+    public void setYearsSinceLastPromotion(Integer yearsSinceLastPromotion) {
         this.yearsSinceLastPromotion = yearsSinceLastPromotion;
     }
 
-    public int getYearsWithCurrManager() {
+    public Integer getYearsWithCurrManager() {
         return yearsWithCurrManager;
     }
 
-    public void setYearsWithCurrManager(int yearsWithCurrManager) {
+    public void setYearsWithCurrManager(Integer yearsWithCurrManager) {
         this.yearsWithCurrManager = yearsWithCurrManager;
     }
 }

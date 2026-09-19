@@ -1,0 +1,50 @@
+.employee-container {
+  margin-top: 28px;
+  color: #223044;
+}
+
+.section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #68768a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h2 { margin: 0; }
+.record-count, .status { color: #68768a; font-size: 13px; }
+.table-shell { overflow-x: auto; border: 1px solid #dce3eb; background: #fff; }
+
+table { width: 100%; min-width: 1040px; border-collapse: collapse; }
+th, td { padding: 12px 14px; border-bottom: 1px solid #e8edf2; text-align: left; white-space: nowrap; }
+th { background: #f5f7fa; color: #58677b; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+td { font-size: 13px; }
+td strong, td small { display: block; }
+td small { margin-top: 3px; color: #8290a1; font-size: 11px; }
+.editing-row { background: #fffaf0; }
+.details-row td { padding: 18px; background: #f8fafc; white-space: normal; }
+.details-grid { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 16px; }
+.details-grid span { color: #334155; font-size: 13px; }
+.details-grid b { display: block; margin-bottom: 4px; color: #758297; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+.actions { white-space: nowrap; }
+.actions button { margin-right: 6px; padding: 6px 9px; border: 1px solid #cad4df; border-radius: 3px; background: #fff; color: #25364b; cursor: pointer; font-size: 12px; }
+.actions button:hover { background: #edf3f8; }
+.actions .quiet { color: #68768a; }
+.actions .danger { border-color: #e4b8b8; color: #a33f3f; }
+input { width: 120px; padding: 7px; border: 1px solid #cbd5e1; border-radius: 3px; }
+.status-pill { color: #2c6b4f; font-weight: 700; }
+.status-pill.risk { color: #ad4a43; }
+.error { color: #ad4a43; }
+
+@media (max-width: 800px) {
+  .section-heading { align-items: start; flex-direction: column; gap: 8px; }
+  .details-grid { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+}

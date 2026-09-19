@@ -4,6 +4,7 @@ import com.employeeintelligence.api.dto.MlPredictionRequest;
 import com.employeeintelligence.api.dto.MlPredictionResponse;
 import com.employeeintelligence.api.service.MlPredictionService;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/ml")
@@ -17,7 +18,7 @@ public class MlPredictionController {
 
     @PostMapping("/predict")
     public MlPredictionResponse predict(
-            @RequestBody MlPredictionRequest request) {
+            @RequestBody @Valid MlPredictionRequest request) {
 
         return mlPredictionService.predict(request);
     }

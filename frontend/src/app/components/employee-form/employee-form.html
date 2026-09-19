@@ -1,0 +1,123 @@
+<div class="employee-form">
+
+  <h2>Add Employee</h2>
+
+  <form (ngSubmit)="createEmployee()">
+
+    <div class="form-group">
+      <label for="name">Name</label>
+
+      <input
+        id="name"
+        type="text"
+        name="name"
+        [(ngModel)]="employee.name"
+        placeholder="Enter employee name"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="department">Department</label>
+
+      <input
+        id="department"
+        type="text"
+        name="department"
+        [(ngModel)]="employee.department"
+        placeholder="Enter department"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="jobRole">Job Role</label>
+
+      <input
+        id="jobRole"
+        type="text"
+        name="jobRole"
+        [(ngModel)]="employee.jobRole"
+        placeholder="Enter job role"
+        required
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="age">Age</label>
+
+      <input
+        id="age"
+        type="number"
+        name="age"
+        [(ngModel)]="employee.age"
+        min="18"
+        max="60"
+        required
+      />
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="departmentTravel">Business travel</label>
+        <select id="departmentTravel" name="businessTravel" [(ngModel)]="employee.businessTravel">
+          <option value="Travel_Rarely">Travel rarely</option>
+          <option value="Travel_Frequently">Travel frequently</option>
+          <option value="Non-Travel">Non-travel</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender" [(ngModel)]="employee.gender">
+          <option value="Female">Female</option>
+          <option value="Male">Male</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="maritalStatus">Marital status</label>
+        <select id="maritalStatus" name="maritalStatus" [(ngModel)]="employee.maritalStatus">
+          <option value="Single">Single</option>
+          <option value="Married">Married</option>
+          <option value="Divorced">Divorced</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="overTime">Overtime</label>
+        <select id="overTime" name="overTime" [(ngModel)]="employee.overTime">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="monthlyIncome">Monthly income</label>
+        <input id="monthlyIncome" type="number" name="monthlyIncome" min="0" [(ngModel)]="employee.monthlyIncome" />
+      </div>
+
+      <div class="form-group">
+        <label for="totalWorkingYears">Total working years</label>
+        <input id="totalWorkingYears" type="number" name="totalWorkingYears" min="0" [(ngModel)]="employee.totalWorkingYears" />
+      </div>
+
+      <div class="form-group">
+        <label for="yearsAtCompany">Years at company</label>
+        <input id="yearsAtCompany" type="number" name="yearsAtCompany" min="0" [(ngModel)]="employee.yearsAtCompany" />
+      </div>
+    </div>
+
+    @if (errorMessage) {
+      <p class="error">{{ errorMessage }}</p>
+    }
+
+    <button
+      type="submit"
+      [disabled]="loading">
+      {{ loading ? 'Creating...' : 'Create Employee' }}
+    </button>
+
+  </form>
+
+</div>
