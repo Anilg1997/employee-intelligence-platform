@@ -102,6 +102,7 @@
 
                 <div class="actions">
 
+                  <!-- Employee Details -->
                   <button
                     type="button"
                     (click)="toggleDetails(employee.id!)">
@@ -114,7 +115,12 @@
 
                   </button>
 
-                  @if (employee.id && predictionLoadingId === employee.id) {
+                  <!-- AI Risk Assessment -->
+
+                  @if (
+                    employee.id &&
+                    predictionLoadingId === employee.id
+                  ) {
 
                     <span class="analyzing">
                       Analyzing...
@@ -122,43 +128,40 @@
 
                   } @else if (
                     employee.id &&
-                    predictions[employee.id]
+                    riskAssessments[employee.id]
                   ) {
 
                     <div
-  class="prediction-result"
-  [class]="
-    getRiskClass(
-      predictions[employee.id].attrition_probability
-    )
-  ">
+                      class="risk-result"
+                      [class.risk-high]="
+                        riskAssessments[employee.id].riskLevel === 'High Risk'
+                      "
+                      [class.risk-medium]="
+                        riskAssessments[employee.id].riskLevel === 'Medium Risk'
+                      "
+                      [class.risk-low]="
+                        riskAssessments[employee.id].riskLevel === 'Low Risk'
+                      ">
 
-  <strong>
-    {{
-      getRiskLevel(
-        predictions[employee.id].attrition_probability
-      )
-    }}
-  </strong>
+                      <strong>
+                        {{ riskAssessments[employee.id].riskLevel }}
+                      </strong>
 
-  <span>
-    Model:
-    {{
-      predictions[employee.id].attrition_prediction
-    }}
-  </span>
+                      <span>
+                        Model:
+                        {{ riskAssessments[employee.id].prediction }}
+                      </span>
 
-  <span>
-    Probability:
-    {{
-      (
-        predictions[employee.id]
-          .attrition_probability * 100
-      ).toFixed(2)
-    }}%
-  </span>
+                      <span>
+                        Probability:
+                        {{
+                          (
+                            riskAssessments[employee.id].probability * 100
+                          ).toFixed(2)
+                        }}%
+                      </span>
 
-</div>
+                    </div>
 
                   } @else {
 
@@ -188,6 +191,8 @@
               </td>
 
             </tr>
+
+            <!-- Employee Details -->
 
             @if (expandedId === employee.id) {
 

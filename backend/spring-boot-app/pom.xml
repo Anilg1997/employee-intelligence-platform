@@ -25,6 +25,10 @@
 
     <dependencies>
 
+        <!-- ================================================= -->
+        <!-- Spring Boot -->
+        <!-- ================================================= -->
+
         <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -50,7 +54,10 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- ================================================= -->
         <!-- Jackson -->
+        <!-- ================================================= -->
+
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -61,7 +68,10 @@
             <artifactId>jackson-dataformat-csv</artifactId>
         </dependency>
 
+        <!-- ================================================= -->
         <!-- Swagger / OpenAPI -->
+        <!-- ================================================= -->
+
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -70,38 +80,47 @@
 
         <!-- ================================================= -->
         <!-- LangChain4j -->
-        <!-- Spring Boot 4 + Ollama -->
         <!-- ================================================= -->
 
-        <!-- LangChain4j core -->
+        <!-- LangChain4j Core -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
             <version>1.20.0</version>
         </dependency>
 
-        <!-- LangChain4j Spring Boot 4 integration -->
+        <!-- LangChain4j MCP -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-mcp</artifactId>
+            <version>1.20.0-beta30</version>
+        </dependency>
+
+        <!-- LangChain4j Spring Boot 4 Integration -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-spring-boot4-starter</artifactId>
             <version>1.20.0-beta30</version>
         </dependency>
 
-        <!-- Ollama Spring Boot 4 integration -->
+        <!-- LangChain4j Ollama Spring Boot 4 Integration -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-ollama-spring-boot4-starter</artifactId>
             <version>1.20.0-beta30</version>
         </dependency>
 
-        <!-- Ollama Java integration -->
+        <!-- LangChain4j Ollama -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-ollama</artifactId>
             <version>1.20.0</version>
         </dependency>
 
-        <!-- DevTools -->
+        <!-- ================================================= -->
+        <!-- Development -->
+        <!-- ================================================= -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -109,7 +128,10 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- ================================================= -->
         <!-- Testing -->
+        <!-- ================================================= -->
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -135,6 +157,10 @@
         </dependency>
 
     </dependencies>
+
+    <!-- ===================================================== -->
+    <!-- Build -->
+    <!-- ===================================================== -->
 
     <build>
         <plugins>
