@@ -119,5 +119,38 @@
     </button>
 
   </form>
+@if (predictionLoading) {
+  <div class="prediction-card">
+    <h3>AI Attrition Prediction</h3>
+    <p>Analyzing employee data...</p>
+  </div>
+}
 
+@if (prediction) {
+  <div class="prediction-card">
+
+    <h3>AI Attrition Prediction</h3>
+
+    <div class="prediction-result">
+
+      <div>
+        <span class="prediction-label">Prediction</span>
+
+        <strong>
+          {{ prediction.attrition_prediction }}
+        </strong>
+      </div>
+
+      <div>
+        <span class="prediction-label">Probability</span>
+
+        <strong>
+          {{ (prediction.attrition_probability * 100).toFixed(2) }}%
+        </strong>
+      </div>
+
+    </div>
+
+  </div>
+}
 </div>

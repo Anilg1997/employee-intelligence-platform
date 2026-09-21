@@ -1,0 +1,29 @@
+<div class="employees-page">
+
+  <header class="page-header">
+    <h2>Employees</h2>
+    <p>Manage employees and view workforce information.</p>
+  </header>
+
+  <section class="create-section">
+
+    <app-employee-form
+      (employeeCreated)="refreshEmployees()">
+    </app-employee-form>
+
+  </section>
+
+  <section class="directory-section">
+
+    <div class="section-header">
+      <h3>Workforce Directory</h3>
+      <p>View employees stored in the platform.</p>
+    </div>
+
+    <app-employee-list
+      [refreshTrigger]="refreshTrigger">
+    </app-employee-list>
+
+  </section>
+
+</div>

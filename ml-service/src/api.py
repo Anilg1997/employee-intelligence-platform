@@ -42,11 +42,17 @@ class EmployeeData(BaseModel):
     YearsSinceLastPromotion: int
     YearsWithCurrManager: int
 
-
 @app.get("/")
 def home():
     return {
         "message": "Employee Attrition Prediction API is running"
+    }
+
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy"
     }
 
 

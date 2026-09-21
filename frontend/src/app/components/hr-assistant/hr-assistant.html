@@ -1,0 +1,72 @@
+<div class="hr-assistant">
+
+  <h2>HR Assistant</h2>
+
+  <p class="description">
+    Ask questions about company HR policies and procedures.
+  </p>
+
+  <form (ngSubmit)="askQuestion()">
+
+    <textarea
+      [(ngModel)]="question"
+      name="question"
+      rows="4"
+      placeholder="Example: How should employees request planned leave?"
+      [disabled]="loading">
+    </textarea>
+
+    <button
+      type="submit"
+      [disabled]="loading || !question.trim()">
+
+      {{ loading ? 'Searching HR policies...' : 'Ask HR Assistant' }}
+
+    </button>
+
+  </form>
+
+  @if (errorMessage) {
+    <div class="error">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (response) {
+
+    <div class="answer-card">
+
+      <h3>Answer</h3>
+
+      <p>{{ response.answer }}</p>
+
+    </div>
+
+    @if (response.sources.length > 0) {
+
+      <div class="sources-card">
+
+        <h3>Sources</h3>
+
+        @for (source of response.sources; track source.source) {
+
+          <div class="source">
+
+            <strong>{{ source.source }}</strong>
+
+            <span>
+              Similarity:
+              {{ (source.similarity * 100).toFixed(2) }}%
+            </span>
+
+          </div>
+
+        }
+
+      </div>
+
+    }
+
+  }
+
+</div>

@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import org.springframework.http.ResponseEntity;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -48,4 +48,17 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(response);
     }
+    @ExceptionHandler(MlServiceException.class)
+public ResponseEntity<Map<String, Object>> handleMlServiceException(
+        MlServiceException exception) {
+
+    Map<String, Object> response = new LinkedHashMap<>();
+
+    response.put("status", HttpStatus.SERVICE_UNAVAILABLE.value());
+    response.put("message", exception.getMessage());
+
+    return ResponseEntity
+            .status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(response);
+}
 }

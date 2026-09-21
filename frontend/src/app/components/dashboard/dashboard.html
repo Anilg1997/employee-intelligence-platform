@@ -1,0 +1,106 @@
+<div class="dashboard">
+
+  <div class="dashboard-header">
+    <h2>Employee Intelligence Dashboard</h2>
+    <p>Workforce overview and department statistics.</p>
+  </div>
+
+  @if (loading) {
+
+    <div class="loading">
+      Loading dashboard...
+    </div>
+
+  } @else if (errorMessage) {
+
+    <div class="error">
+      {{ errorMessage }}
+    </div>
+
+  } @else if (dashboard) {
+
+    <!-- Total employees -->
+    <div class="summary-card">
+
+      <h3>Total Employees</h3>
+
+      <p class="total-employees">
+        {{ dashboard.totalEmployees }}
+      </p>
+
+    </div>
+
+    <!-- Department cards -->
+    <section class="department-section">
+
+      <h3>Employees by Department</h3>
+
+      <div class="department-grid">
+
+        @for (
+          department of dashboard.departmentStatistics | keyvalue;
+          track department.key
+        ) {
+
+          <div class="department-card">
+
+            <span class="department-name">
+              {{ department.key }}
+            </span>
+
+            <span class="department-count">
+              {{ department.value }}
+            </span>
+
+          </div>
+
+        }
+
+      </div>
+
+    </section>
+
+    <!-- Department distribution -->
+    <section class="department-chart">
+
+      <h3>Department Distribution</h3>
+
+      <div class="chart">
+
+        @for (
+          department of dashboard.departmentStatistics | keyvalue;
+          track department.key
+        ) {
+
+          <div class="bar-row">
+
+            <div class="bar-label">
+              {{ department.key }}
+            </div>
+
+            <div class="bar-container">
+
+              <div
+                class="bar"
+                [style.width.%]="
+                  (department.value / dashboard.totalEmployees) * 100
+                ">
+              </div>
+
+            </div>
+
+            <div class="bar-value">
+              {{ department.value }}
+            </div>
+
+          </div>
+
+        }
+
+      </div>
+
+    </section>
+
+  }
+
+</div>

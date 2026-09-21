@@ -3,6 +3,10 @@ import { FormsModule } from '@angular/forms';
 
 import { Employee } from '../../models/employee';
 import { EmployeeService } from '../../services/employee';
+import {
+  EmployeeAiService,
+  EmployeeAiPrediction
+} from '../../services/employee-ai.service';
 
 @Component({
   selector: 'app-employee-form',
@@ -31,13 +35,21 @@ export class EmployeeForm {
   };
 
   loading = false;
+  predictionLoading = false;
+
   errorMessage = '';
 
-  constructor(private employeeService: EmployeeService) {}
+  prediction: EmployeeAiPrediction | null = null;
+
+  constructor(
+    private employeeService: EmployeeService,
+    private employeeAiService: EmployeeAiService
+  ) {}
 
   createEmployee(): void {
 
     this.errorMessage = '';
+    this.prediction = null;
 
     if (
       !this.employee.name ||
@@ -53,19 +65,55 @@ export class EmployeeForm {
 
     this.employeeService.createEmployee(this.employee).subscribe({
       next: (createdEmployee: Employee) => {
+
         this.employeeCreated.emit(createdEmployee);
 
-        this.employee = this.emptyEmployee();
-
         this.loading = false;
+
+        // Get AI prediction for the newly created employee
+        if (createdEmployee.id) {
+          this.predictEmployee(createdEmployee.id);
+        }
+
+        this.employee = this.emptyEmployee();
       },
 
       error: (error: unknown) => {
         console.error('Failed to create employee:', error);
+
         this.errorMessage = 'Failed to create employee.';
         this.loading = false;
       }
     });
+  }
+
+  private predictEmployee(employeeId: number): void {
+
+    this.predictionLoading = true;
+
+    this.employeeAiService
+      .predictEmployee(employeeId)
+      .subscribe({
+        next: (result: EmployeeAiPrediction) => {
+
+          this.prediction = result;
+          this.predictionLoading = false;
+
+        },
+
+        error: (error: unknown) => {
+
+          console.error(
+            'Failed to predict employee attrition:',
+            error
+          );
+
+          this.errorMessage =
+            'Employee created, but AI prediction failed.';
+
+          this.predictionLoading = false;
+        }
+      });
   }
 
   private emptyEmployee(): Employee {

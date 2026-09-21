@@ -1,63 +1,336 @@
-<div class="employee-container">
-  <div class="section-heading">
+<div class="employee-list">
+
+  <div class="list-header">
     <div>
-      <p class="eyebrow">Workforce directory</p>
-      <h2>Employees</h2>
+      <h3>Employee Directory</h3>
+      <p>{{ employees.length }} employees</p>
     </div>
-    <span class="record-count">{{ employees.length }} records</span>
+
+    <button
+      type="button"
+      (click)="loadEmployees()">
+      Refresh
+    </button>
   </div>
 
-  @if (loading) { <p class="status">Loading employees...</p> }
-  @if (errorMessage) { <p class="error">{{ errorMessage }}</p> }
+  @if (loading) {
 
-  @if (!loading && !errorMessage) {
-    @if (employees.length === 0) { <p class="status">No employees found.</p> }
+    <div class="loading">
+      Loading employees...
+    </div>
 
-    @if (employees.length > 0) {
-      <div class="table-shell">
-        <table>
-          <thead>
+  } @else if (errorMessage) {
+
+    <div class="error">
+      {{ errorMessage }}
+    </div>
+
+  } @else if (employees.length === 0) {
+
+    <div class="empty">
+      No employees found.
+    </div>
+
+  } @else {
+
+    <div class="table-container">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Job Role</th>
+            <th>Age</th>
+            <th>Monthly Income</th>
+            <th>Overtime</th>
+            <th>Attrition</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          @for (employee of employees; track employee.id) {
+
             <tr>
-              <th>ID</th><th>Employee</th><th>Department</th><th>Role</th><th>Age</th>
-              <th>Attrition</th><th>Overtime</th><th>Monthly income</th><th>Years at company</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (employee of employees; track employee.id) {
-              @if (editingId === employee.id) {
-                <tr class="editing-row">
-                  <td>{{ employee.id }}</td>
-                  <td><input type="text" [(ngModel)]="editingEmployee!.name"></td>
-                  <td><input type="text" [(ngModel)]="editingEmployee!.department"></td>
-                  <td><input type="text" [(ngModel)]="editingEmployee!.jobRole"></td>
-                  <td><input type="number" min="18" max="60" [(ngModel)]="editingEmployee!.age"></td>
-                  <td>{{ employee.attrition || '—' }}</td><td>{{ employee.overTime || '—' }}</td>
-                  <td>{{ employee.monthlyIncome ?? '—' }}</td><td>{{ employee.yearsAtCompany ?? '—' }}</td>
-                  <td class="actions"><button type="button" (click)="saveEdit()">Save</button><button type="button" class="quiet" (click)="cancelEdit()">Cancel</button></td>
-                </tr>
-              } @else {
-                <tr>
-                  <td>{{ employee.id }}</td>
-                  <td><strong>{{ employee.name }}</strong><small>#{{ employee.employeeNumber || 'manual' }}</small></td>
-                  <td>{{ employee.department }}</td><td>{{ employee.jobRole }}</td><td>{{ employee.age }}</td>
-                  <td><span class="status-pill" [class.risk]="employee.attrition === 'Yes'">{{ employee.attrition || '—' }}</span></td>
-                  <td>{{ employee.overTime || '—' }}</td><td>{{ employee.monthlyIncome ?? '—' }}</td><td>{{ employee.yearsAtCompany ?? '—' }}</td>
-                  <td class="actions"><button type="button" (click)="toggleDetails(employee.id!)">{{ expandedId === employee.id ? 'Hide' : 'Details' }}</button><button type="button" class="quiet" (click)="startEdit(employee)">Edit</button><button type="button" class="danger" (click)="deleteEmployee(employee.id!)">Delete</button></td>
-                </tr>
-              }
 
-              @if (expandedId === employee.id && editingId !== employee.id) {
-                <tr class="details-row"><td colspan="10"><div class="details-grid">
-                  <span><b>Business travel</b>{{ employee.businessTravel || '—' }}</span><span><b>Gender</b>{{ employee.gender || '—' }}</span><span><b>Marital status</b>{{ employee.maritalStatus || '—' }}</span><span><b>Education</b>{{ employee.education ?? '—' }} / {{ employee.educationField || '—' }}</span>
-                  <span><b>Distance from home</b>{{ employee.distanceFromHome ?? '—' }}</span><span><b>Job level</b>{{ employee.jobLevel ?? '—' }}</span><span><b>Job satisfaction</b>{{ employee.jobSatisfaction ?? '—' }}</span><span><b>Environment satisfaction</b>{{ employee.environmentSatisfaction ?? '—' }}</span>
-                  <span><b>Performance rating</b>{{ employee.performanceRating ?? '—' }}</span><span><b>Salary hike</b>{{ employee.percentSalaryHike ?? '—' }}%</span><span><b>Stock option level</b>{{ employee.stockOptionLevel ?? '—' }}</span><span><b>Total working years</b>{{ employee.totalWorkingYears ?? '—' }}</span>
-                  <span><b>Companies worked</b>{{ employee.numCompaniesWorked ?? '—' }}</span><span><b>Current role years</b>{{ employee.yearsInCurrentRole ?? '—' }}</span><span><b>Last promotion</b>{{ employee.yearsSinceLastPromotion ?? '—' }} years ago</span><span><b>Current manager</b>{{ employee.yearsWithCurrManager ?? '—' }} years</span>
-                </div></td></tr>
-              }
+              <td>
+                {{ employee.id }}
+              </td>
+
+              <td>
+                {{ employee.name }}
+              </td>
+
+              <td>
+                {{ employee.department }}
+              </td>
+
+              <td>
+                {{ employee.jobRole }}
+              </td>
+
+              <td>
+                {{ employee.age }}
+              </td>
+
+              <td>
+                {{ employee.monthlyIncome }}
+              </td>
+
+              <td>
+                {{ employee.overTime }}
+              </td>
+
+              <td>
+
+                <span
+                  class="attrition-badge"
+                  [class.attrition-yes]="employee.attrition === 'Yes'"
+                  [class.attrition-no]="employee.attrition === 'No'">
+
+                  {{ employee.attrition }}
+
+                </span>
+
+              </td>
+
+              <td>
+
+                <div class="actions">
+
+                  <button
+                    type="button"
+                    (click)="toggleDetails(employee.id!)">
+
+                    {{
+                      expandedId === employee.id
+                        ? 'Hide'
+                        : 'Details'
+                    }}
+
+                  </button>
+
+                  @if (employee.id && predictionLoadingId === employee.id) {
+
+                    <span class="analyzing">
+                      Analyzing...
+                    </span>
+
+                  } @else if (
+                    employee.id &&
+                    predictions[employee.id]
+                  ) {
+
+                    <div
+  class="prediction-result"
+  [class]="
+    getRiskClass(
+      predictions[employee.id].attrition_probability
+    )
+  ">
+
+  <strong>
+    {{
+      getRiskLevel(
+        predictions[employee.id].attrition_probability
+      )
+    }}
+  </strong>
+
+  <span>
+    Model:
+    {{
+      predictions[employee.id].attrition_prediction
+    }}
+  </span>
+
+  <span>
+    Probability:
+    {{
+      (
+        predictions[employee.id]
+          .attrition_probability * 100
+      ).toFixed(2)
+    }}%
+  </span>
+
+</div>
+
+                  } @else {
+
+                    <button
+                      type="button"
+                      (click)="predictAttrition(employee.id!)">
+
+                      Predict
+
+                    </button>
+
+                  }
+
+                </div>
+
+                @if (
+                  employee.id &&
+                  predictionErrors[employee.id]
+                ) {
+
+                  <div class="prediction-error">
+                    {{ predictionErrors[employee.id] }}
+                  </div>
+
+                }
+
+              </td>
+
+            </tr>
+
+            @if (expandedId === employee.id) {
+
+              <tr class="details-row">
+
+                <td colspan="9">
+
+                  <div class="employee-details">
+
+                    <h4>Employee Details</h4>
+
+                    <div class="details-grid">
+
+                      <div>
+                        <span>Name</span>
+                        <strong>
+                          {{ employee.name }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Age</span>
+                        <strong>
+                          {{ employee.age }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Department</span>
+                        <strong>
+                          {{ employee.department }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Job Role</span>
+                        <strong>
+                          {{ employee.jobRole }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Business Travel</span>
+                        <strong>
+                          {{ employee.businessTravel }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Gender</span>
+                        <strong>
+                          {{ employee.gender }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Marital Status</span>
+                        <strong>
+                          {{ employee.maritalStatus }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Monthly Income</span>
+                        <strong>
+                          {{ employee.monthlyIncome }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Overtime</span>
+                        <strong>
+                          {{ employee.overTime }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Job Satisfaction</span>
+                        <strong>
+                          {{ employee.jobSatisfaction }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Job Level</span>
+                        <strong>
+                          {{ employee.jobLevel }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Years at Company</span>
+                        <strong>
+                          {{ employee.yearsAtCompany }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Total Working Years</span>
+                        <strong>
+                          {{ employee.totalWorkingYears }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Years in Current Role</span>
+                        <strong>
+                          {{ employee.yearsInCurrentRole }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Years Since Last Promotion</span>
+                        <strong>
+                          {{ employee.yearsSinceLastPromotion }}
+                        </strong>
+                      </div>
+
+                      <div>
+                        <span>Years With Current Manager</span>
+                        <strong>
+                          {{ employee.yearsWithCurrManager }}
+                        </strong>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </td>
+
+              </tr>
+
             }
-          </tbody>
-        </table>
-      </div>
-    }
+
+          }
+
+        </tbody>
+
+      </table>
+
+    </div>
+
   }
+
 </div>
