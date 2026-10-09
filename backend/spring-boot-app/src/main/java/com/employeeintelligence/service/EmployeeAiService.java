@@ -6,6 +6,7 @@ import com.employeeintelligence.api.model.Employee;
 import com.employeeintelligence.api.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.beans.factory.annotation.Value;
 import com.employeeintelligence.api.exception.MlServiceException;
 import com.employeeintelligence.api.dto.AttritionRiskResponse;
 @Service
@@ -16,12 +17,13 @@ public class EmployeeAiService {
 
     public EmployeeAiService(
             EmployeeRepository employeeRepository,
-            RestClient.Builder restClientBuilder) {
+            RestClient.Builder restClientBuilder,
+            @Value("${ml.service.url}") String mlServiceUrl) {
 
         this.employeeRepository = employeeRepository;
 
         this.mlRestClient = restClientBuilder
-                .baseUrl("http://127.0.0.1:8000")
+                .baseUrl(mlServiceUrl)
                 .build();
     }
 

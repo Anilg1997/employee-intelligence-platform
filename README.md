@@ -1,98 +1,120 @@
-# employee-attrition-ml
+# Employee Intelligence Platform
 
-An end-to-end Machine Learning application that predicts whether an employee is likely to leave an organization based on employee and workplace attributes.
+An employee-workforce intelligence platform with an Angular web application,
+Spring Boot API, machine-learning prediction service, HR policy RAG, and an
+MCP server for tool-based access.
 
-The project covers the complete ML lifecycle:
+## Current status
 
-**Data → EDA → Preprocessing → Model Training → Evaluation → Model Persistence → FastAPI → Streamlit → Testing**
+### Implemented
 
----
+- Angular frontend with dashboard, employee directory, employee create/edit/delete,
+  attrition prediction, and HR assistant screens.
+- `/employees` routes to the combined `EmployeesPage` (employee form plus directory).
+- Spring Boot API integration for employees, dashboard summary, AI risk assessment,
+  ML prediction, and RAG questions.
+- Standalone ML service in `ml-service/` using FastAPI and the persisted
+  `models/employee_attrition_model.pkl` pipeline.
+- MCP server in `mcp-server/` exposing employee lookup, attrition risk,
+  HR-policy search, and department statistics tools.
+- Automated frontend, ML, and backend test suites are present in their respective
+  project directories.
+- PostgreSQL and pgvector migrations are defined under the Spring Boot resources,
+  and a local Docker Compose stack is available for PostgreSQL, ML, and backend.
 
-## Business Problem
+### In progress
 
-Employee attrition can increase recruitment costs, reduce productivity, and create workforce planning challenges.
+- Runtime deployment wiring and environment-specific service URLs.
+- End-to-end validation across the Angular app, Spring Boot API, ML service, and MCP
+  server when all services are running together.
+- Production hardening such as authentication, authorization, observability, and
+  operational configuration.
 
-This project builds a machine learning system that estimates an employee's attrition risk so HR teams can identify employees who may require further attention.
+### Planned
 
-> This project uses a public IBM HR Analytics dataset and is intended for learning and portfolio demonstration. It does not use confidential or internal company data.
+- Role-based access controls and audit history for HR actions.
+- Model monitoring, retraining workflows, and documented model-performance reports.
+- Production deployment automation and managed secrets/configuration.
 
----
+## Repository layout
 
-## Project Objectives
+| Path | Purpose |
+| --- | --- |
+| `frontend/` | Angular 21 web application |
+| `backend/spring-boot-app/` | Spring Boot REST API and business services |
+| `ml-service/` | FastAPI attrition prediction service and model |
+| `mcp-server/` | MCP HTTP server and its Python dependency manifest |
 
-- Analyze employee attrition patterns
-- Identify factors associated with employee attrition
-- Build and compare multiple classification models
-- Handle class imbalance
-- Select a prediction threshold using validation data
-- Evaluate the final model on an untouched test set
-- Save the trained ML pipeline
-- Expose predictions through a REST API
-- Build an interactive Streamlit dashboard
-- Add automated tests
-- Package the project for GitHub
+## Run locally
 
----
+### Frontend
 
-## Dataset
+```bash
+cd frontend
+npm install
+npm start
+```
 
-The project uses the **IBM HR Analytics Employee Attrition & Performance** dataset.
+Open `http://localhost:4200`. The frontend API origin is centralized in
+`frontend/src/app/config/api.config.ts` and defaults to `http://localhost:8080/api`.
 
-Dataset characteristics:
+### ML service
 
-- 1,470 employee records
-- 35 original columns
-- Target variable: `Attrition`
-- `No`: 1,233 employees
-- `Yes`: 237 employees
+```bash
+cd ml-service
+python -m pip install -r requirements.txt
+uvicorn src.api:app --host 0.0.0.0 --port 8000
+```
 
-The target is imbalanced, with significantly fewer employees in the `Yes` class.
+The ML container definition is `ml-service/Dockerfile`; it expects the trained
+pipeline at `ml-service/models/employee_attrition_model.pkl`.
 
----
+### MCP server
 
-## Exploratory Data Analysis
+```bash
+cd mcp-server
+python -m pip install -r requirements.txt
+python server.py
+```
 
-The analysis investigated:
+The MCP server defaults to port `8001` and calls the Spring Boot API at
+`http://localhost:8080`.
 
-- Missing values
-- Duplicate records
-- Attrition distribution
-- Overtime and attrition
-- Job satisfaction
-- Monthly income
-- Age
-- Years at company
-- Feature correlations
-- Constant and identifier columns
+### Spring Boot API
 
-### Key observations
+See `backend/spring-boot-app/` for the existing Maven application and its
+application configuration. Start it before using the frontend, ML-backed features,
+or MCP tools.
 
-Employees working overtime showed a higher observed attrition rate than employees who did not work overtime.
+### Docker Compose foundation
 
-Employees who had left the organization had lower average monthly income, lower average age, and fewer average years at the company than employees who remained.
+The Phase 1 local stack can be validated with:
 
-These are statistical associations in the dataset and should not be interpreted as causal relationships.
+```bash
+docker compose config
+docker compose up --build
+```
 
----
+The stack includes PostgreSQL with pgvector, the FastAPI ML service, and the
+Spring Boot API. Docker Desktop (or another Docker Engine) must be running for
+the build and startup commands. The backend runs Flyway migrations on startup;
+employee CSV import is disabled by default and can be enabled explicitly with
+`EMPLOYEE_IMPORT_ENABLED=true` and `EMPLOYEE_IMPORT_FILE`.
 
-## Machine Learning Models
+## Checks
 
-The following models were evaluated:
+From `frontend/`:
 
-1. Logistic Regression
-2. Decision Tree
-3. Random Forest
-4. Balanced Logistic Regression
+```bash
+npm run build
+npm test -- --watch=false
+```
 
-Because the target variable is imbalanced, class weighting was used for the final Logistic Regression model.
+From `ml-service/`:
 
-### Final Model
+```bash
+pytest
+```
 
-**Balanced Logistic Regression**
-
-Configuration:
-
-```text
-class_weight = "balanced"
-max_iter = 1000
-random_state = 42
+The attrition model is an estimate to support HR analysis and should not replace
+human judgment or employment decisions.

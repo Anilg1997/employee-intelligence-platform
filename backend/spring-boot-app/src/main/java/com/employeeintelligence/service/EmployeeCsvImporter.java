@@ -27,17 +27,24 @@ public class EmployeeCsvImporter implements CommandLineRunner {
 
     private final EmployeeRepository employeeRepository;
     private final Path csvPath;
+    private final boolean enabled;
 
     public EmployeeCsvImporter(
             EmployeeRepository employeeRepository,
-            @Value("${employee.import.file:C:/Users/Lenovo/Downloads/WA_Fn-UseC_-HR-Employee-Attrition.csv}") String csvFile) {
+            @Value("${employee.import.file:}") String csvFile,
+            @Value("${employee.import.enabled:false}") boolean enabled) {
         this.employeeRepository = employeeRepository;
-        this.csvPath = Path.of(csvFile);
+        this.csvPath = csvFile == null || csvFile.isBlank() ? null : Path.of(csvFile);
+        this.enabled = enabled;
     }
 
     @Override
     public void run(String... args) throws IOException {
-        if (!Files.exists(csvPath)) {
+        if (!enabled) {
+            logger.info("Employee CSV import is disabled; skipping import");
+            return;
+        }
+        if (csvPath == null || !Files.exists(csvPath)) {
             logger.info("Employee CSV not found at {}; skipping import", csvPath);
             return;
         }

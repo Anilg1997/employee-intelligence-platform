@@ -48,6 +48,15 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(response);
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
+            IllegalArgumentException exception) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", HttpStatus.BAD_REQUEST.value());
+        response.put("message", exception.getMessage());
+        return ResponseEntity.badRequest().body(response);
+    }
     @ExceptionHandler(MlServiceException.class)
 public ResponseEntity<Map<String, Object>> handleMlServiceException(
         MlServiceException exception) {
