@@ -1,10 +1,12 @@
 package com.employeeintelligence.api.exception;
 
+import com.employeeintelligence.api.dto.ApiErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -12,71 +14,45 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationException(
+    public ResponseEntity<ApiErrorResponse> handleValidationException(
             MethodArgumentNotValidException exception) {
-
         Map<String, String> errors = new LinkedHashMap<>();
-
         exception.getBindingResult()
                 .getFieldErrors()
-                .forEach(error ->
-                        errors.put(error.getField(), error.getDefaultMessage())
-                );
+                .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
-        Map<String, Object> response = new LinkedHashMap<>();
-
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("message", "Validation failed");
-        response.put("errors", errors);
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(response);
+        return response(HttpStatus.BAD_REQUEST, "Validation failed", errors);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(
+    public ResponseEntity<ApiErrorResponse> handleGenericException(
             Exception exception) {
-
-        Map<String, Object> response = new LinkedHashMap<>();
-
-        response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        response.put("message", "An unexpected error occurred");
-
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(response);
+        return response(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", null);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgumentException(
             IllegalArgumentException exception) {
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("status", HttpStatus.BAD_REQUEST.value());
-        response.put("message", exception.getMessage());
-        return ResponseEntity.badRequest().body(response);
+        return response(HttpStatus.BAD_REQUEST, exception.getMessage(), null);
     }
 
     @ExceptionHandler(EmployeeNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleEmployeeNotFoundException(
+    public ResponseEntity<ApiErrorResponse> handleEmployeeNotFoundException(
             EmployeeNotFoundException exception) {
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("status", HttpStatus.NOT_FOUND.value());
-        response.put("message", exception.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        return response(HttpStatus.NOT_FOUND, exception.getMessage(), null);
     }
 
     @ExceptionHandler(MlServiceException.class)
-public ResponseEntity<Map<String, Object>> handleMlServiceException(
-        MlServiceException exception) {
+    public ResponseEntity<ApiErrorResponse> handleMlServiceException(
+            MlServiceException exception) {
+        return response(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), null);
+    }
 
-    Map<String, Object> response = new LinkedHashMap<>();
-
-    response.put("status", HttpStatus.SERVICE_UNAVAILABLE.value());
-    response.put("message", exception.getMessage());
-
-    return ResponseEntity
-            .status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(response);
-}
+    private ResponseEntity<ApiErrorResponse> response(
+            HttpStatus status,
+            String message,
+            Map<String, String> errors) {
+        return ResponseEntity.status(status)
+                .body(new ApiErrorResponse(status.value(), message, errors));
+    }
 }
