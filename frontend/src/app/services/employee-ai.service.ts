@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { apiUrl } from '../config/api.config';
 
 export interface EmployeeAiPrediction {
   attrition_prediction: string;
@@ -19,8 +20,7 @@ export interface AttritionRiskResponse {
 })
 export class EmployeeAiService {
 
-  private readonly apiUrl =
-    'http://localhost:8080/api/ai/employees';
+  private readonly employeeAiUrl = apiUrl('ai/employees');
 
   constructor(private http: HttpClient) {}
 
@@ -29,7 +29,7 @@ export class EmployeeAiService {
   ): Observable<EmployeeAiPrediction> {
 
     return this.http.get<EmployeeAiPrediction>(
-      `${this.apiUrl}/${employeeId}/prediction`
+      `${this.employeeAiUrl}/${employeeId}/prediction`
     );
   }
 
@@ -38,7 +38,7 @@ export class EmployeeAiService {
   ): Observable<AttritionRiskResponse> {
 
     return this.http.get<AttritionRiskResponse>(
-      `${this.apiUrl}/${employeeId}/risk`
+      `${this.employeeAiUrl}/${employeeId}/risk`
     );
   }
 }

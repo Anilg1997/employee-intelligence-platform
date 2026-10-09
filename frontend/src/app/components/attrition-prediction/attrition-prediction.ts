@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { Employee } from '../../models/employee';
 import { EmployeeService } from '../../services/employee';
+import { MlPredictionService } from '../../services/ml-prediction';
+import { MlPredictionRequest } from '../../models/ml-prediction-request';
+import { MlPredictionResponse } from '../../models/ml-prediction-response';
 
 @Component({
   selector: 'app-attrition-prediction',
@@ -15,13 +17,13 @@ export class AttritionPrediction implements OnInit {
 
   employees: Employee[] = [];
   selectedEmployeeId: number | null = null;
-  prediction: { attrition_prediction: string; attrition_probability: number } | null = null;
+  prediction: MlPredictionResponse | null = null;
   loading = false;
   errorMessage = '';
 
   constructor(
     private employeeService: EmployeeService,
-    private http: HttpClient
+    private mlPredictionService: MlPredictionService
   ) {}
 
   ngOnInit(): void {
@@ -45,10 +47,7 @@ export class AttritionPrediction implements OnInit {
     this.errorMessage = '';
     this.prediction = null;
 
-    this.http.post<{ attrition_prediction: string; attrition_probability: number }>(
-      'http://127.0.0.1:8080/api/ml/predict',
-      this.toPredictionRequest(employee)
-    ).subscribe({
+    this.mlPredictionService.predict(this.toPredictionRequest(employee)).subscribe({
       next: result => {
         this.prediction = result;
         this.loading = false;
@@ -61,7 +60,7 @@ export class AttritionPrediction implements OnInit {
     });
   }
 
-  private toPredictionRequest(employee: Employee): Record<string, unknown> {
+  private toPredictionRequest(employee: Employee): MlPredictionRequest {
     return {
       Age: employee.age,
       BusinessTravel: employee.businessTravel ?? 'Travel_Rarely',

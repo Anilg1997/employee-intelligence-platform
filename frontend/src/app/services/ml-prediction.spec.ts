@@ -1,13 +1,17 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
-import { MlPrediction } from './ml-prediction';
+import { MlPredictionService } from './ml-prediction';
 
-describe('MlPrediction', () => {
-  let service: MlPrediction;
+describe('MlPredictionService', () => {
+  let service: MlPredictionService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(MlPrediction);
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()]
+    });
+    service = TestBed.inject(MlPredictionService);
   });
 
   it('should be created', () => {

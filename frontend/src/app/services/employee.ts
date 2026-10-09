@@ -3,36 +3,37 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { Employee } from '../models/employee';
+import { apiUrl } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EmployeeService {
 
-  private readonly apiUrl = 'http://127.0.0.1:8080/api/employees';
+  private readonly employeesUrl = apiUrl('employees');
 
   constructor(private http: HttpClient) {}
 
   getEmployees(): Observable<Employee[]> {
-    return this.http.get<Employee[]>(this.apiUrl);
+    return this.http.get<Employee[]>(this.employeesUrl);
   }
 
   getEmployeeById(id: number): Observable<Employee> {
-    return this.http.get<Employee>(`${this.apiUrl}/${id}`);
+    return this.http.get<Employee>(`${this.employeesUrl}/${id}`);
   }
 
   createEmployee(employee: Employee): Observable<Employee> {
-    return this.http.post<Employee>(this.apiUrl, employee);
+    return this.http.post<Employee>(this.employeesUrl, employee);
   }
 
   updateEmployee(id: number, employee: Employee): Observable<Employee> {
     return this.http.put<Employee>(
-      `${this.apiUrl}/${id}`,
+      `${this.employeesUrl}/${id}`,
       employee
     );
   }
 
   deleteEmployee(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.employeesUrl}/${id}`);
   }
 }

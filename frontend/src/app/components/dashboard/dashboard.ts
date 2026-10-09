@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { KeyValuePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { apiUrl } from '../../config/api.config';
 
 interface DashboardResponse {
   totalEmployees: number;
@@ -23,8 +24,7 @@ export class Dashboard implements OnInit {
   loading = true;
   errorMessage = '';
 
-  private readonly apiUrl =
-    'http://localhost:8080/api/dashboard/summary';
+  private readonly dashboardUrl = apiUrl('dashboard/summary');
 
   constructor(private http: HttpClient) {}
 
@@ -37,7 +37,7 @@ export class Dashboard implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    this.http.get<DashboardResponse>(this.apiUrl).subscribe({
+    this.http.get<DashboardResponse>(this.dashboardUrl).subscribe({
 
       next: (response) => {
         console.log('Dashboard response:', response);

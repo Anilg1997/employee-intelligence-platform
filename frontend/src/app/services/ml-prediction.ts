@@ -4,13 +4,14 @@ import { Observable } from 'rxjs';
 
 import { MlPredictionRequest } from '../models/ml-prediction-request';
 import { MlPredictionResponse } from '../models/ml-prediction-response';
+import { apiUrl } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MlPredictionService {
 
-  private readonly apiUrl = 'http://localhost:8080/api/ml/predict';
+  private readonly predictionUrl = apiUrl('ml/predict');
 
   constructor(private http: HttpClient) {}
 
@@ -19,7 +20,7 @@ export class MlPredictionService {
   ): Observable<MlPredictionResponse> {
 
     return this.http.post<MlPredictionResponse>(
-      this.apiUrl,
+      this.predictionUrl,
       request
     );
   }

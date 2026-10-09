@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { apiUrl } from '../config/api.config';
 
 export interface RagSource {
   source: string;
@@ -19,15 +20,14 @@ export interface RagResponse {
 })
 export class RagService {
 
-  private readonly apiUrl =
-    'http://localhost:8080/api/rag/ask';
+  private readonly ragUrl = apiUrl('rag/ask');
 
   constructor(private http: HttpClient) {}
 
   askQuestion(question: string): Observable<RagResponse> {
 
     return this.http.post<RagResponse>(
-      this.apiUrl,
+      this.ragUrl,
       { question }
     );
   }
