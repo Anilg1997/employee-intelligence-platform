@@ -36,23 +36,11 @@ public ResponseEntity<Employee> getEmployeeById(@PathVariable Long id) {
 public ResponseEntity<Employee> updateEmployee(
         @PathVariable Long id,
         @RequestBody Employee employee) {
-
-    try {
-        return ResponseEntity.ok(
-                employeeService.updateEmployee(id, employee)
-        );
-    } catch (RuntimeException exception) {
-        return ResponseEntity.notFound().build();
-    }
+    return ResponseEntity.ok(employeeService.updateEmployee(id, employee));
 }
 @DeleteMapping("/{id}")
 public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
-
-    try {
-        employeeService.deleteEmployee(id);
-        return ResponseEntity.noContent().build();
-    } catch (RuntimeException exception) {
-        return ResponseEntity.notFound().build();
-    }
+    employeeService.deleteEmployee(id);
+    return ResponseEntity.noContent().build();
 }
 }

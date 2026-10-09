@@ -2,6 +2,7 @@ package com.employeeintelligence.api.service;
 
 import com.employeeintelligence.api.model.Employee;
 import com.employeeintelligence.api.repository.EmployeeRepository;
+import com.employeeintelligence.api.exception.EmployeeNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -143,9 +144,9 @@ class EmployeeServiceTest {
         when(employeeRepository.findById(99L))
                 .thenReturn(Optional.empty());
 
-        RuntimeException exception =
+        EmployeeNotFoundException exception =
                 assertThrows(
-                        RuntimeException.class,
+                        EmployeeNotFoundException.class,
                         () -> employeeService.updateEmployee(
                                 99L,
                                 new Employee(
@@ -172,9 +173,9 @@ class EmployeeServiceTest {
         when(employeeRepository.existsById(99L))
                 .thenReturn(false);
 
-        RuntimeException exception =
+        EmployeeNotFoundException exception =
                 assertThrows(
-                        RuntimeException.class,
+                        EmployeeNotFoundException.class,
                         () -> employeeService.deleteEmployee(99L)
                 );
 

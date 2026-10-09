@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.beans.factory.annotation.Value;
 import com.employeeintelligence.api.exception.MlServiceException;
+import com.employeeintelligence.api.exception.EmployeeNotFoundException;
 import com.employeeintelligence.api.dto.AttritionRiskResponse;
 @Service
 public class EmployeeAiService {
@@ -30,11 +31,7 @@ public class EmployeeAiService {
     public Employee getEmployee(Long employeeId) {
 
         return employeeRepository.findById(employeeId)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Employee not found: " + employeeId
-                        )
-                );
+                .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
     }
 
     public MlPredictionResponse predictEmployee(Long employeeId) {

@@ -2,6 +2,7 @@ package com.employeeintelligence.api.service;
 
 import com.employeeintelligence.api.model.Employee;
 import com.employeeintelligence.api.repository.EmployeeRepository;
+import com.employeeintelligence.api.exception.EmployeeNotFoundException;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 import java.util.List;
@@ -28,7 +29,7 @@ public class EmployeeService {
 public Employee updateEmployee(Long id, Employee updatedEmployee) {
 
     Employee existingEmployee = employeeRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
+            .orElseThrow(() -> new EmployeeNotFoundException(id));
 
     existingEmployee.setName(updatedEmployee.getName());
     existingEmployee.setDepartment(updatedEmployee.getDepartment());
@@ -73,7 +74,7 @@ public Employee updateEmployee(Long id, Employee updatedEmployee) {
 public void deleteEmployee(Long id) {
 
     if (!employeeRepository.existsById(id)) {
-        throw new RuntimeException("Employee not found with id: " + id);
+        throw new EmployeeNotFoundException(id);
     }
 
     employeeRepository.deleteById(id);

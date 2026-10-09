@@ -5,7 +5,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.http.ResponseEntity;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -57,6 +56,16 @@ public class GlobalExceptionHandler {
         response.put("message", exception.getMessage());
         return ResponseEntity.badRequest().body(response);
     }
+
+    @ExceptionHandler(EmployeeNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleEmployeeNotFoundException(
+            EmployeeNotFoundException exception) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", HttpStatus.NOT_FOUND.value());
+        response.put("message", exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
     @ExceptionHandler(MlServiceException.class)
 public ResponseEntity<Map<String, Object>> handleMlServiceException(
         MlServiceException exception) {
