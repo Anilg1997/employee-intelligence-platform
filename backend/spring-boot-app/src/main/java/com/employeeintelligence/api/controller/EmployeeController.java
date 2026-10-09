@@ -2,6 +2,7 @@ package com.employeeintelligence.api.controller;
 
 import com.employeeintelligence.api.dto.EmployeeRequest;
 import com.employeeintelligence.api.dto.EmployeeResponse;
+import com.employeeintelligence.api.dto.EmployeePageResponse;
 import com.employeeintelligence.api.mapper.EmployeeMapper;
 import com.employeeintelligence.api.service.EmployeeService;
 import jakarta.validation.Valid;
@@ -24,6 +25,17 @@ public class EmployeeController {
         return employeeService.getEmployees().stream()
                 .map(EmployeeMapper::toResponse)
                 .toList();
+    }
+
+    @GetMapping("/search")
+    public EmployeePageResponse searchEmployees(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String page,
+            @RequestParam(required = false) String size,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDirection) {
+        return employeeService.searchEmployees(query, department, page, size, sortBy, sortDirection);
     }
 
     @PostMapping

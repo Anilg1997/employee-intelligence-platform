@@ -6,9 +6,23 @@ import com.employeeintelligence.api.exception.EmployeeNotFoundException;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 import java.util.List;
+import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import com.employeeintelligence.api.dto.EmployeePageResponse;
+import com.employeeintelligence.api.mapper.EmployeeMapper;
 
 @Service
 public class EmployeeService {
+
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_SIZE = 20;
+    private static final int MAX_SIZE = 100;
+    private static final Map<String, String> SORTABLE_FIELDS = Map.of(
+            "id", "id", "name", "name", "department", "department",
+            "jobRole", "jobRole", "age", "age", "employeeNumber", "employeeNumber");
 
     private final EmployeeRepository employeeRepository;
 
@@ -18,6 +32,39 @@ public class EmployeeService {
 
     public List<Employee> getEmployees() {
         return employeeRepository.findAll();
+    }
+
+    public EmployeePageResponse searchEmployees(String query, String department,
+                                                  String page, String size,
+                                                  String sortBy, String sortDirection) {
+        int normalizedPage = parseNonNegative(page, DEFAULT_PAGE);
+        int normalizedSize = Math.min(Math.max(parseNonNegative(size, DEFAULT_SIZE), 1), MAX_SIZE);
+        String property = sortBy == null ? "name" : SORTABLE_FIELDS.getOrDefault(sortBy, "name");
+        Sort.Direction direction = "DESC".equalsIgnoreCase(sortDirection)
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(normalizedPage, normalizedSize,
+                Sort.by(direction, property));
+        Page<Employee> result = employeeRepository.search(normalize(query), normalize(department), pageable);
+        return new EmployeePageResponse(result.getContent().stream().map(EmployeeMapper::toResponse).toList(),
+                result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
+    }
+
+    private static String normalize(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private static int parseNonNegative(String value, int fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        try {
+            return Math.max(0, Integer.parseInt(value));
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
     }
 
     public Employee createEmployee(Employee employee) {

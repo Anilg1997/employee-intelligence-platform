@@ -11,6 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import com.employeeintelligence.api.dto.EmployeePageResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,6 +47,40 @@ class EmployeeServiceTest {
         assertEquals("Anil", employees.get(0).getName());
 
         verify(employeeRepository).findAll();
+    }
+
+    @Test
+    void shouldSearchWithFiltersPaginationAndAllowlistedSort() {
+        Employee employee = new Employee("Anil", "Research & Development", "Research Scientist", 30);
+        when(employeeRepository.search(eq("anil"), eq("Research & Development"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(employee),
+                        org.springframework.data.domain.PageRequest.of(1, 2), 5));
+
+        EmployeePageResponse result = employeeService.searchEmployees(
+                " anil ", " Research & Development ", "1", "2", "name", "DESC");
+
+        assertEquals(1, result.page());
+        assertEquals(2, result.size());
+        assertEquals(5, result.totalElements());
+        assertEquals(3, result.totalPages());
+        assertEquals("Anil", result.content().get(0).name());
+        verify(employeeRepository).search(eq("anil"), eq("Research & Development"),
+                argThat(pageable -> pageable.getSort().getOrderFor("name").isDescending()));
+    }
+
+    @Test
+    void shouldSafelyDefaultInvalidSearchParameters() {
+        when(employeeRepository.search(isNull(), isNull(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(),
+                        org.springframework.data.domain.PageRequest.of(0, 1), 0));
+
+        EmployeePageResponse result = employeeService.searchEmployees(
+                " ", "", "not-a-number", "-10", "name;drop", "sideways");
+
+        assertEquals(0, result.page());
+        assertEquals(1, result.size());
+        verify(employeeRepository).search(isNull(), isNull(), argThat(pageable ->
+                pageable.getSort().getOrderFor("name").isAscending()));
     }
 
     @Test

@@ -17,6 +17,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import java.util.Optional;
+import com.employeeintelligence.api.dto.EmployeePageResponse;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -124,6 +125,30 @@ class EmployeeControllerTest {
                 .andExpect(jsonPath("$.name").value("Anil"))
                 .andExpect(jsonPath("$.jobRole")
                         .value("Research Scientist"));
+    }
+
+    @Test
+    void shouldReturnStableSearchPageShapeAndEmployeeResponses() throws Exception {
+        Employee employee = new Employee("Anil", "Research & Development", "Research Scientist", 30);
+        when(employeeService.searchEmployees(eq("anil"), eq("IT"), eq("0"), eq("10"),
+                eq("name"), eq("ASC")))
+                .thenReturn(new EmployeePageResponse(
+                        List.of(com.employeeintelligence.api.mapper.EmployeeMapper.toResponse(employee)),
+                        0, 10, 1, 1));
+
+        mockMvc.perform(get("/api/employees/search")
+                        .param("query", "anil")
+                        .param("department", "IT")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sortBy", "name")
+                        .param("sortDirection", "ASC"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].name").value("Anil"))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1));
     }
 
     @Test
