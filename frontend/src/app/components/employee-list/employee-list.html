@@ -3,7 +3,7 @@
   <div class="list-header">
     <div>
       <h3>Employee Directory</h3>
-      <p>{{ employees.length }} employees</p>
+      <p>{{ totalElements }} employees</p>
     </div>
 
     <button
@@ -11,6 +11,55 @@
       (click)="loadEmployees()">
       Refresh
     </button>
+  </div>
+
+  <div class="filters" role="search">
+    <label>
+      Search
+      <input
+        type="search"
+        [(ngModel)]="searchQuery"
+        (keyup.enter)="applyFilters()"
+        placeholder="Name, role, or department">
+    </label>
+
+    <label>
+      Department
+      <select [(ngModel)]="selectedDepartment" (change)="applyFilters()">
+        <option value="">All departments</option>
+        @for (department of departments; track department) {
+          <option [value]="department">{{ department }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Sort by
+      <select [(ngModel)]="sortBy" (change)="applyFilters()">
+        @for (option of sortOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Direction
+      <select [(ngModel)]="sortDirection" (change)="applyFilters()">
+        <option value="ASC">Ascending</option>
+        <option value="DESC">Descending</option>
+      </select>
+    </label>
+
+    <label>
+      Per page
+      <select [(ngModel)]="pageSize" (change)="changePageSize()">
+        <option [ngValue]="10">10</option>
+        <option [ngValue]="20">20</option>
+        <option [ngValue]="50">50</option>
+      </select>
+    </label>
+
+    <button type="button" class="apply-button" (click)="applyFilters()">Search</button>
   </div>
 
   @if (loading) {
@@ -334,6 +383,18 @@
 
       </table>
 
+    </div>
+
+    <div class="pagination" aria-label="Employee directory pagination">
+      <span>Page {{ totalPages ? currentPage + 1 : 0 }} of {{ totalPages }}</span>
+      <div>
+        <button type="button" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 0">
+          Previous
+        </button>
+        <button type="button" (click)="changePage(currentPage + 1)" [disabled]="currentPage + 1 >= totalPages">
+          Next
+        </button>
+      </div>
     </div>
 
   }

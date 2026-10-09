@@ -21,7 +21,8 @@
     </div>
 
     <app-employee-list
-      [refreshTrigger]="refreshTrigger">
+      [refreshTrigger]="refreshTrigger"
+      (employeeChanged)="refreshEmployees()">
     </app-employee-list>
 
   </section>

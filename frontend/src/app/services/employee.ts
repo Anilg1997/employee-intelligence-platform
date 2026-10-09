@@ -3,7 +3,18 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { Employee } from '../models/employee';
+import { EmployeePageResponse } from '../models/employee-page-response';
 import { apiUrl } from '../config/api.config';
+import { HttpParams } from '@angular/common/http';
+
+export interface EmployeeSearchOptions {
+  query?: string;
+  department?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDirection?: 'ASC' | 'DESC';
+}
 
 @Injectable({
   providedIn: 'root'
@@ -16,6 +27,26 @@ export class EmployeeService {
 
   getEmployees(): Observable<Employee[]> {
     return this.http.get<Employee[]>(this.employeesUrl);
+  }
+
+  searchEmployees(options: EmployeeSearchOptions = {}): Observable<EmployeePageResponse> {
+    let params = new HttpParams();
+    const values: Record<string, string | number | undefined> = {
+      query: options.query?.trim() || undefined,
+      department: options.department || undefined,
+      page: options.page,
+      size: options.size,
+      sortBy: options.sortBy,
+      sortDirection: options.sortDirection
+    };
+
+    Object.entries(values).forEach(([key, value]) => {
+      if (value !== undefined) {
+        params = params.set(key, String(value));
+      }
+    });
+
+    return this.http.get<EmployeePageResponse>(`${this.employeesUrl}/search`, { params });
   }
 
   getEmployeeById(id: number): Observable<Employee> {

@@ -1,6 +1,8 @@
 import {
   Component,
   Input,
+  Output,
+  EventEmitter,
   OnInit,
   OnChanges,
   SimpleChanges
@@ -29,12 +31,30 @@ export class EmployeeList implements OnInit, OnChanges {
   // --------------------------------------------------
 
   @Input() refreshTrigger = 0;
+  @Output() employeeChanged = new EventEmitter<void>();
 
   // --------------------------------------------------
   // Employee data
   // --------------------------------------------------
 
   employees: Employee[] = [];
+  totalElements = 0;
+  totalPages = 0;
+  currentPage = 0;
+  pageSize = 20;
+  searchQuery = '';
+  selectedDepartment = '';
+  sortBy = 'name';
+  sortDirection: 'ASC' | 'DESC' = 'ASC';
+
+  readonly departments = ['Human Resources', 'Research & Development', 'Sales'];
+  readonly sortOptions = [
+    { value: 'name', label: 'Name' },
+    { value: 'department', label: 'Department' },
+    { value: 'jobRole', label: 'Job role' },
+    { value: 'age', label: 'Age' },
+    { value: 'employeeNumber', label: 'Employee number' }
+  ];
 
   // --------------------------------------------------
   // Loading and error state
@@ -106,11 +126,21 @@ predictionErrors: {
     this.loading = true;
     this.errorMessage = '';
 
-    this.employeeService.getEmployees().subscribe({
+    this.employeeService.searchEmployees({
+      query: this.searchQuery,
+      department: this.selectedDepartment,
+      page: this.currentPage,
+      size: this.pageSize,
+      sortBy: this.sortBy,
+      sortDirection: this.sortDirection
+    }).subscribe({
 
-      next: (employees: Employee[]) => {
+      next: (response) => {
 
-        this.employees = employees;
+        this.employees = response.content;
+        this.currentPage = response.page;
+        this.totalElements = response.totalElements;
+        this.totalPages = response.totalPages;
 
         this.loading = false;
       },
@@ -128,6 +158,24 @@ predictionErrors: {
         this.loading = false;
       }
     });
+  }
+
+  applyFilters(): void {
+    this.currentPage = 0;
+    this.loadEmployees();
+  }
+
+  changePage(page: number): void {
+    if (page < 0 || page >= this.totalPages || page === this.currentPage) {
+      return;
+    }
+    this.currentPage = page;
+    this.loadEmployees();
+  }
+
+  changePageSize(): void {
+    this.currentPage = 0;
+    this.loadEmployees();
   }
 
   // --------------------------------------------------
@@ -201,6 +249,7 @@ predictionErrors: {
           // Exit edit mode
           this.editingId = null;
           this.editingEmployee = null;
+          this.employeeChanged.emit();
         },
 
         error: (error: unknown) => {
@@ -251,6 +300,7 @@ predictionErrors: {
           if (this.expandedId === id) {
             this.expandedId = null;
           }
+          this.employeeChanged.emit();
         },
 
         error: (error: unknown) => {
