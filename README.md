@@ -21,6 +21,9 @@ MCP server for tool-based access.
   for compensation decisions. See [salary model report](docs/ml/salary-model.md).
 - MCP server in `mcp-server/` exposing employee lookup, attrition risk,
   HR-policy search, and department statistics tools.
+- Performance-rating classification slice with explicit training, deterministic
+  leakage-safe splits, persisted artifact/metrics, FastAPI/Spring endpoints, and
+  an Angular employee-selection screen. See `docs/ml/performance-model.md`.
 - Automated frontend, ML, and backend test suites are present in their respective
   project directories.
 - PostgreSQL and pgvector migrations are defined under the Spring Boot resources,
@@ -68,12 +71,17 @@ Open `http://localhost:4200`. The frontend API origin is centralized in
 ```bash
 cd ml-service
 python -m pip install -r requirements.txt
-python -m src.train_salary_model
+ python -m src.train_salary_model
+ python -m src.train_performance_model
 uvicorn src.api:app --host 0.0.0.0 --port 8000
 ```
 
 The ML container definition is `ml-service/Dockerfile`; it expects the trained
 pipeline at `ml-service/models/employee_attrition_model.pkl`.
+Performance inference similarly requires the explicitly trained
+`models/employee_performance_model.pkl`; inference never trains and a missing or
+incompatible artifact is reported as HTTP 503. Its synthetic-data limitations are
+documented in `docs/ml/performance-model.md`.
 Salary inference requires `models/employee_salary_model.pkl`; it never trains
 automatically. Missing/incompatible artifacts return HTTP 503. The explicit
 training command also writes `models/employee_salary_model.json` with provenance
