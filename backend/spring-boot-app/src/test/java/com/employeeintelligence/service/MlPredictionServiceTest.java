@@ -3,6 +3,7 @@ package com.employeeintelligence.api.service;
 import com.employeeintelligence.api.dto.MlPredictionRequest;
 import com.employeeintelligence.api.dto.MlPredictionResponse;
 import com.employeeintelligence.api.dto.PerformancePredictionResponse;
+import com.employeeintelligence.api.dto.PromotionPredictionResponse;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -29,6 +30,19 @@ class MlPredictionServiceTest {
         PerformancePredictionResponse response = service.predictPerformance(Map.of("Age", 35));
         assertEquals(3, response.getPerformance_prediction());
         assertEquals("performance-classifier-v1", response.getModel_version());
+        server.verify();
+    }
+
+    @Test
+    void shouldReturnPromotionReadinessAndUseDedicatedEndpoint() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("http://127.0.0.1:8000");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        MlPredictionService service = new MlPredictionService(builder.build());
+        server.expect(requestTo("http://127.0.0.1:8000/predict/promotion")).andExpect(method(POST))
+                .andRespond(withSuccess("{\"promotion_prediction\":\"Ready\",\"promotion_probability\":0.75,\"target_type\":\"portfolio_demo_rule_target\"}", MediaType.APPLICATION_JSON));
+        PromotionPredictionResponse response = service.predictPromotion(Map.of("YearsAtCompany", 4));
+        assertEquals("Ready", response.getPromotion_prediction());
+        assertEquals("portfolio_demo_rule_target", response.getTarget_type());
         server.verify();
     }
 

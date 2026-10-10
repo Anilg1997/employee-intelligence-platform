@@ -5,6 +5,7 @@ import com.employeeintelligence.api.dto.MlPredictionResponse;
 import com.employeeintelligence.api.dto.SalaryPredictionRequest;
 import com.employeeintelligence.api.dto.SalaryPredictionResponse;
 import com.employeeintelligence.api.dto.PerformancePredictionResponse;
+import com.employeeintelligence.api.dto.PromotionPredictionResponse;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,5 +50,10 @@ public class MlPredictionService {
     public PerformancePredictionResponse predictPerformance(Map<String, Object> request) {
         return restClient.post().uri("/predict/performance").contentType(MediaType.APPLICATION_JSON)
                 .body(request).retrieve().body(PerformancePredictionResponse.class);
+    }
+
+    public PromotionPredictionResponse predictPromotion(Map<String, Object> request) {
+        return restClient.post().uri("/predict/promotion").contentType(MediaType.APPLICATION_JSON)
+                .body(request).retrieve().body(PromotionPredictionResponse.class);
     }
 }

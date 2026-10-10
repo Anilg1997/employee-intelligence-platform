@@ -24,6 +24,11 @@ MCP server for tool-based access.
 - Performance-rating classification slice with explicit training, deterministic
   leakage-safe splits, persisted artifact/metrics, FastAPI/Spring endpoints, and
   an Angular employee-selection screen. See `docs/ml/performance-model.md`.
+- Promotion-readiness vertical slice with FastAPI and Spring proxy endpoints and
+  an Angular employee-selection screen. Because the IBM HR CSV has no promotion
+  outcome, this is explicitly a deterministic `portfolio_demo_rule_target` based
+  on documented business rules, not a learned promotion predictor or ground-truth
+  evaluation. See `docs/ml/promotion-model.md`.
 - Automated frontend, ML, and backend test suites are present in their respective
   project directories.
 - PostgreSQL and pgvector migrations are defined under the Spring Boot resources,
