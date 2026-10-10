@@ -33,6 +33,11 @@ MCP server for tool-based access.
   project directories.
 - PostgreSQL and pgvector migrations are defined under the Spring Boot resources,
   and a local Docker Compose stack is available for PostgreSQL, ML, and backend.
+- Phase 8 authentication/RBAC foundation: local demo mode remains enabled by
+  default, with an external OIDC/JWT resource-server seam, role constants, and
+  method-level checks on high-impact endpoints. See
+  [authentication and RBAC](docs/security/authentication-rbac.md). Production
+  OAuth provider setup is not included.
 
 ### In progress
 
@@ -44,7 +49,7 @@ MCP server for tool-based access.
 
 ### Planned
 
-- Role-based access controls and audit history for HR actions.
+- Audit history for HR actions and production identity-provider wiring.
 - Model monitoring and operational retraining workflows (an explicit salary
   training command and held-out evaluation report are available).
 - Production deployment automation and managed secrets/configuration.

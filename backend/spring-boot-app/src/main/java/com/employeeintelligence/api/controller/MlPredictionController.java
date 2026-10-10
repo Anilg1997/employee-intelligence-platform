@@ -9,6 +9,7 @@ import com.employeeintelligence.api.dto.PromotionPredictionResponse;
 import java.util.Map;
 import com.employeeintelligence.api.service.MlPredictionService;
 import com.employeeintelligence.api.service.ModelRegistryService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.employeeintelligence.api.dto.ModelMetadata;
 import java.util.List;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +33,7 @@ public class MlPredictionController {
     }
 
     @GetMapping("/models")
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_ANALYST')")
     public List<ModelMetadata> models(ModelRegistryService registry) { return registry.list(); }
 
     @PostMapping("/predict/salary")

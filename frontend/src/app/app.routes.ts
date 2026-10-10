@@ -9,6 +9,7 @@ import { SalaryPrediction } from './components/salary-prediction/salary-predicti
 import { PerformancePrediction } from './components/performance-prediction/performance-prediction';
 import { PromotionPrediction } from './components/promotion-prediction/promotion-prediction';
 import { RiskIntelligence } from './components/risk-intelligence/risk-intelligence';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
 
@@ -20,31 +21,36 @@ export const routes: Routes = [
 
   {
     path: 'dashboard',
-    component: Dashboard
+    component: Dashboard,
+    canActivate: [authGuard]
   },
 
   {
     path: 'employees',
-    component: EmployeesPage
+    component: EmployeesPage,
+    canActivate: [authGuard]
   },
 
   {
     path: 'employees/:id',
-    component: EmployeeProfile
+    component: EmployeeProfile,
+    canActivate: [authGuard]
   },
 
   {
     path: 'attrition-prediction',
-    component: AttritionPrediction
+    component: AttritionPrediction,
+    canActivate: [authGuard]
   },
-  { path: 'salary-prediction', component: SalaryPrediction },
-  { path: 'performance-prediction', component: PerformancePrediction },
-  { path: 'promotion-prediction', component: PromotionPrediction },
-  { path: 'risk-intelligence', component: RiskIntelligence },
+  { path: 'salary-prediction', component: SalaryPrediction, canActivate: [authGuard] },
+  { path: 'performance-prediction', component: PerformancePrediction, canActivate: [authGuard] },
+  { path: 'promotion-prediction', component: PromotionPrediction, canActivate: [authGuard] },
+  { path: 'risk-intelligence', component: RiskIntelligence, canActivate: [authGuard] },
 
   {
     path: 'hr-assistant',
-    component: HrAssistant
+    component: HrAssistant,
+    canActivate: [authGuard]
   }
 
 ];

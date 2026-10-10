@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -57,8 +58,9 @@ public ResponseEntity<EmployeeResponse> updateEmployee(
     return ResponseEntity.ok(EmployeeMapper.toResponse(
             employeeService.updateEmployee(id, EmployeeMapper.toEntity(employee))));
 }
-@DeleteMapping("/{id}")
-public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
+ @DeleteMapping("/{id}")
+ @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN')")
+ public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
     employeeService.deleteEmployee(id);
     return ResponseEntity.noContent().build();
 }
