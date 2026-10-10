@@ -111,7 +111,9 @@
               </td>
 
               <td>
-                {{ employee.name }}
+                  <a class="employee-link" [routerLink]="['/employees', employee.id]">
+                    {{ employee.name }}
+                  </a>
               </td>
 
               <td>
@@ -152,9 +154,9 @@
                 <div class="actions">
 
                   <!-- Employee Details -->
-                  <button
-                    type="button"
-                    (click)="toggleDetails(employee.id!)">
+                   <button
+                     type="button"
+                     (click)="toggleDetails(employee.id!)">
 
                     {{
                       expandedId === employee.id
@@ -162,7 +164,10 @@
                         : 'Details'
                     }}
 
-                  </button>
+                   </button>
+                   <a class="profile-link" [routerLink]="['/employees', employee.id]">
+                     View profile
+                   </a>
 
                   <!-- AI Risk Assessment -->
 

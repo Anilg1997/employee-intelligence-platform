@@ -1,0 +1,88 @@
+@if (loading) {
+  <section class="profile-state" aria-live="polite">
+    <span class="state-icon" aria-hidden="true">◌</span>
+    <h2>Loading employee profile</h2>
+    <p>Retrieving employee details and intelligence.</p>
+  </section>
+} @else if (notFound) {
+  <section class="profile-state" role="alert">
+    <span class="state-icon" aria-hidden="true">?</span>
+    <h2>Employee not found</h2>
+    <p>We could not find an employee with this profile ID.</p>
+    <a class="primary-action" routerLink="/employees">Return to directory</a>
+  </section>
+} @else if (errorMessage) {
+  <section class="profile-state" role="alert">
+    <span class="state-icon error-icon" aria-hidden="true">!</span>
+    <h2>Profile unavailable</h2>
+    <p>{{ errorMessage }}</p>
+    <a class="primary-action" routerLink="/employees">Return to directory</a>
+  </section>
+} @else if (employee) {
+  <div class="profile-page">
+    <a class="back-link" routerLink="/employees">← Employee directory</a>
+
+    <header class="profile-hero">
+      <div class="avatar" aria-hidden="true">{{ employee.name.charAt(0) }}</div>
+      <div class="hero-copy">
+        <p class="eyebrow">Employee profile · #{{ formatValue(employee.employeeNumber ?? employee.id) }}</p>
+        <h1>{{ employee.name }}</h1>
+        <p class="role-line">{{ employee.jobRole }} <span>·</span> {{ employee.department }}</p>
+      </div>
+      <div class="hero-status">
+        <span class="status-label">Current attrition</span>
+        <strong [class.status-positive]="employee.attrition === 'No'">{{ formatValue(employee.attrition) }}</strong>
+      </div>
+    </header>
+
+    <div class="profile-grid">
+      <section class="profile-card">
+        <div class="card-heading"><div><p class="eyebrow">01 · Employee record</p><h2>Personal &amp; employment</h2></div></div>
+        <dl class="detail-grid">
+          <div><dt>Department</dt><dd>{{ employee.department }}</dd></div>
+          <div><dt>Job role</dt><dd>{{ employee.jobRole }}</dd></div>
+          <div><dt>Age</dt><dd>{{ formatValue(employee.age) }}</dd></div>
+          <div><dt>Gender</dt><dd>{{ formatValue(employee.gender) }}</dd></div>
+          <div><dt>Marital status</dt><dd>{{ formatValue(employee.maritalStatus) }}</dd></div>
+          <div><dt>Business travel</dt><dd>{{ formatValue(employee.businessTravel) }}</dd></div>
+          <div><dt>Years at company</dt><dd>{{ formatValue(employee.yearsAtCompany) }}</dd></div>
+          <div><dt>Overtime</dt><dd>{{ formatValue(employee.overTime) }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="profile-card">
+        <div class="card-heading"><div><p class="eyebrow">02 · Rewards &amp; growth</p><h2>Compensation &amp; performance</h2></div></div>
+        <dl class="detail-grid">
+          <div><dt>Monthly income</dt><dd>{{ formatValue(employee.monthlyIncome) }}</dd></div>
+          <div><dt>Job level</dt><dd>{{ formatValue(employee.jobLevel) }}</dd></div>
+          <div><dt>Performance rating</dt><dd>{{ formatValue(employee.performanceRating) }}</dd></div>
+          <div><dt>Percent salary hike</dt><dd>{{ formatValue(employee.percentSalaryHike) }}</dd></div>
+          <div><dt>Job satisfaction</dt><dd>{{ formatValue(employee.jobSatisfaction) }}</dd></div>
+          <div><dt>Environment satisfaction</dt><dd>{{ formatValue(employee.environmentSatisfaction) }}</dd></div>
+          <div><dt>Years in current role</dt><dd>{{ formatValue(employee.yearsInCurrentRole) }}</dd></div>
+          <div><dt>Years since promotion</dt><dd>{{ formatValue(employee.yearsSinceLastPromotion) }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="profile-card intelligence-card">
+        <div class="card-heading"><div><p class="eyebrow">03 · Model signal</p><h2>ML intelligence</h2></div><span class="model-badge">Attrition model</span></div>
+        @if (riskLoading) {
+          <div class="risk-state" aria-live="polite"><span class="spinner" aria-hidden="true"></span><strong>Assessing attrition risk</strong><p>Generating the latest risk signal for this employee.</p></div>
+        } @else if (riskErrorMessage) {
+          <div class="risk-state risk-error" role="alert"><strong>Risk assessment unavailable</strong><p>{{ riskErrorMessage }}</p></div>
+        } @else if (riskAssessment) {
+          <div class="risk-result" [class.risk-high]="riskAssessment.riskLevel === 'High Risk'" [class.risk-medium]="riskAssessment.riskLevel === 'Medium Risk'" [class.risk-low]="riskAssessment.riskLevel === 'Low Risk'">
+            <div><span class="risk-label">Risk level</span><strong>{{ riskAssessment.riskLevel }}</strong></div>
+            <div><span class="risk-label">Model prediction</span><strong>{{ riskAssessment.prediction }}</strong></div>
+            <div><span class="risk-label">Probability</span><strong>{{ (riskAssessment.probability * 100).toFixed(2) }}%</strong></div>
+          </div>
+        }
+      </section>
+
+      <section class="profile-card placeholder-card">
+        <div class="card-heading"><div><p class="eyebrow">04 · Coming later</p><h2>Timeline &amp; audit</h2></div><span class="placeholder-badge">Not yet available</span></div>
+        <p>Employment events, manager changes, and audit history will appear here when timeline data is available.</p>
+      </section>
+    </div>
+  </div>
+}

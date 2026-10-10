@@ -4,6 +4,7 @@ import { Dashboard } from './components/dashboard/dashboard';
 import { EmployeesPage } from './components/employees-page/employees-page';
 import { AttritionPrediction } from './components/attrition-prediction/attrition-prediction';
 import { HrAssistant } from './components/hr-assistant/hr-assistant';
+import { EmployeeProfile } from './components/employee-profile/employee-profile';
 
 export const routes: Routes = [
 
@@ -21,6 +22,11 @@ export const routes: Routes = [
   {
     path: 'employees',
     component: EmployeesPage
+  },
+
+  {
+    path: 'employees/:id',
+    component: EmployeeProfile
   },
 
   {

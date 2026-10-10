@@ -8,6 +8,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { Employee } from '../../models/employee';
 import { EmployeeService } from '../../services/employee';
@@ -20,7 +21,7 @@ import {
 @Component({
   selector: 'app-employee-list',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './employee-list.html',
   styleUrl: './employee-list.scss'
 })
