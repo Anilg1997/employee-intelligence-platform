@@ -1,35 +1,54 @@
 <div class="app-container">
-
   <header class="app-header">
-
-    <h1>Employee Intelligence Platform</h1>
-
-    <nav class="main-nav">
-
-      <a routerLink="/dashboard">
-        Dashboard
+    <div class="header-inner">
+      <a class="brand" routerLink="/dashboard" aria-label="Employee Intelligence Platform home" (click)="closeNavigation()">
+        <span class="brand-mark" aria-hidden="true">EI</span>
+        <span class="brand-copy">
+          <span class="brand-name">Employee Intelligence</span>
+          <span class="brand-label">People operations platform</span>
+        </span>
       </a>
 
-      <a routerLink="/employees">
-        Employees
-      </a>
+      <button
+        class="menu-toggle"
+        type="button"
+        aria-controls="primary-navigation"
+        [attr.aria-expanded]="navigationOpen()"
+        (click)="toggleNavigation()"
+      >
+        <span class="menu-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>Menu</span>
+      </button>
 
-      <a routerLink="/attrition-prediction">
-        Attrition Prediction
-      </a>
+      <div class="header-status" aria-label="Workspace status">
+        <span class="status-indicator" aria-hidden="true"></span>
+        <span>Workspace online</span>
+      </div>
+    </div>
 
-      <a routerLink="/hr-assistant">
-        HR Assistant
+    <nav id="primary-navigation" class="main-nav" [class.is-open]="navigationOpen()" aria-label="Primary navigation">
+      <a routerLink="/dashboard" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()">
+        <span class="nav-icon" aria-hidden="true">▦</span>
+        <span>Overview</span>
       </a>
-
+      <a routerLink="/employees" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()">
+        <span class="nav-icon" aria-hidden="true">◎</span>
+        <span>Employees</span>
+      </a>
+      <a routerLink="/attrition-prediction" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()">
+        <span class="nav-icon" aria-hidden="true">⌁</span>
+        <span>Attrition insights</span>
+      </a>
+      <a routerLink="/hr-assistant" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()">
+        <span class="nav-icon" aria-hidden="true">✦</span>
+        <span>HR assistant</span>
+      </a>
     </nav>
-
   </header>
 
   <main class="app-content">
-
-    <router-outlet></router-outlet>
-
+    <div class="content-frame">
+      <router-outlet></router-outlet>
+    </div>
   </main>
-
 </div>

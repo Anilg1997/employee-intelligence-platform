@@ -1,106 +1,101 @@
 <div class="dashboard">
-
-  <div class="dashboard-header">
-    <h2>Employee Intelligence Dashboard</h2>
-    <p>Workforce overview and department statistics.</p>
-  </div>
+  <header class="dashboard-header">
+    <div>
+      <p class="eyebrow">WORKFORCE INTELLIGENCE</p>
+      <h2>Employee Intelligence Dashboard</h2>
+      <p class="dashboard-subtitle">A current view of the employee directory, organized by department.</p>
+    </div>
+    <span class="scope-badge">Current directory scope</span>
+  </header>
 
   @if (loading) {
-
-    <div class="loading">
-      Loading dashboard...
-    </div>
-
+    <section class="state-card loading" aria-live="polite" aria-busy="true">
+      <div class="loading-mark" aria-hidden="true"></div>
+      <div>
+        <h3>Loading workforce snapshot</h3>
+        <p>Fetching the latest employee directory summary.</p>
+      </div>
+    </section>
   } @else if (errorMessage) {
-
-    <div class="error">
-      {{ errorMessage }}
-    </div>
-
+    <section class="state-card error" role="alert">
+      <div>
+        <p class="state-kicker">DATA UNAVAILABLE</p>
+        <h3>We couldn't load the dashboard</h3>
+        <p>{{ errorMessage }} Check the API connection and try again.</p>
+      </div>
+      <button type="button" class="retry-button" (click)="loadDashboard()">Retry</button>
+    </section>
   } @else if (dashboard) {
-
-    <!-- Total employees -->
-    <div class="summary-card">
-
-      <h3>Total Employees</h3>
-
-      <p class="total-employees">
-        {{ dashboard.totalEmployees }}
-      </p>
-
-    </div>
-
-    <!-- Department cards -->
-    <section class="department-section">
-
-      <h3>Employees by Department</h3>
-
-      <div class="department-grid">
-
-        @for (
-          department of dashboard.departmentStatistics | keyvalue;
-          track department.key
-        ) {
-
-          <div class="department-card">
-
-            <span class="department-name">
-              {{ department.key }}
-            </span>
-
-            <span class="department-count">
-              {{ department.value }}
-            </span>
-
-          </div>
-
-        }
-
-      </div>
-
+    <section class="metric-grid" aria-label="Workforce summary">
+      <article class="metric-card metric-card-primary">
+        <span class="metric-label">Total employees</span>
+        <strong>{{ dashboard.totalEmployees | number }}</strong>
+        <span class="metric-caption">In the current directory</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Departments</span>
+        <strong>{{ departmentCount | number }}</strong>
+        <span class="metric-caption">With directory records</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Largest department</span>
+        <strong>{{ largestDepartment?.name || '—' }}</strong>
+        <span class="metric-caption">{{ largestDepartment ? (largestDepartment.count + ' employees') : 'No department data' }}</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Average department size</span>
+        <strong>{{ hasDepartmentData ? (averageDepartmentSize | number:'1.0-1') : '—' }}</strong>
+        <span class="metric-caption">Derived from this snapshot</span>
+      </article>
     </section>
 
-    <!-- Department distribution -->
-    <section class="department-chart">
-
-      <h3>Department Distribution</h3>
-
-      <div class="chart">
-
-        @for (
-          department of dashboard.departmentStatistics | keyvalue;
-          track department.key
-        ) {
-
-          <div class="bar-row">
-
-            <div class="bar-label">
-              {{ department.key }}
-            </div>
-
-            <div class="bar-container">
-
-              <div
-                class="bar"
-                [style.width.%]="
-                  (department.value / dashboard.totalEmployees) * 100
-                ">
-              </div>
-
-            </div>
-
-            <div class="bar-value">
-              {{ department.value }}
-            </div>
-
+    @if (hasDepartmentData) {
+      <section class="panel department-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">ORGANIZATIONAL MIX</p>
+            <h3>Department summary</h3>
           </div>
+          <span class="panel-note">{{ departmentCount }} departments</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <caption class="sr-only">Employee count and share by department</caption>
+            <thead>
+              <tr><th scope="col">Department</th><th scope="col">Employees</th><th scope="col">Share of directory</th></tr>
+            </thead>
+            <tbody>
+              @for (department of departmentSummaries; track department.name) {
+                <tr>
+                  <th scope="row">{{ department.name }}</th>
+                  <td>{{ department.count | number }}</td>
+                  <td>
+                    <div class="share-cell">
+                      <span class="share-track"><span class="share-bar" [style.width.%]="department.share"></span></span>
+                      <span>{{ formatShare(department.share) }}</span>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    } @else {
+      <section class="state-card empty-state">
+        <p class="state-kicker">NO DIRECTORY DATA</p>
+        <h3>There are no department records yet</h3>
+        <p>Department insights will appear here when employee records are available.</p>
+      </section>
+    }
 
-        }
-
-      </div>
-
-    </section>
-
+    <p class="data-note"><strong>Data scope:</strong> This view reflects the employee directory summary currently returned by the platform. Trends, attrition risk, and other workforce signals are not included in this snapshot.</p>
   }
 
+  @if (!loading && !errorMessage && !dashboard) {
+    <section class="state-card empty-state">
+      <h3>No dashboard data available</h3>
+      <p>There is no workforce snapshot to display.</p>
+    </section>
+  }
 </div>
