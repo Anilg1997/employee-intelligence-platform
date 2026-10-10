@@ -8,6 +8,9 @@ import com.employeeintelligence.api.dto.PerformancePredictionResponse;
 import com.employeeintelligence.api.dto.PromotionPredictionResponse;
 import java.util.Map;
 import com.employeeintelligence.api.service.MlPredictionService;
+import com.employeeintelligence.api.service.ModelRegistryService;
+import com.employeeintelligence.api.dto.ModelMetadata;
+import java.util.List;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -27,6 +30,9 @@ public class MlPredictionController {
 
         return mlPredictionService.predict(request);
     }
+
+    @GetMapping("/models")
+    public List<ModelMetadata> models(ModelRegistryService registry) { return registry.list(); }
 
     @PostMapping("/predict/salary")
     public SalaryPredictionResponse predictSalary(@RequestBody @Valid SalaryPredictionRequest request) {

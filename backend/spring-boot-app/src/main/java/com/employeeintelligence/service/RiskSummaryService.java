@@ -1,0 +1,8 @@
+package com.employeeintelligence.api.service;
+import com.employeeintelligence.api.dto.*; import com.employeeintelligence.api.model.Employee; import java.util.*; import org.springframework.stereotype.Service;
+@Service public class RiskSummaryService {
+ private final EmployeeAiService employeeAiService; private final MlPredictionService mlPredictionService;
+ public RiskSummaryService(EmployeeAiService e,MlPredictionService m){employeeAiService=e;mlPredictionService=m;}
+ public RiskSummaryResponse summarize(Long id){Employee e=employeeAiService.getEmployee(id);double a=employeeAiService.assessRisk(id).getProbability();Map<String,Object> r=employeeAiService.toPredictionMap(e);PerformancePredictionResponse p=mlPredictionService.predictPerformance(r);PromotionPredictionResponse q=mlPredictionService.predictPromotion(r);double c=p.getClass_probabilities()==null?(p.getPerformance_prediction()>=4?p.getPerformance_probability():0):p.getClass_probabilities().getOrDefault("4",0.0);double pr=clamp(1-c),rr=clamp(q.getRule_score());List<String> l=new ArrayList<>(List.of("Decision-support only: never use this as a standalone employment decision.","Overall risk is the deterministic equal-weight mean of attrition risk, derived performance risk (1 - class 4 score), and inverse promotion rule score; it is not calibrated."));if(p.getLimitations()!=null)l.addAll(p.getLimitations());if(q.getLimitations()!=null)l.addAll(q.getLimitations());return new RiskSummaryResponse(id,a,pr,rr,(a+pr+(1-rr))/3,q.getTarget_type(),Map.of("attrition","attrition-service-current","performance",p.getModel_version(),"promotionReadiness",q.getModel_version()),l);}
+ private double clamp(double v){return Math.max(0,Math.min(1,v));}
+}

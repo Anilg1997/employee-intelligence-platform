@@ -8,6 +8,7 @@ import { EmployeeProfile } from './components/employee-profile/employee-profile'
 import { SalaryPrediction } from './components/salary-prediction/salary-prediction';
 import { PerformancePrediction } from './components/performance-prediction/performance-prediction';
 import { PromotionPrediction } from './components/promotion-prediction/promotion-prediction';
+import { RiskIntelligence } from './components/risk-intelligence/risk-intelligence';
 
 export const routes: Routes = [
 
@@ -39,6 +40,7 @@ export const routes: Routes = [
   { path: 'salary-prediction', component: SalaryPrediction },
   { path: 'performance-prediction', component: PerformancePrediction },
   { path: 'promotion-prediction', component: PromotionPrediction },
+  { path: 'risk-intelligence', component: RiskIntelligence },
 
   {
     path: 'hr-assistant',

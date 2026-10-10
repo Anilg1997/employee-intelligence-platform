@@ -1,0 +1,1 @@
+export interface RiskSummary { employeeId:number; attritionRisk:number; performanceRisk:number; promotionReadiness:number; overallRisk:number; promotionTargetType:string; modelVersions:Record<string,string>; limitations:string[]; }

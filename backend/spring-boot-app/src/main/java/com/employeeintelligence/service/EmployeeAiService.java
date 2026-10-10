@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import com.employeeintelligence.api.exception.MlServiceException;
 import com.employeeintelligence.api.exception.EmployeeNotFoundException;
 import com.employeeintelligence.api.dto.AttritionRiskResponse;
+import java.util.LinkedHashMap;
+import java.util.Map;
 @Service
 public class EmployeeAiService {
 
@@ -122,4 +124,10 @@ public class EmployeeAiService {
             riskLevel
     );
 }
+
+    public Map<String, Object> toPredictionMap(Employee employee) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("Age", employee.getAge()); m.put("BusinessTravel", employee.getBusinessTravel()); m.put("DailyRate", employee.getDailyRate()); m.put("Department", employee.getDepartment()); m.put("DistanceFromHome", employee.getDistanceFromHome()); m.put("Education", employee.getEducation()); m.put("EducationField", employee.getEducationField()); m.put("EnvironmentSatisfaction", employee.getEnvironmentSatisfaction()); m.put("Gender", employee.getGender()); m.put("HourlyRate", employee.getHourlyRate()); m.put("JobInvolvement", employee.getJobInvolvement()); m.put("JobLevel", employee.getJobLevel()); m.put("JobRole", employee.getJobRole()); m.put("JobSatisfaction", employee.getJobSatisfaction()); m.put("MaritalStatus", employee.getMaritalStatus()); m.put("MonthlyIncome", employee.getMonthlyIncome()); m.put("MonthlyRate", employee.getMonthlyRate()); m.put("NumCompaniesWorked", employee.getNumCompaniesWorked()); m.put("OverTime", employee.getOverTime()); m.put("PercentSalaryHike", employee.getPercentSalaryHike()); m.put("PerformanceRating", employee.getPerformanceRating()); m.put("RelationshipSatisfaction", employee.getRelationshipSatisfaction()); m.put("StockOptionLevel", employee.getStockOptionLevel()); m.put("TotalWorkingYears", employee.getTotalWorkingYears()); m.put("TrainingTimesLastYear", employee.getTrainingTimesLastYear()); m.put("WorkLifeBalance", employee.getWorkLifeBalance()); m.put("YearsAtCompany", employee.getYearsAtCompany()); m.put("YearsInCurrentRole", employee.getYearsInCurrentRole()); m.put("YearsSinceLastPromotion", employee.getYearsSinceLastPromotion()); m.put("YearsWithCurrManager", employee.getYearsWithCurrManager());
+        return m;
+    }
 }

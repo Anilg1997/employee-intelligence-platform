@@ -31,7 +31,7 @@ describe('App', () => {
     const links = compiled.querySelectorAll('.main-nav a');
 
     expect(navigation).toBeTruthy();
-    expect(links.length).toBe(7);
+    expect(links.length).toBe(8);
     expect(compiled.querySelector('.main-nav a[routerlink="/salary-prediction"]')).toBeTruthy();
     expect(compiled.querySelector('.main-nav a[routerlink="/employees"]')).toBeTruthy();
     expect(compiled.querySelector('.menu-toggle')?.getAttribute('aria-controls')).toBe('primary-navigation');
