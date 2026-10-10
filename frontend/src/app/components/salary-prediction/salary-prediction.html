@@ -1,0 +1,9 @@
+<div class="prediction-container">
+  <h2>Salary estimate</h2>
+  <p>Estimate monthly income from role and experience signals. This is a model estimate, not a compensation decision.</p>
+  <label for="salaryEmployee">Employee</label>
+  <select id="salaryEmployee" [(ngModel)]="selectedEmployeeId">@for (employee of employees; track employee.id) { <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option> }</select>
+  <button type="button" [disabled]="loading || !selectedEmployeeId" (click)="predict()">{{ loading ? 'Estimating...' : 'Estimate salary' }}</button>
+  @if (prediction) { <div class="prediction-result"><strong>{{ prediction.estimated_monthly_income.toFixed(2) }} dataset income units / month</strong><span>{{ prediction.algorithm }} · {{ prediction.model_version }}</span></div><p class="note">Synthetic-dataset demonstration only. Not validated for compensation or employment decisions; no calibrated confidence interval is available.</p> }
+  @if (errorMessage) { <p class="error">{{ errorMessage }}</p> }
+</div>

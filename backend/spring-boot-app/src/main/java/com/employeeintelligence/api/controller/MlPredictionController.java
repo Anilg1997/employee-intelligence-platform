@@ -2,6 +2,8 @@ package com.employeeintelligence.api.controller;
 
 import com.employeeintelligence.api.dto.MlPredictionRequest;
 import com.employeeintelligence.api.dto.MlPredictionResponse;
+import com.employeeintelligence.api.dto.SalaryPredictionRequest;
+import com.employeeintelligence.api.dto.SalaryPredictionResponse;
 import com.employeeintelligence.api.service.MlPredictionService;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -21,5 +23,10 @@ public class MlPredictionController {
             @RequestBody @Valid MlPredictionRequest request) {
 
         return mlPredictionService.predict(request);
+    }
+
+    @PostMapping("/predict/salary")
+    public SalaryPredictionResponse predictSalary(@RequestBody @Valid SalaryPredictionRequest request) {
+        return mlPredictionService.predictSalary(request);
     }
 }

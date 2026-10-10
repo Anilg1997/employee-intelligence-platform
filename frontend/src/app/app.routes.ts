@@ -5,6 +5,7 @@ import { EmployeesPage } from './components/employees-page/employees-page';
 import { AttritionPrediction } from './components/attrition-prediction/attrition-prediction';
 import { HrAssistant } from './components/hr-assistant/hr-assistant';
 import { EmployeeProfile } from './components/employee-profile/employee-profile';
+import { SalaryPrediction } from './components/salary-prediction/salary-prediction';
 
 export const routes: Routes = [
 
@@ -33,6 +34,7 @@ export const routes: Routes = [
     path: 'attrition-prediction',
     component: AttritionPrediction
   },
+  { path: 'salary-prediction', component: SalaryPrediction },
 
   {
     path: 'hr-assistant',
