@@ -730,7 +730,7 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 | Performance modeling and leakage review | IN PROGRESS |
 | Promotion endpoint and honest target definition | IN PROGRESS |
 | JSON-only complete model/rule artifacts | IMPLEMENTED |
-| Registry and composite risk engine | IN PROGRESS |
+| JSON-backed model registry and composite risk engine | IN PROGRESS |
 | Flyway wiring, fresh schema and V3-to-V4 fixture migration | IMPLEMENTED |
 | Existing deployment database migration/backup verification | IN PROGRESS |
 | JWT/RBAC and complete identity flow | IN PROGRESS |
