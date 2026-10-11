@@ -22,7 +22,7 @@ public class RagIngestionController {
     }
 
     @PostMapping
-    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER')")
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN')")
     public Map<String, String> ingest(
             @RequestParam String filePath,
             @RequestParam String source) throws Exception {

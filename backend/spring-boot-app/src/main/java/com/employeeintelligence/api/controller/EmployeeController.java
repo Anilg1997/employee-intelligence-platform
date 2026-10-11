@@ -25,6 +25,7 @@ public class EmployeeController {
     }
 
     @GetMapping
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
     public List<EmployeeResponse> getEmployees() {
         return employeeService.getEmployees().stream()
                 .map(EmployeeMapper::toResponse)
@@ -32,6 +33,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/search")
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
     public EmployeePageResponse searchEmployees(
             @RequestParam(required = false) String query,
             @RequestParam(required = false) String department,
@@ -43,12 +45,14 @@ public class EmployeeController {
     }
 
     @PostMapping
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER')")
     public EmployeeResponse createEmployee(@Valid @RequestBody EmployeeRequest employee) {
         var saved = employeeService.createEmployee(EmployeeMapper.toEntity(employee));
         auditService.record("EMPLOYEE_CREATE", "employee", saved.getId(), "SUCCESS", "created employee record");
         return EmployeeMapper.toResponse(saved);
     }
     @GetMapping("/{id}")
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
 public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long id) {
 
     return employeeService.getEmployeeById(id)
@@ -57,6 +61,7 @@ public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long id) {
             .orElse(ResponseEntity.notFound().build());
 }
 @PutMapping("/{id}")
+ @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER')")
 public ResponseEntity<EmployeeResponse> updateEmployee(
         @PathVariable Long id,
         @Valid @RequestBody EmployeeRequest employee) {
@@ -65,7 +70,7 @@ public ResponseEntity<EmployeeResponse> updateEmployee(
      return ResponseEntity.ok(EmployeeMapper.toResponse(updated));
 }
  @DeleteMapping("/{id}")
- @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN')")
+  @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER')")
  public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
      employeeService.deleteEmployee(id);
      auditService.record("EMPLOYEE_DELETE", "employee", id, "SUCCESS", "deleted employee record");

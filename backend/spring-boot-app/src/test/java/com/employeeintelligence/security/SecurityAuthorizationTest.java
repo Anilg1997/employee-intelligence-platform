@@ -23,7 +23,8 @@ class SecurityAuthorizationTest {
         assertNotNull(delete);
         assertTrue(delete.value().contains("ROLE_HR_ADMIN"));
         assertNotNull(ingestion);
-        assertTrue(ingestion.value().contains("ROLE_HR_MANAGER"));
+        assertTrue(ingestion.value().contains("ROLE_HR_ADMIN"));
+        assertFalse(ingestion.value().contains("ROLE_HR_MANAGER"));
     }
 
     @Test

@@ -29,6 +29,7 @@ public class MlPredictionController {
     }
 
     @PostMapping("/predict")
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
     public MlPredictionResponse predict(
             @RequestBody @Valid MlPredictionRequest request) {
 
@@ -41,16 +42,19 @@ public class MlPredictionController {
     public List<ModelMetadata> models(ModelRegistryService registry) { return registry.list(); }
 
     @PostMapping("/predict/salary")
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
     public SalaryPredictionResponse predictSalary(@RequestBody @Valid SalaryPredictionRequest request) {
         var response = mlPredictionService.predictSalary(request); auditService.record("ML_PREDICTION", "model", "salary", "SUCCESS", "prediction completed"); return response;
     }
 
     @PostMapping("/predict/performance")
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
     public PerformancePredictionResponse predictPerformance(@RequestBody Map<String, Object> request) {
         var response = mlPredictionService.predictPerformance(request); auditService.record("ML_PREDICTION", "model", "performance", "SUCCESS", "prediction completed"); return response;
     }
 
     @PostMapping("/predict/promotion")
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
     public PromotionPredictionResponse predictPromotion(@RequestBody Map<String, Object> request) {
         var response = mlPredictionService.predictPromotion(request); auditService.record("ML_PREDICTION", "model", "promotion", "SUCCESS", "prediction completed"); return response;
     }

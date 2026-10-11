@@ -2,6 +2,7 @@ package com.employeeintelligence.api.controller;
 
 import com.employeeintelligence.api.service.RagDocumentService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 import java.util.List;
@@ -19,6 +20,7 @@ public class RagDocumentController {
     }
 
     @PostMapping
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN')")
     public Map<String, String> createDocument(
             @RequestParam String content,
             @RequestParam(required = false) String metadata) {
@@ -34,6 +36,7 @@ public class RagDocumentController {
         );
     }
     @GetMapping("/search")
+    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
 public List<Map<String, Object>> search(
         @RequestParam String query,
         @RequestParam(defaultValue = "3") int limit) {

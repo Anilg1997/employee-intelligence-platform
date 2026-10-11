@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.web.SecurityFilterChain;
@@ -31,6 +32,20 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/employees", "/api/employees/**", "/api/dashboard/**")
+                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
+                        .requestMatchers(HttpMethod.POST, "/api/employees", "/api/employees/**")
+                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/employees/**")
+                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/employees/**")
+                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER")
+                        .requestMatchers("/api/ml/**", "/api/ai/employees/**")
+                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
+                        .requestMatchers("/api/agent/ask", "/api/rag/ask", "/api/ai/chat")
+                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
+                        .requestMatchers("/api/audit/**", "/api/rag/ingestion/**", "/api/rag/documents/**")
+                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions.accessDeniedHandler((request, response, denied) -> {
                     AuditService service = audit.getIfAvailable();
