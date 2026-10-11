@@ -15,5 +15,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf 
 RUN useradd --system --create-home --uid 10001 appuser
 COPY --from=build /workspace/target/*.jar /app/app.jar
 USER 10001
-EXPOSE 8080
+EXPOSE 8080 8081
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

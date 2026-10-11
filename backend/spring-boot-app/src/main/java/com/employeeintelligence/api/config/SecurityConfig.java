@@ -29,7 +29,9 @@ public class SecurityConfig {
     @ConditionalOnProperty(name = "security.auth.enabled", havingValue = "false", matchIfMissing = true)
     SecurityFilterChain localSecurityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/metrics", "/actuator/prometheus").permitAll()
+                        .anyRequest().permitAll())
                 .build();
     }
 
@@ -39,7 +41,8 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable())
                 .addFilterAfter(new TenantFilter(tenants), BearerTokenAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/health", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/metrics", "/actuator/prometheus",
+                                "/api/health", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/employees", "/api/employees/**", "/api/dashboard/**")
                         .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
                         .requestMatchers(HttpMethod.POST, "/api/employees", "/api/employees/**")

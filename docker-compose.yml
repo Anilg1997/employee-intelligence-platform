@@ -36,6 +36,7 @@ services:
         condition: service_healthy
     environment:
       SERVER_PORT: 8080
+      MANAGEMENT_SERVER_PORT: 8081
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-employee_intelligence}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-root}
@@ -49,10 +50,11 @@ services:
       OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
+      - "${BACKEND_MANAGEMENT_PORT:-8081}:8081"
     volumes:
       - ./documents:/app/documents:ro
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "4", "http://localhost:8080/api/health"]
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "--max-time", "4", "http://localhost:8081/actuator/health/readiness"]
       interval: 15s
       timeout: 5s
       retries: 10

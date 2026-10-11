@@ -5,7 +5,7 @@ import com.employeeintelligence.api.repository.AuditEventRepository;
 import com.employeeintelligence.security.AuthenticatedUser;
 import com.employeeintelligence.security.TenantContext;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.Logger; import org.slf4j.LoggerFactory;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory; import org.slf4j.MDC;
 import org.springframework.data.domain.*; import org.springframework.stereotype.Service;
 import java.time.Instant; import java.util.UUID;
 
@@ -19,12 +19,20 @@ public class AuditService {
         try {
             var user = AuthenticatedUser.current();
             String role = user.roles().stream().findFirst().orElse(null);
-            AuditEvent event = new AuditEvent(Instant.now(), safe(user.subject()), safe(role), safe(action), safe(resourceType), resourceId == null ? null : safe(String.valueOf(resourceId)), safe(result), UUID.randomUUID().toString(), sanitize(metadata));
+            String correlationId = MDC.get("correlationId");
+            AuditEvent event = new AuditEvent(Instant.now(), safe(user.subject()), safe(role), safe(action), safe(resourceType), resourceId == null ? null : safe(String.valueOf(resourceId)), safe(result), safe(correlationId == null ? UUID.randomUUID().toString() : correlationId), sanitize(metadata));
             event.setTenantId(tenantContext.currentTenantId()); repository.save(event);
         } catch (Exception ex) { log.warn("Audit persistence failed; continuing primary operation", ex); }
     }
     public void record(String action, String resourceType, Object resourceId, String result, String metadata, HttpServletRequest request) {
-        record(action, resourceType, resourceId, result, sanitize(metadata));
+        String correlationId = request == null ? null : request.getHeader("X-Correlation-Id");
+        if (correlationId != null && correlationId.matches("[A-Za-z0-9._:-]{1,64}")) {
+            try (MDC.MDCCloseable ignored = MDC.putCloseable("correlationId", correlationId)) {
+                record(action, resourceType, resourceId, result, metadata);
+            }
+        } else {
+            record(action, resourceType, resourceId, result, metadata);
+        }
     }
     public Page<AuditEvent> find(String action, String result, Pageable pageable) {
         return repository.findByTenantIdAndActionContainingIgnoreCaseAndResultContainingIgnoreCase(tenantContext.currentTenantId(), action == null ? "" : action, result == null ? "" : result, pageable);

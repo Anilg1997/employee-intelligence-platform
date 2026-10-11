@@ -127,7 +127,7 @@ The table lists technologies present in source/configuration, not a blanket depl
 | API description | Springdoc/OpenAPI dependency | API documentation integration; compatibility needs verification |
 | Legacy demo | Streamlit | Separate attrition-only UI, not the primary enterprise frontend |
 
-Kafka, Redis, GraphQL, gRPC, Actuator, Micrometer, Prometheus, Grafana, Testcontainers, and the security pipeline are target additions, not current stack capabilities.
+Kafka, Redis, GraphQL, gRPC, Grafana, Testcontainers, and the security pipeline remain target additions, not current stack capabilities. Actuator, Micrometer, and Prometheus exposure are implemented for this slice.
 
 ## Microservices
 
@@ -284,7 +284,7 @@ Employee history, optimistic locking, database-side dashboard aggregation, data 
 
 ## Observability
 
-**IN PROGRESS:** application logs and basic health endpoints exist. **PLANNED:** Actuator, Micrometer, Prometheus, Grafana, distributed tracing and propagated correlation IDs.
+**IN PROGRESS:** Spring Boot Actuator health/info/metrics/Prometheus endpoints are available on the separate management port (8081 by default), with liveness independent of optional AI services and readiness including the database health contributor. Flyway remains a startup migration/validation gate. Requests receive a bounded `X-Correlation-Id` that is also available to audit persistence through MDC. **PLANNED:** Grafana, distributed tracing and broader model/RAG telemetry.
 
 The intended telemetry covers HTTP/database latency, error rates, pool pressure, JVM metrics, model/RAG/LLM/MCP latency, retrieval scores, and eventually cache behavior and Kafka lag. Model/prompt versions and token counts should be captured where available, without raw sensitive prompts or high-cardinality employee labels. Existing audit correlation IDs are not equivalent to end-to-end request tracing.
 
@@ -603,6 +603,7 @@ The configured bind address is `127.0.0.1:8001`. These are the intended launch c
 | Variable / config key | Purpose | Notes |
 | --- | --- | --- |
 | `SERVER_PORT` | Spring HTTP port | Default 8080 |
+| `MANAGEMENT_SERVER_PORT` | Spring Actuator management port | Default 8081; expose only to the monitoring/network boundary |
 | `SPRING_PROFILES_ACTIVE` | `local` or `secure` | Local mode is not authenticated |
 | `SPRING_DATASOURCE_URL` | JDBC connection URL | Supply per environment |
 | `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` | Database identity | Inject privately; never commit |
@@ -621,6 +622,7 @@ The configured bind address is `127.0.0.1:8001`. These are the intended launch c
 | `SECURITY_OAUTH2_ISSUER_URI` | JWT issuer in secure profile | Public issuer URL, never an access token |
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Compose database configuration | Supply private environment values |
 | `POSTGRES_PORT`, `ML_SERVICE_PORT`, `BACKEND_PORT` | Compose host ports | Avoid exposing internal services unnecessarily |
+| `BACKEND_MANAGEMENT_PORT` | Compose host port for Actuator | Default 8081; keep restricted to health/monitoring consumers |
 | `window.__APP_CONFIG__` | Browser `apiBaseUrl`, `authEnabled`, `oidcAuthority`, `oidcClientId` | Public configuration, not a secret store or completed OIDC client |
 
 Spring and Python do not automatically load the root Compose `.env` in the current code. Configure each process explicitly. There are no operative Kafka/Redis environment variables yet. `.env` is ignored, but variant secret filenames and already-tracked files still require review.

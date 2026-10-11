@@ -17,8 +17,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.beans.factory.annotation.Value;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(EmployeeIntelligenceApiApplicationTests.TestChatModelConfig.class)
 class EmployeeIntelligenceApiApplicationTests {
 
@@ -32,11 +37,13 @@ class EmployeeIntelligenceApiApplicationTests {
         properties.add("spring.jpa.properties.hibernate.default_schema", () -> SCHEMA);
         properties.add("spring.datasource.hikari.connection-init-sql", () -> "SET search_path TO " + SCHEMA + ", public");
         properties.add("employee.import.enabled", () -> "false");
+        properties.add("management.server.port", () -> "0");
     }
 
     @Autowired private Flyway flyway;
     @Autowired private DataSource dataSource;
     @Autowired private com.employeeintelligence.api.repository.EmployeeRepository employees;
+    @Value("${local.management.port}") private int managementPort;
 
     @AfterAll
     static void removeTestSchema(@Autowired DataSource dataSource) {
@@ -58,7 +65,7 @@ class EmployeeIntelligenceApiApplicationTests {
     }
 
 	@Test
-	void contextLoads() {
+    void contextLoads() {
 
         assertEquals("4", flyway.info().current().getVersion().getVersion());
         assertTrue(flyway.validateWithResult().validationSuccessful);
@@ -88,6 +95,25 @@ class EmployeeIntelligenceApiApplicationTests {
         } finally {
             jdbc.execute("DROP SCHEMA IF EXISTS " + legacy + " CASCADE");
         }
+    }
+
+    @Test
+    void managementHealthEndpointsExposeStatusWithoutDatabaseDetails() throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> live = get(client, "/actuator/health/liveness");
+        HttpResponse<String> ready = get(client, "/actuator/health/readiness");
+
+        assertEquals(200, live.statusCode());
+        assertEquals(200, ready.statusCode());
+        assertTrue(live.body().contains("\"status\":\"UP\""));
+        assertTrue(ready.body().contains("\"status\":\"UP\""));
+        assertFalse(ready.body().contains("jdbc"));
+        assertFalse(ready.body().contains("password"));
+    }
+
+    private HttpResponse<String> get(HttpClient client, String path) throws Exception {
+        return client.send(HttpRequest.newBuilder(URI.create("http://localhost:" + managementPort + path)).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
     }
 
     @Test
