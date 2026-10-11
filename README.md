@@ -4,7 +4,7 @@
 
 Nexora Technologies is a **fictional company** used for this engineering portfolio. This repository is not an internal system of a real employer. It evolves the existing Employee Intelligence Platform; it does not replace it with a new application.
 
-> **Engineering status — reviewed 11 October 2026:** production-oriented, not production-ready. Employee and prediction workflows have automated checks, but the latest backend has an unresolved database migration/startup verification gap. Secure login, complete tenant-isolation validation, and end-to-end deployment are unfinished. See [Limitations](#limitations) before running a demonstration.
+> **Engineering status — reviewed 11 October 2026:** production-oriented, not production-ready. Backend migration/startup wiring, nullable employee search, the promotion request contract, and secure navigation have regression fixes. PostgreSQL integration tests verify fresh migration, a V3-to-V4 upgrade, and selected tenant-scoped reads using isolated schemas. Existing deployment databases, real OIDC login, and full-stack/container operation still require verification. See [Limitations](#limitations) before running a demonstration.
 
 Status vocabulary used throughout:
 
@@ -30,13 +30,13 @@ The platform brings those concerns into a common workflow: find an employee, ins
 
 | Capability | Status | Current scope |
 | --- | --- | --- |
-| Employee Management | IMPLEMENTED | CRUD, search, filtering, pagination, sorting; tenant migration currently blocks full-stack startup verification |
+| Employee Management | IMPLEMENTED | CRUD, search, filtering, pagination and sorting; selected search/tenant reads verified against PostgreSQL |
 | Employee 360 | IN PROGRESS | Profile and intelligence sections; historical timeline and comprehensive audit integration remain |
 | Workforce Analytics | IN PROGRESS | Dashboard summary and department aggregation; longitudinal analytics remain |
 | Attrition Prediction | IMPLEMENTED | Existing persisted classifier and threshold-based inference |
 | Salary Prediction | IMPLEMENTED | Experimental random-forest regression with explicit training and evaluation metadata |
 | Performance Prediction | IN PROGRESS | Classifier and API exist; feature timing/leakage review remains |
-| Promotion Prediction | IN PROGRESS | Rule-based readiness only; no historical promotion target and a request-contract defect |
+| Promotion Prediction | IN PROGRESS | Rule-based readiness API with required-rating validation; no historical promotion target or learned classifier |
 | Workforce Risk Intelligence | IN PROGRESS | Composite heuristic over model/rule outputs; not a validated risk measure |
 | HR Knowledge Assistant / RAG | IN PROGRESS | Document ingestion, semantic retrieval, answer/source contract; live and security validation remain |
 | Agentic AI | IN PROGRESS | LangChain4j tool registration and agent endpoint |
@@ -115,7 +115,7 @@ The table lists technologies present in source/configuration, not a blanket depl
 | Persistence | Spring Data JPA, Hibernate, JDBC | Entity persistence and vector SQL |
 | Security | Spring Security, OAuth2 Resource Server | JWT validation configuration and role checks |
 | Database | PostgreSQL 17, pgvector | Employee/audit records and embeddings |
-| Schema | Flyway scripts V1–V4 | Versioned schema; startup wiring/upgrade verification unfinished |
+| Schema | Spring Boot Flyway starter, scripts V1–V4 | Fresh migrations and V3-to-V4 upgrade tested in isolated PostgreSQL schemas |
 | Frontend | Angular 21.2, TypeScript 5.9, RxJS | Routed application and API interaction |
 | Frontend runtime | Angular SSR, Express | Server output and prerendering configuration |
 | ML | Python, Pandas, NumPy, Scikit-learn, Joblib | Data preparation, training and persisted inference |
@@ -153,7 +153,7 @@ Salary and performance trainers split raw rows into deterministic **60/20/20 tra
 | Attrition | Existing persisted classifier; `Yes` score compared with **0.55** | Threshold is configured in inference; selection provenance and independent final evaluation need review before asserting validation-only tuning |
 | Salary | RandomForestRegressor; target `MonthlyIncome` excluded from inputs | Validation/test MAE, RMSE and R² recorded; no calibrated prediction interval or external-validity claim |
 | Performance | RandomForestClassifier; target `PerformanceRating` excluded | Accuracy, balanced accuracy and macro F1 recorded; `PercentSalaryHike` may be an outcome proxy, so temporal leakage needs investigation |
-| Promotion | Four deterministic readiness rules | No observed promotion label; score is not a learned/calibrated probability. API request contract currently requires repair |
+| Promotion | Four deterministic readiness rules | No observed promotion label; score is not a learned/calibrated probability. API explicitly requires `PerformanceRating` |
 
 Current fixed salary/performance configurations do not fit on held-out partitions. Repeated development against test metrics would still compromise the holdout: future tuning must use training/validation only, with a frozen final test evaluation. Protected characteristics and correlated proxies require explicit fairness/appropriateness review.
 
@@ -190,7 +190,7 @@ flowchart TD
 
 The current ingestion path validates a trusted directory, file size, and extensions, serializes metadata as JSON, and stores paragraph embeddings. Retrieval returns the top three non-null embeddings within the current tenant. The prompt instructs the model to state when the documents contain insufficient information.
 
-**Remaining:** transactional/versioned ingestion, deduplication, bounded/token-aware chunks, relevance thresholds, keyword fusion, retrieval evaluation, document-level permissions, and stronger prompt/data separation. An insufficient-context instruction is not a deterministic refusal mechanism. Tenant filtering exists in code but still requires migrated-database isolation tests.
+**Remaining:** transactional/versioned ingestion, deduplication, bounded/token-aware chunks, relevance thresholds, keyword fusion, retrieval evaluation, document-level permissions, and stronger prompt/data separation. An insufficient-context instruction is not a deterministic refusal mechanism. RAG tenant filtering exists in code but still requires dedicated migrated-database isolation tests.
 
 ## Agentic AI
 
@@ -247,7 +247,7 @@ Delivery design should use bounded retries with backoff, retry topics where just
 - Bean validation, parameterized SQL and ingestion path checks provide existing input defenses, but validation is not uniform across endpoints.
 - Audit writes exist for selected actions. OWASP threat modeling, request limits, secure headers, centralized rate limiting, complete denial handling, and security regression coverage remain unfinished.
 
-The frontend does not implement a complete OIDC login/callback/refresh/logout flow and has an unauthenticated redirect defect. Demo mode must never be exposed as a secured deployment. Existing development credential defaults require removal/hardening; do not use them in a deployment or add secrets to Git.
+The frontend does not implement a complete OIDC login/callback/refresh/logout flow. Anonymous and expired sessions now navigate to an unguarded `/access-required` page that explicitly states sign-in is not integrated; role checks revalidate expired sessions. Demo mode must never be exposed as a secured deployment. Existing development credential defaults require removal/hardening; do not use them in a deployment or add secrets to Git.
 
 See [authentication/RBAC](docs/security/authentication-rbac.md) and [audit governance](docs/security/audit-governance.md). These foundations are not a security certification.
 
@@ -274,7 +274,7 @@ These controls align with OWASP LLM/GenAI themes including prompt injection, sen
 - **Redis — PLANNED:** cache only justified reads and short-lived state; keys must include tenant and authorization-relevant scope. Mutations need explicit invalidation. Do not reuse sensitive AI responses across principals.
 - **Kafka — PLANNED:** event transport, not the transactional source of truth.
 
-Employee history, optimistic locking, database-side dashboard aggregation, data retention and full migration/isolation tests remain outstanding. Legacy rows are proposed to backfill into `demo`; deployment owners must review that mapping before migration.
+Employee history, optimistic locking, database-side dashboard aggregation, data retention and comprehensive isolation tests remain outstanding. Fresh migrations and a V3-to-V4 upgrade with employee/document/audit fixtures are tested. Legacy rows backfill into `demo`; deployment owners must review that mapping and the actual schema/history before applying it to existing records. Tests create UUID-named schemas and clean up only their own fixtures, leaving existing employee data untouched.
 
 ## Real-Time Architecture
 
@@ -307,11 +307,11 @@ Core employee operations should remain available when optional AI services fail;
 | --- | --- | --- |
 | Java | JUnit/Mockito controller, service, error, tenant and HTTP authorization tests | Real JWT validation, database-backed isolation and complete API authorization matrix |
 | Python | Pytest prediction/API tests under `ml-service/tests/` | Current full rerun, promotion contract, artifact parity, feature leakage/fairness review |
-| Angular | Vitest component/service tests | Secure-mode guards/interceptor/visibility coverage and browser E2E |
+| Angular | Vitest component/service and real-router secure/demo navigation tests | Interceptor/visibility coverage and browser E2E |
 | Infrastructure | Docker definitions | Testcontainers PostgreSQL/pgvector, Kafka/Redis integration tests |
 | AI/MCP | Tool/retrieval code and manual client scripts | Automated injection, retrieval quality, tool authorization and multi-step agent tests |
 
-Historical local evidence: frontend **29 tests across 16 files passed** and its production build completed. The later full backend run executed **46 tests with one application-context error** caused by missing `tenant_id`. Targeted tests passed after a local Flyway dependency edit, but that does not validate database migration or a complete deployment. No current CI badge, coverage percentage, or passing E2E claim is provided.
+Latest local evidence (11 October 2026): backend **48 tests passed**, including application-context startup after Flyway migrations, V3-to-V4 data preservation/tenant uniqueness, and selected tenant-scoped repository reads. The integration test requires reachable PostgreSQL/pgvector and creates isolated schemas; it mocks the chat/agent dependencies and is not a live Ollama smoke test. ML **43 tests passed**, including 27 promotion API cases. Frontend **41 tests across 17 files passed** and its production build completed. Compose configuration validation passed; Docker Engine was unavailable, so image build/runtime health were not verified. No CI badge, coverage percentage, or passing E2E claim is provided.
 
 Commands from the respective project folders:
 
@@ -347,7 +347,7 @@ Scanning must not print credentials or private payloads. Dependency findings nee
 
 ## Frontend
 
-Angular is the primary UI, with routed dashboard, employee directory/form/profile, prediction screens, risk intelligence, HR assistant, and audit pages. Search, pagination, data display, and selected loading/error states are implemented. Role-policy code exists but secure-mode navigation is unfinished.
+Angular is the primary UI, with routed dashboard, employee directory/form/profile, prediction screens, risk intelligence, HR assistant, and audit pages. Search, pagination, data display, selected loading/error states and an unguarded access-required page are implemented. Secure/demo navigation has router tests; provider login integration remains unfinished.
 
 The target enterprise experience adds workforce analytics, document/knowledge administration, reports, notifications, AI operations, system health, and administration screens. A consistent sidebar/top-bar layout, dark/light theme, accessible dialogs, skeletons, confirmation flows and responsive states need systematic completion and visual verification. Existing SSR prerendering can attempt unavailable backend calls during builds; this behavior needs correction.
 
@@ -415,10 +415,10 @@ Spring is the application-facing API. FastAPI is an internal inference boundary 
 | POST | `/api/ml/predict` | Attrition proxy |
 | POST | `/api/ml/predict/salary` | Salary proxy |
 | POST | `/api/ml/predict/performance` | Performance proxy |
-| POST | `/api/ml/predict/promotion` | Promotion-readiness proxy; known contract defect |
+| POST | `/api/ml/predict/promotion` | Promotion-readiness proxy; requires `PerformanceRating` |
 | GET | `/api/ml/models` | Static model registry |
 | GET | `/api/ai/employees/{id}/risk` | Employee attrition assessment |
-| GET | `/api/ai/employees/{id}/risk-summary` | Composite risk; promotion dependency currently affects this flow |
+| GET | `/api/ai/employees/{id}/risk-summary` | Composite risk; live multi-service flow still needs verification |
 | POST | `/api/rag/ingestion?filePath=...&source=...` | Ingest an existing trusted-directory file; not multipart upload |
 | POST / GET | `/api/rag/documents`, `/api/rag/documents/search` | Document insertion/vector search |
 | POST | `/api/rag/ask` | Grounded HR question |
@@ -511,7 +511,7 @@ FastAPI normally exposes `/docs` when startup succeeds. Springdoc is declared fo
 | Containers | Docker Engine/Desktop and Compose v2, if using the local database container |
 | Kafka / Redis | Not currently required or configured; no startup step yet |
 
-**Known gate:** do not treat these commands as a verified full-stack quickstart. The local Flyway-starter edit, existing-schema upgrade, and tenant backfill need verification first. Use a disposable database to validate V1–V4 before applying migrations to existing employee records. Do not work around the problem with `ddl-auto=update`, disabled validation, or edits to applied migrations.
+**Known gate:** do not treat these commands as a verified full-stack quickstart. Flyway startup wiring, V1–V4 and a V3-to-V4 fixture upgrade now pass integration tests. Before migrating an existing deployment, back up the database and inspect its actual schema and Flyway history, especially if tables were previously created outside Flyway. The existing local employee database was not migrated by these tests. Do not work around mismatches with `ddl-auto=update`, disabled validation, an arbitrary baseline, or edits to applied migrations.
 
 Use one canonical checkout of this repository. Do not mirror `.git`, `.venv`, `node_modules`, secrets or database volumes between copies. The following commands assume a terminal at the repository root unless a working folder is specified; run long-lived processes in separate terminals.
 
@@ -634,7 +634,7 @@ docker compose up --build
 
 The backend Dockerfile uses a Java 21 multi-stage build and non-root runtime. ML uses Python 3.12 slim but does not yet configure a non-root user. The root Dockerfile is an older ML packaging path; Compose uses `ml-service/Dockerfile`.
 
-**Known defects:** the backend Compose probe requests `/health` instead of `/api/health`; its probe executable must also be verified in the runtime image. Migration startup is unresolved, and committed development credential fallbacks are not production-safe. A passing image build is not a passing deployment test. Do not publish `docker compose config` output when it contains resolved secrets.
+The backend Compose probe now uses `/api/health` with a bounded `curl` request; the runtime Dockerfile explicitly installs curl. `docker compose config --quiet` passed, but Docker Engine was unavailable for image/runtime checks. Committed development credential fallbacks are not production-safe. A passing configuration or image build is not a passing deployment test. Do not publish `docker compose config` output when it contains resolved secrets.
 
 ## Kubernetes
 
@@ -704,14 +704,14 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 
 ## Limitations
 
-1. **Startup is not fully verified:** the tenant migration is not applied to the previously used local database; the Flyway-starter correction requires an integrated rerun.
-2. **Promotion API is defective:** its input aliases a performance schema that excludes `PerformanceRating`, while the rule engine requires it. The composite risk flow depends on this call.
+1. **Deployment startup is not fully verified:** isolated-schema application startup and upgrades pass, but the pre-existing local database was not migrated and the full live service stack remains unverified.
+2. **Composite risk requires live verification:** the promotion request-contract defect is repaired, but backend/FastAPI/Angular integration still requires an end-to-end exercise.
 3. **Promotion is not learned ML:** the existing dataset has no historical promotion outcome. Do not infer one from tenure and report it as truth.
-4. **Security is incomplete:** local mode is permit-all, OIDC login is unfinished, frontend redirect handling needs repair, and complete tenant/role enforcement has not been proven end to end.
+4. **Security is incomplete:** local mode is permit-all and OIDC login is unfinished. The frontend redirect loop is repaired; complete tenant/role enforcement has not been proven end to end.
 5. **Model registry is static:** it omits salary and does not implement deployment approvals, rollback or monitoring.
 6. **Model limitations:** synthetic data, potential feature-timing leakage, bias/proxy risks, uncalibrated scores, and no external validity guarantee. Artifact metadata is not a substitute for validation.
 7. **RAG/agent/MCP integration remains partial:** no complete prompt-injection defense, retrieval evaluation, document versioning, tool identity propagation or full workflow trace.
-8. **Deployment is unfinished:** health-check mismatch, development credential fallbacks, incomplete container hardening and no verified complete Compose stack.
+8. **Deployment is unfinished:** the health-check path/tooling is corrected in configuration; development credential fallbacks, incomplete container hardening and no verified complete Compose stack remain.
 9. **Advanced platform capabilities remain planned:** Kafka, Redis, GraphQL, gRPC, real-time alerts, reports, telemetry stack and CI/CD security gates.
 10. **Testing is not comprehensive:** no demonstrated E2E/Testcontainers suite or measured 80% coverage. Historical passing tests do not override current defects.
 
@@ -729,7 +729,8 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 | Promotion endpoint and honest target definition | IN PROGRESS |
 | JSON-only complete model artifacts | PLANNED |
 | Registry and composite risk engine | IN PROGRESS |
-| PostgreSQL/Flyway tenant migration verification | IN PROGRESS |
+| Flyway wiring, fresh schema and V3-to-V4 fixture migration | IMPLEMENTED |
+| Existing deployment database migration/backup verification | IN PROGRESS |
 | JWT/RBAC and complete identity flow | IN PROGRESS |
 | Tenant isolation evidence across persistence paths | IN PROGRESS |
 | Audit and AI governance | IN PROGRESS |
@@ -765,7 +766,7 @@ Each capability change must update its row, affected API/setup/environment secti
 | 1:00–2:15 | Search/filter/page employees and inspect the dashboard | Values must come from the existing dataset, not decorative statistics |
 | 2:15–3:15 | Open Employee 360 | Explain that history/timeline completion remains outstanding |
 | 3:15–4:15 | Request attrition and salary estimates | Discuss provenance, units, thresholds, uncertainty and human review |
-| 4:15–5:00 | Explain performance and promotion/risk design | Do not run broken promotion/composite risk as if it works; discuss the missing promotion label |
+| 4:15–5:00 | Explain performance and promotion/risk design | Promotion API tests pass, but preflight the live composite flow and discuss the missing promotion label |
 | 5:00–6:15 | Ask an HR policy question and inspect sources/scores | Only if ingestion and Ollama are verified; distinguish citation from answer correctness |
 | 6:15–7:15 | Exercise an agent question or an MCP tool | Only after runtime verification; the current Java tools are not an MCP-backed workflow |
 | 7:15–8:15 | Inspect selected audit events and HTTP authorization tests | Explain incomplete correlation/coverage and mock-JWT scope |
@@ -795,7 +796,7 @@ Each capability change must update its row, affected API/setup/environment secti
 
 ## Future Evolution
 
-1. **Restore a verified baseline:** resolve migration startup, promotion contract, secure navigation and container health checks without replacing existing features or data.
+1. **Complete live baseline verification:** migration wiring, promotion contract, nullable search and secure navigation have regression fixes; next validate the existing deployment database upgrade and full container/service flows without replacing data.
 2. **Complete model contracts:** validate feature timing, consolidate artifacts into a safe JSON schema with parity tests, and populate a truthful lightweight registry. Keep promotion limitations explicit.
 3. **Strengthen trusted access:** finish OIDC integration, prove tenant/role isolation and enforce MCP identity/tool policies.
 4. **Deliver one meaningful asynchronous workflow:** approved event delivery and a notification/report path with retries, idempotency and operational evidence.
