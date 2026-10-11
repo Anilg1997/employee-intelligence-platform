@@ -3,6 +3,7 @@ package com.employeeintelligence.api.service;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import com.employeeintelligence.security.TenantContext;
 
 import java.util.List;
 import java.util.Map;
@@ -12,13 +13,15 @@ public class RagDocumentService {
 
     private final EmbeddingModel embeddingModel;
     private final JdbcTemplate jdbcTemplate;
+    private final TenantContext tenantContext;
 
     public RagDocumentService(
             EmbeddingModel embeddingModel,
-            JdbcTemplate jdbcTemplate) {
+            JdbcTemplate jdbcTemplate, TenantContext tenantContext) {
 
         this.embeddingModel = embeddingModel;
         this.jdbcTemplate = jdbcTemplate;
+        this.tenantContext = tenantContext;
     }
 
     public void createDocument(
@@ -37,14 +40,14 @@ public class RagDocumentService {
 
         String sql = """
                 INSERT INTO rag_documents
-                    (content, metadata, embedding)
+                    (tenant_id, content, metadata, embedding)
                 VALUES
-                    (?, ?::jsonb, ?::vector)
+                    (?, ?, ?::jsonb, ?::vector)
                 """;
 
         jdbcTemplate.update(
                 sql,
-                content,
+                tenantContext.currentTenantId(), content,
                 metadata,
                 embedding
         );
@@ -67,15 +70,14 @@ public class RagDocumentService {
                 metadata,
                 1 - (embedding <=> ?::vector) AS similarity
             FROM rag_documents
-            WHERE embedding IS NOT NULL
+            WHERE tenant_id = ? AND embedding IS NOT NULL
             ORDER BY embedding <=> ?::vector
             LIMIT ?
             """;
 
     return jdbcTemplate.queryForList(
             sql,
-            embedding,
-            embedding,
+            embedding, tenantContext.currentTenantId(), embedding,
             limit
     );
 }

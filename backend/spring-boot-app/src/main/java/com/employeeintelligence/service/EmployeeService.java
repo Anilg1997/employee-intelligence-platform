@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import com.employeeintelligence.api.dto.EmployeePageResponse;
 import com.employeeintelligence.api.mapper.EmployeeMapper;
+import com.employeeintelligence.security.TenantContext;
 
 @Service
 public class EmployeeService {
@@ -25,13 +26,14 @@ public class EmployeeService {
             "jobRole", "jobRole", "age", "age", "employeeNumber", "employeeNumber");
 
     private final EmployeeRepository employeeRepository;
+    private final TenantContext tenantContext;
 
-    public EmployeeService(EmployeeRepository employeeRepository) {
-        this.employeeRepository = employeeRepository;
+    public EmployeeService(EmployeeRepository employeeRepository, TenantContext tenantContext) {
+        this.employeeRepository = employeeRepository; this.tenantContext = tenantContext;
     }
 
     public List<Employee> getEmployees() {
-        return employeeRepository.findAll();
+        return employeeRepository.findAllByTenantId(tenantContext.currentTenantId());
     }
 
     public EmployeePageResponse searchEmployees(String query, String department,
@@ -44,7 +46,7 @@ public class EmployeeService {
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(normalizedPage, normalizedSize,
                 Sort.by(direction, property));
-        Page<Employee> result = employeeRepository.search(normalize(query), normalize(department), pageable);
+        Page<Employee> result = employeeRepository.search(tenantContext.currentTenantId(), normalize(query), normalize(department), pageable);
         return new EmployeePageResponse(result.getContent().stream().map(EmployeeMapper::toResponse).toList(),
                 result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
     }
@@ -68,14 +70,15 @@ public class EmployeeService {
     }
 
     public Employee createEmployee(Employee employee) {
+        employee.setTenantId(tenantContext.currentTenantId());
         return employeeRepository.save(employee);
     }
     public Optional<Employee> getEmployeeById(Long id) {
-    return employeeRepository.findById(id);
+    return employeeRepository.findByIdAndTenantId(id, tenantContext.currentTenantId());
 }
 public Employee updateEmployee(Long id, Employee updatedEmployee) {
 
-    Employee existingEmployee = employeeRepository.findById(id)
+    Employee existingEmployee = employeeRepository.findByIdAndTenantId(id, tenantContext.currentTenantId())
             .orElseThrow(() -> new EmployeeNotFoundException(id));
 
     existingEmployee.setName(updatedEmployee.getName());
@@ -118,12 +121,13 @@ public Employee updateEmployee(Long id, Employee updatedEmployee) {
     return employeeRepository.save(existingEmployee);
 }
 
+@org.springframework.transaction.annotation.Transactional
 public void deleteEmployee(Long id) {
 
-    if (!employeeRepository.existsById(id)) {
+    if (!employeeRepository.existsByIdAndTenantId(id, tenantContext.currentTenantId())) {
         throw new EmployeeNotFoundException(id);
     }
 
-    employeeRepository.deleteById(id);
+    employeeRepository.deleteByIdAndTenantId(id, tenantContext.currentTenantId());
 }
 }

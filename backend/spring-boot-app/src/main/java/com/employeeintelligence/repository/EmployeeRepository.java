@@ -8,20 +8,25 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.List;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("""
             select e from Employee e
-            where (:query is null
+            where e.tenantId = :tenantId and (:query is null
                 or lower(e.name) like lower(concat('%', :query, '%'))
                 or lower(e.department) like lower(concat('%', :query, '%'))
                 or lower(e.jobRole) like lower(concat('%', :query, '%')))
               and (:department is null or lower(e.department) = lower(:department))
             """)
-    Page<Employee> search(@Param("query") String query,
+    Page<Employee> search(@Param("tenantId") String tenantId, @Param("query") String query,
                           @Param("department") String department,
                           Pageable pageable);
 
-	Optional<Employee> findByEmployeeNumber(Integer employeeNumber);
+	Optional<Employee> findByEmployeeNumberAndTenantId(Integer employeeNumber, String tenantId);
+    List<Employee> findAllByTenantId(String tenantId);
+    Optional<Employee> findByIdAndTenantId(Long id, String tenantId);
+    boolean existsByIdAndTenantId(Long id, String tenantId);
+    void deleteByIdAndTenantId(Long id, String tenantId);
 }

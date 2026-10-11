@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import com.employeeintelligence.security.TenantContext;
 
 @Service
 public class RagDocumentIngestionService {
@@ -22,13 +23,15 @@ public class RagDocumentIngestionService {
     private final Path trustedDirectory;
     private final long maxFileSizeBytes;
     private final Set<String> allowedExtensions;
+    private final TenantContext tenantContext;
 
     public RagDocumentIngestionService(
             EmbeddingModel embeddingModel,
             JdbcTemplate jdbcTemplate,
             @Value("${rag.ingestion.directory:./documents}") String trustedDirectory,
             @Value("${rag.ingestion.max-file-size-bytes:10485760}") long maxFileSizeBytes,
-            @Value("${rag.ingestion.allowed-extensions:txt,md,csv,json}") String allowedExtensions) {
+            @Value("${rag.ingestion.allowed-extensions:txt,md,csv,json}") String allowedExtensions,
+            TenantContext tenantContext) {
 
         this.embeddingModel = embeddingModel;
         this.jdbcTemplate = jdbcTemplate;
@@ -38,6 +41,7 @@ public class RagDocumentIngestionService {
                 .map(extension -> extension.trim().toLowerCase(Locale.ROOT).replaceFirst("^\\.", ""))
                 .filter(extension -> !extension.isBlank())
                 .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        this.tenantContext = tenantContext;
     }
 
     public void ingestDocument(
@@ -102,14 +106,14 @@ public class RagDocumentIngestionService {
 
             String sql = """
                     INSERT INTO rag_documents
-                        (content, metadata, embedding)
+                        (tenant_id, content, metadata, embedding)
                     VALUES
-                        (?, ?::jsonb, ?::vector)
+                        (?, ?, ?::jsonb, ?::vector)
                     """;
 
             jdbcTemplate.update(
                     sql,
-                    chunk,
+                    tenantContext.currentTenantId(), chunk,
                     metadata,
                     embedding
             );

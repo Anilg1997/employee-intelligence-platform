@@ -6,6 +6,7 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.ObjectProvider;
+import com.employeeintelligence.security.TenantContext;
 
 import java.util.List;
 import java.util.Map;
@@ -16,15 +17,17 @@ public class RagService {
     private final EmbeddingModel embeddingModel;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectProvider<ChatModel> chatModels;
+    private final TenantContext tenantContext;
 
     public RagService(
             EmbeddingModel embeddingModel,
             JdbcTemplate jdbcTemplate,
-            ObjectProvider<ChatModel> chatModels) {
+            ObjectProvider<ChatModel> chatModels, TenantContext tenantContext) {
 
         this.embeddingModel = embeddingModel;
         this.jdbcTemplate = jdbcTemplate;
         this.chatModels = chatModels;
+        this.tenantContext = tenantContext;
     }
 
     public RagResponse ask(String question) {
@@ -44,7 +47,7 @@ public class RagService {
                     metadata->>'source' AS source,
                     1 - (embedding <=> ?::vector) AS similarity
                 FROM rag_documents
-                WHERE embedding IS NOT NULL
+                WHERE tenant_id = ? AND embedding IS NOT NULL
                 ORDER BY embedding <=> ?::vector
                 LIMIT 3
                 """;
@@ -52,8 +55,7 @@ public class RagService {
         List<Map<String, Object>> documents =
                 jdbcTemplate.queryForList(
                         sql,
-                        embedding,
-                        embedding
+                        embedding, tenantContext.currentTenantId(), embedding
                 );
 
         // 3. Build context from retrieved documents

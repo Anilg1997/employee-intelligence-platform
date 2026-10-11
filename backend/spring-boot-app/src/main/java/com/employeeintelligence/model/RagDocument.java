@@ -16,6 +16,8 @@ public class RagDocument {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "tenant_id", nullable = false)
+    private String tenantId;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
@@ -35,6 +37,8 @@ public class RagDocument {
     public Long getId() {
         return id;
     }
+    public String getTenantId() { return tenantId; }
+    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
 
     public void setId(Long id) {
         this.id = id;

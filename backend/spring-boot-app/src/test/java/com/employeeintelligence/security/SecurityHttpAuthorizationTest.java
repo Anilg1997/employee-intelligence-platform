@@ -54,7 +54,7 @@ class SecurityHttpAuthorizationTest {
 
     @Test
     void employeeRoleCannotReadSensitiveDirectory() throws Exception {
-        mockMvc.perform(get("/api/employees").with(jwt().authorities(() -> "ROLE_EMPLOYEE")))
+        mockMvc.perform(get("/api/employees").with(jwt().jwt(j -> j.claim("tenant_id", "acme")).authorities(() -> "ROLE_EMPLOYEE")))
                 .andExpect(status().isForbidden());
     }
 
@@ -62,14 +62,14 @@ class SecurityHttpAuthorizationTest {
     void hrAnalystCanReadDirectory() throws Exception {
         when(employeeService.getEmployees()).thenReturn(java.util.List.of());
 
-        mockMvc.perform(get("/api/employees").with(jwt().authorities(() -> "ROLE_HR_ANALYST")))
+        mockMvc.perform(get("/api/employees").with(jwt().jwt(j -> j.claim("tenant_id", "acme")).authorities(() -> "ROLE_HR_ANALYST")))
                 .andExpect(status().isOk());
     }
 
     @Test
     void analystCannotModifyEmployee() throws Exception {
         mockMvc.perform(post("/api/employees")
-                        .with(jwt().authorities(() -> "ROLE_HR_ANALYST"))
+                        .with(jwt().jwt(j -> j.claim("tenant_id", "acme")).authorities(() -> "ROLE_HR_ANALYST"))
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isForbidden());
@@ -78,7 +78,7 @@ class SecurityHttpAuthorizationTest {
     @Test
     void managerCannotIngestRagDocuments() throws Exception {
         mockMvc.perform(post("/api/rag/ingestion")
-                        .with(jwt().authorities(() -> "ROLE_HR_MANAGER"))
+                        .with(jwt().jwt(j -> j.claim("tenant_id", "acme")).authorities(() -> "ROLE_HR_MANAGER"))
                         .param("filePath", "document.txt")
                         .param("source", "test"))
                 .andExpect(status().isForbidden());

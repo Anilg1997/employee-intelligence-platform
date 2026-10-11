@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import com.employeeintelligence.security.TenantContext;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,19 +29,21 @@ public class EmployeeCsvImporter implements CommandLineRunner {
     private final EmployeeRepository employeeRepository;
     private final Path csvPath;
     private final boolean enabled;
+    private final TenantContext tenantContext;
 
     public EmployeeCsvImporter(
             EmployeeRepository employeeRepository,
             @Value("${employee.import.file:}") String csvFile,
-            @Value("${employee.import.enabled:false}") boolean enabled) {
+            @Value("${employee.import.enabled:false}") boolean enabled, TenantContext tenantContext) {
         this.employeeRepository = employeeRepository;
         this.csvPath = csvFile == null || csvFile.isBlank() ? null : Path.of(csvFile);
         this.enabled = enabled;
+        this.tenantContext = tenantContext;
     }
 
     @Override
     public void run(String... args) throws IOException {
-        if (!enabled) {
+        if (!enabled || tenantContext.isSecurityEnabled()) {
             logger.info("Employee CSV import is disabled; skipping import");
             return;
         }
@@ -52,7 +55,7 @@ public class EmployeeCsvImporter implements CommandLineRunner {
         CsvSchema schema = CsvSchema.emptySchema().withHeader();
         ObjectReader reader = new CsvMapper().readerFor(Map.class).with(schema);
         Map<Integer, Employee> existingEmployees = new HashMap<>();
-        employeeRepository.findAll().stream()
+        employeeRepository.findAllByTenantId(tenantContext.currentTenantId()).stream()
             .filter(employee -> employee.getEmployeeNumber() != null)
             .forEach(employee -> existingEmployees.put(employee.getEmployeeNumber(), employee));
         List<Employee> employeesToSave = new ArrayList<>();
@@ -62,6 +65,7 @@ public class EmployeeCsvImporter implements CommandLineRunner {
                 Map<String, String> row = rows.next();
                 Integer employeeNumber = integer(row, "EmployeeNumber");
             Employee employee = existingEmployees.getOrDefault(employeeNumber, new Employee());
+                employee.setTenantId(tenantContext.currentTenantId());
 
                 employee.setName("Employee " + employeeNumber);
                 employee.setAge(integer(row, "Age"));

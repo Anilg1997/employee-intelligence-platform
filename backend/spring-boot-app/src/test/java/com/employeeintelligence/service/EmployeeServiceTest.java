@@ -6,6 +6,8 @@ import com.employeeintelligence.api.exception.EmployeeNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Spy;
+import com.employeeintelligence.security.TenantContext;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -24,6 +26,7 @@ class EmployeeServiceTest {
 
     @Mock
     private EmployeeRepository employeeRepository;
+    @Spy private TenantContext tenants = new TenantContext(false);
 
     @InjectMocks
     private EmployeeService employeeService;
@@ -38,7 +41,7 @@ class EmployeeServiceTest {
                 30
         );
 
-        when(employeeRepository.findAll())
+        when(employeeRepository.findAllByTenantId("demo"))
                 .thenReturn(List.of(employee));
 
         List<Employee> employees = employeeService.getEmployees();
@@ -46,13 +49,13 @@ class EmployeeServiceTest {
         assertEquals(1, employees.size());
         assertEquals("Anil", employees.get(0).getName());
 
-        verify(employeeRepository).findAll();
+        verify(employeeRepository).findAllByTenantId("demo");
     }
 
     @Test
     void shouldSearchWithFiltersPaginationAndAllowlistedSort() {
         Employee employee = new Employee("Anil", "Research & Development", "Research Scientist", 30);
-        when(employeeRepository.search(eq("anil"), eq("Research & Development"), any(Pageable.class)))
+        when(employeeRepository.search(eq("demo"), eq("anil"), eq("Research & Development"), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(employee),
                         org.springframework.data.domain.PageRequest.of(1, 2), 5));
 
@@ -64,13 +67,13 @@ class EmployeeServiceTest {
         assertEquals(5, result.totalElements());
         assertEquals(3, result.totalPages());
         assertEquals("Anil", result.content().get(0).name());
-        verify(employeeRepository).search(eq("anil"), eq("Research & Development"),
+        verify(employeeRepository).search(eq("demo"), eq("anil"), eq("Research & Development"),
                 argThat(pageable -> pageable.getSort().getOrderFor("name").isDescending()));
     }
 
     @Test
     void shouldSafelyDefaultInvalidSearchParameters() {
-        when(employeeRepository.search(isNull(), isNull(), any(Pageable.class)))
+        when(employeeRepository.search(eq("demo"), isNull(), isNull(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(),
                         org.springframework.data.domain.PageRequest.of(0, 1), 0));
 
@@ -79,7 +82,7 @@ class EmployeeServiceTest {
 
         assertEquals(0, result.page());
         assertEquals(1, result.size());
-        verify(employeeRepository).search(isNull(), isNull(), argThat(pageable ->
+        verify(employeeRepository).search(eq("demo"), isNull(), isNull(), argThat(pageable ->
                 pageable.getSort().getOrderFor("name").isAscending()));
     }
 
@@ -93,7 +96,7 @@ class EmployeeServiceTest {
                 30
         );
 
-        when(employeeRepository.findById(1L))
+        when(employeeRepository.findByIdAndTenantId(1L, "demo"))
                 .thenReturn(Optional.of(employee));
 
         Optional<Employee> result =
@@ -102,7 +105,7 @@ class EmployeeServiceTest {
         assertTrue(result.isPresent());
         assertEquals("Anil", result.get().getName());
 
-        verify(employeeRepository).findById(1L);
+        verify(employeeRepository).findByIdAndTenantId(1L, "demo");
     }
 
     @Test
@@ -145,7 +148,7 @@ class EmployeeServiceTest {
                 31
         );
 
-        when(employeeRepository.findById(1L))
+        when(employeeRepository.findByIdAndTenantId(1L, "demo"))
                 .thenReturn(Optional.of(existingEmployee));
 
         when(employeeRepository.save(any(Employee.class)))
@@ -159,26 +162,26 @@ class EmployeeServiceTest {
         assertEquals("Software Engineer", result.getJobRole());
         assertEquals(31, result.getAge());
 
-        verify(employeeRepository).findById(1L);
+        verify(employeeRepository).findByIdAndTenantId(1L, "demo");
         verify(employeeRepository).save(existingEmployee);
     }
 
     @Test
     void shouldDeleteEmployee() {
 
-        when(employeeRepository.existsById(1L))
+        when(employeeRepository.existsByIdAndTenantId(1L, "demo"))
                 .thenReturn(true);
 
         employeeService.deleteEmployee(1L);
 
-        verify(employeeRepository).existsById(1L);
-        verify(employeeRepository).deleteById(1L);
+        verify(employeeRepository).existsByIdAndTenantId(1L, "demo");
+        verify(employeeRepository).deleteByIdAndTenantId(1L, "demo");
     }
 
     @Test
     void shouldThrowExceptionWhenUpdatingNonExistingEmployee() {
 
-        when(employeeRepository.findById(99L))
+        when(employeeRepository.findByIdAndTenantId(99L, "demo"))
                 .thenReturn(Optional.empty());
 
         EmployeeNotFoundException exception =
@@ -200,14 +203,14 @@ class EmployeeServiceTest {
                 exception.getMessage()
         );
 
-        verify(employeeRepository).findById(99L);
+        verify(employeeRepository).findByIdAndTenantId(99L, "demo");
         verify(employeeRepository, never()).save(any(Employee.class));
     }
 
     @Test
     void shouldThrowExceptionWhenDeletingNonExistingEmployee() {
 
-        when(employeeRepository.existsById(99L))
+        when(employeeRepository.existsByIdAndTenantId(99L, "demo"))
                 .thenReturn(false);
 
         EmployeeNotFoundException exception =
@@ -221,7 +224,7 @@ class EmployeeServiceTest {
                 exception.getMessage()
         );
 
-        verify(employeeRepository).existsById(99L);
-        verify(employeeRepository, never()).deleteById(anyLong());
+        verify(employeeRepository).existsByIdAndTenantId(99L, "demo");
+        verify(employeeRepository, never()).deleteByIdAndTenantId(anyLong(), anyString());
     }
 }

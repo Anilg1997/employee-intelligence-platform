@@ -5,6 +5,7 @@ import com.employeeintelligence.api.dto.MlPredictionResponse;
 import com.employeeintelligence.api.model.Employee;
 import com.employeeintelligence.api.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
+import com.employeeintelligence.security.TenantContext;
 import org.springframework.web.client.RestClient;
 import org.springframework.beans.factory.annotation.Value;
 import com.employeeintelligence.api.exception.MlServiceException;
@@ -16,14 +17,16 @@ import java.util.Map;
 public class EmployeeAiService {
 
     private final EmployeeRepository employeeRepository;
+    private final TenantContext tenantContext;
     private final RestClient mlRestClient;
 
     public EmployeeAiService(
             EmployeeRepository employeeRepository,
             RestClient.Builder restClientBuilder,
-            @Value("${ml.service.url:http://127.0.0.1:8000}") String mlServiceUrl) {
+            @Value("${ml.service.url:http://127.0.0.1:8000}") String mlServiceUrl, TenantContext tenantContext) {
 
         this.employeeRepository = employeeRepository;
+        this.tenantContext = tenantContext;
 
         this.mlRestClient = restClientBuilder
                 .baseUrl(mlServiceUrl)
@@ -32,7 +35,7 @@ public class EmployeeAiService {
 
     public Employee getEmployee(Long employeeId) {
 
-        return employeeRepository.findById(employeeId)
+        return employeeRepository.findByIdAndTenantId(employeeId, tenantContext.currentTenantId())
                 .orElseThrow(() -> new EmployeeNotFoundException(employeeId));
     }
 

@@ -8,12 +8,16 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = "employeeNumber"))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "employeeNumber"}))
 public class Employee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @jakarta.persistence.Column(name = "tenant_id", nullable = false)
+    private String tenantId;
 
     private String name;
 
@@ -71,6 +75,8 @@ public class Employee {
     public Long getId() {
         return id;
     }
+    public String getTenantId() { return tenantId; }
+    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
 
     public String getName() {
         return name;

@@ -7,6 +7,7 @@ import java.time.Instant;
 @Table(name = "audit_events")
 public class AuditEvent {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+    @Column(name = "tenant_id", nullable = false) private String tenantId;
     @Column(name = "event_timestamp", nullable = false) private Instant timestamp;
     @Column(name = "actor_subject", nullable = false) private String actorSubject;
     private String actorRole;
@@ -24,6 +25,8 @@ public class AuditEvent {
         this.resourceType = resourceType; this.resourceId = resourceId; this.result = result;
         this.correlationId = correlationId; this.metadata = metadata;
     }
+    public void setTenantId(String tenantId) { this.tenantId = tenantId; }
+    public String getTenantId() { return tenantId; }
     public Long getId() { return id; }
     public Instant getTimestamp() { return timestamp; }
     public String getActorSubject() { return actorSubject; }

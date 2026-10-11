@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.ArgumentCaptor;
+import com.employeeintelligence.security.TenantContext;
 import static org.mockito.Mockito.mock;
 
 class RagDocumentIngestionServiceTest {
@@ -31,7 +32,7 @@ class RagDocumentIngestionServiceTest {
                 mock(JdbcTemplate.class),
                 trustedDirectory.toString(),
                 1024,
-                "txt,md");
+                "txt,md", new TenantContext(false));
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.ingestDocument("../outside.txt", "test"));
@@ -46,7 +47,7 @@ class RagDocumentIngestionServiceTest {
                 mock(JdbcTemplate.class),
                 trustedDirectory.toString(),
                 1024,
-                "txt,md");
+                "txt,md", new TenantContext(false));
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.ingestDocument(document.toString(), "test"));
@@ -67,12 +68,12 @@ class RagDocumentIngestionServiceTest {
                 jdbcTemplate,
                 trustedDirectory.toString(),
                 1024,
-                "txt,md");
+                "txt,md", new TenantContext(false));
 
         service.ingestDocument(document.toString(), source);
 
         ArgumentCaptor<String> metadataCaptor = ArgumentCaptor.forClass(String.class);
-        verify(jdbcTemplate).update(anyString(), eq("content"), metadataCaptor.capture(), eq("[0.1]"));
+        verify(jdbcTemplate).update(anyString(), eq("demo"), eq("content"), metadataCaptor.capture(), eq("[0.1]"));
         JsonNode metadata = new ObjectMapper().readTree(metadataCaptor.getValue());
         assertEquals(source, metadata.get("source").asText());
     }

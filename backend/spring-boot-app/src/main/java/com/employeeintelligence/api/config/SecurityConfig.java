@@ -13,11 +13,18 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import com.employeeintelligence.api.service.AuditService;
 import org.springframework.beans.factory.ObjectProvider;
+import com.employeeintelligence.security.TenantContext;
+import com.employeeintelligence.security.TenantFilter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+    @Bean
+    TenantContext tenantContext(@org.springframework.beans.factory.annotation.Value("${security.auth.enabled:false}") boolean enabled) {
+        return new TenantContext(enabled);
+    }
     @Bean
     @ConditionalOnProperty(name = "security.auth.enabled", havingValue = "false", matchIfMissing = true)
     SecurityFilterChain localSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -28,8 +35,9 @@ public class SecurityConfig {
 
     @Bean
     @ConditionalOnProperty(name = "security.auth.enabled", havingValue = "true")
-    SecurityFilterChain oidcSecurityFilterChain(HttpSecurity http, ObjectProvider<AuditService> audit) throws Exception {
+    SecurityFilterChain oidcSecurityFilterChain(HttpSecurity http, ObjectProvider<AuditService> audit, TenantContext tenants) throws Exception {
         return http.csrf(csrf -> csrf.disable())
+                .addFilterAfter(new TenantFilter(tenants), BearerTokenAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/employees", "/api/employees/**", "/api/dashboard/**")
