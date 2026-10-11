@@ -1,5 +1,5 @@
-import { Injectable, signal } from '@angular/core';
-import { AUTH_ENABLED } from '../config/auth.config';
+import { inject, Injectable, signal } from '@angular/core';
+import { AUTH_ENABLED_TOKEN } from '../config/auth.config';
 
 export const APP_ROLES = ['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER', 'HR_ANALYST', 'EMPLOYEE'] as const;
 export type AppRole = typeof APP_ROLES[number];
@@ -31,7 +31,7 @@ function rolesFrom(payload: Record<string, unknown>): AppRole[] {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  readonly enabled = AUTH_ENABLED;
+  readonly enabled = inject(AUTH_ENABLED_TOKEN);
   readonly state = signal<AuthState>(this.readState());
   readonly lastAuthError = signal<401 | 403 | null>(null);
 
@@ -43,9 +43,16 @@ export class AuthService {
     const authenticated = !!token && !!payload && expiresAt !== null && expiresAt * 1000 > Date.now();
     return { authenticated, token: authenticated ? token : null, roles: authenticated ? rolesFrom(payload!) : [], expiresAt, demo: false };
   }
-  isAuthenticated(): boolean { const current = this.readState(); if (!current.authenticated && this.state().token) this.clear(); else this.state.set(current); return current.authenticated; }
+  isAuthenticated(): boolean {
+    const current = this.readState();
+    const previous = this.state();
+    if (!current.authenticated && previous.token) this.clear();
+    // Role checks also run from templates; avoid publishing unchanged state on every check.
+    else if (current.token !== previous.token || current.authenticated !== previous.authenticated || current.expiresAt !== previous.expiresAt) this.state.set(current);
+    return current.authenticated;
+  }
   token(): string | null { return this.isAuthenticated() ? this.state().token : null; }
-  hasAnyRole(roles: AppRole[]): boolean { return !this.enabled || roles.some(role => this.state().roles.includes(role)); }
+  hasAnyRole(roles: AppRole[]): boolean { return !this.enabled || (this.isAuthenticated() && roles.some(role => this.state().roles.includes(role))); }
   setAccessToken(token: string): void { if (this.enabled && typeof sessionStorage !== 'undefined') { sessionStorage.setItem(TOKEN_KEY, token); this.state.set(this.readState()); } }
   clear(): void { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(TOKEN_KEY); this.state.set(this.readState()); }
   recordAuthError(status: 401 | 403): void { this.lastAuthError.set(status); if (status === 401) this.clear(); }

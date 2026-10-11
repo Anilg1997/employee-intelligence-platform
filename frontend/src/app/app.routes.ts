@@ -12,8 +12,10 @@ import { RiskIntelligence } from './components/risk-intelligence/risk-intelligen
 import { authGuard } from './guards/auth.guard';
 import { Audit } from './components/audit/audit';
 import { ROLE_POLICY } from './services/role-policy.service';
+import { AccessRequired } from './components/access-required/access-required';
 
 export const routes: Routes = [
+  { path: 'access-required', component: AccessRequired },
 
   {
     path: '',
