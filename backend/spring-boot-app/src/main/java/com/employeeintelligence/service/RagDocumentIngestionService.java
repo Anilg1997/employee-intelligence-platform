@@ -1,5 +1,6 @@
 package com.employeeintelligence.api.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ public class RagDocumentIngestionService {
 
     private final EmbeddingModel embeddingModel;
     private final JdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final Path trustedDirectory;
     private final long maxFileSizeBytes;
     private final Set<String> allowedExtensions;
@@ -96,9 +98,7 @@ public class RagDocumentIngestionService {
 
             String embedding = vector.toString();
 
-            String metadata = """
-                    {"source":"%s"}
-                    """.formatted(source).trim();
+            String metadata = objectMapper.writeValueAsString(java.util.Map.of("source", source));
 
             String sql = """
                     INSERT INTO rag_documents
