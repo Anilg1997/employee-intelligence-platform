@@ -5,6 +5,7 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -14,16 +15,16 @@ public class RagService {
 
     private final EmbeddingModel embeddingModel;
     private final JdbcTemplate jdbcTemplate;
-    private final ChatModel chatModel;
+    private final ObjectProvider<ChatModel> chatModels;
 
     public RagService(
             EmbeddingModel embeddingModel,
             JdbcTemplate jdbcTemplate,
-            ChatModel chatModel) {
+            ObjectProvider<ChatModel> chatModels) {
 
         this.embeddingModel = embeddingModel;
         this.jdbcTemplate = jdbcTemplate;
-        this.chatModel = chatModel;
+        this.chatModels = chatModels;
     }
 
     public RagResponse ask(String question) {
@@ -100,6 +101,10 @@ public class RagService {
 );
 
         // 6. Send prompt to Llama 3.2
+        ChatModel chatModel = chatModels.getIfAvailable();
+        if (chatModel == null) {
+            throw new IllegalStateException("LLM chat model is unavailable; configure Ollama before using RAG chat");
+        }
         String answer = chatModel.chat(prompt);
 
         // 7. Return answer + sources

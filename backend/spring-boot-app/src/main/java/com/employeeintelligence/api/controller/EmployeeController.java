@@ -10,15 +10,18 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.employeeintelligence.api.service.AuditService;
 
 @RestController
 @RequestMapping("/api/employees")
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final AuditService auditService;
 
-    public EmployeeController(EmployeeService employeeService) {
+    public EmployeeController(EmployeeService employeeService, AuditService auditService) {
         this.employeeService = employeeService;
+        this.auditService = auditService;
     }
 
     @GetMapping
@@ -41,7 +44,9 @@ public class EmployeeController {
 
     @PostMapping
     public EmployeeResponse createEmployee(@Valid @RequestBody EmployeeRequest employee) {
-        return EmployeeMapper.toResponse(employeeService.createEmployee(EmployeeMapper.toEntity(employee)));
+        var saved = employeeService.createEmployee(EmployeeMapper.toEntity(employee));
+        auditService.record("EMPLOYEE_CREATE", "employee", saved.getId(), "SUCCESS", "created employee record");
+        return EmployeeMapper.toResponse(saved);
     }
     @GetMapping("/{id}")
 public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long id) {
@@ -55,13 +60,15 @@ public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long id) {
 public ResponseEntity<EmployeeResponse> updateEmployee(
         @PathVariable Long id,
         @Valid @RequestBody EmployeeRequest employee) {
-    return ResponseEntity.ok(EmployeeMapper.toResponse(
-            employeeService.updateEmployee(id, EmployeeMapper.toEntity(employee))));
+     var updated = employeeService.updateEmployee(id, EmployeeMapper.toEntity(employee));
+     auditService.record("EMPLOYEE_UPDATE", "employee", id, "SUCCESS", "updated employee record");
+     return ResponseEntity.ok(EmployeeMapper.toResponse(updated));
 }
  @DeleteMapping("/{id}")
  @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN')")
  public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
-    employeeService.deleteEmployee(id);
+     employeeService.deleteEmployee(id);
+     auditService.record("EMPLOYEE_DELETE", "employee", id, "SUCCESS", "deleted employee record");
     return ResponseEntity.noContent().build();
-}
+ }
 }

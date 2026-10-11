@@ -21,7 +21,7 @@ public class EmployeeAiService {
     public EmployeeAiService(
             EmployeeRepository employeeRepository,
             RestClient.Builder restClientBuilder,
-            @Value("${ml.service.url}") String mlServiceUrl) {
+            @Value("${ml.service.url:http://127.0.0.1:8000}") String mlServiceUrl) {
 
         this.employeeRepository = employeeRepository;
 

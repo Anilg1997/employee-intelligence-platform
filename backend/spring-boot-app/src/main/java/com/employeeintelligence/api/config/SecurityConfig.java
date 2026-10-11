@@ -10,6 +10,8 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import com.employeeintelligence.api.service.AuditService;
+import org.springframework.beans.factory.ObjectProvider;
 
 @Configuration
 @EnableWebSecurity
@@ -25,11 +27,16 @@ public class SecurityConfig {
 
     @Bean
     @ConditionalOnProperty(name = "security.auth.enabled", havingValue = "true")
-    SecurityFilterChain oidcSecurityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain oidcSecurityFilterChain(HttpSecurity http, ObjectProvider<AuditService> audit) throws Exception {
         return http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated())
+                .exceptionHandling(exceptions -> exceptions.accessDeniedHandler((request, response, denied) -> {
+                    AuditService service = audit.getIfAvailable();
+                    if (service != null) service.record("AUTHORIZATION_FAILURE", "http", request.getRequestURI(), "FAILURE", "access denied");
+                    response.sendError(403);
+                }))
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .build();
     }

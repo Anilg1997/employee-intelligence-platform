@@ -14,22 +14,26 @@ import com.employeeintelligence.api.dto.ModelMetadata;
 import java.util.List;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import com.employeeintelligence.api.service.AuditService;
 
 @RestController
 @RequestMapping("/api/ml")
 public class MlPredictionController {
 
     private final MlPredictionService mlPredictionService;
+    private final AuditService auditService;
 
-    public MlPredictionController(MlPredictionService mlPredictionService) {
+    public MlPredictionController(MlPredictionService mlPredictionService, AuditService auditService) {
         this.mlPredictionService = mlPredictionService;
+        this.auditService = auditService;
     }
 
     @PostMapping("/predict")
     public MlPredictionResponse predict(
             @RequestBody @Valid MlPredictionRequest request) {
 
-        return mlPredictionService.predict(request);
+        var response = mlPredictionService.predict(request);
+        auditService.record("ML_PREDICTION", "model", "predict", "SUCCESS", "prediction completed"); return response;
     }
 
     @GetMapping("/models")
@@ -38,16 +42,16 @@ public class MlPredictionController {
 
     @PostMapping("/predict/salary")
     public SalaryPredictionResponse predictSalary(@RequestBody @Valid SalaryPredictionRequest request) {
-        return mlPredictionService.predictSalary(request);
+        var response = mlPredictionService.predictSalary(request); auditService.record("ML_PREDICTION", "model", "salary", "SUCCESS", "prediction completed"); return response;
     }
 
     @PostMapping("/predict/performance")
     public PerformancePredictionResponse predictPerformance(@RequestBody Map<String, Object> request) {
-        return mlPredictionService.predictPerformance(request);
+        var response = mlPredictionService.predictPerformance(request); auditService.record("ML_PREDICTION", "model", "performance", "SUCCESS", "prediction completed"); return response;
     }
 
     @PostMapping("/predict/promotion")
     public PromotionPredictionResponse predictPromotion(@RequestBody Map<String, Object> request) {
-        return mlPredictionService.predictPromotion(request);
+        var response = mlPredictionService.predictPromotion(request); auditService.record("ML_PREDICTION", "model", "promotion", "SUCCESS", "prediction completed"); return response;
     }
 }

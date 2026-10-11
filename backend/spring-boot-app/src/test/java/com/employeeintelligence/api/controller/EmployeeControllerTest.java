@@ -2,6 +2,7 @@ package com.employeeintelligence.api.controller;
 
 import com.employeeintelligence.api.model.Employee;
 import com.employeeintelligence.api.service.EmployeeService;
+import com.employeeintelligence.api.service.AuditService;
 import com.employeeintelligence.api.exception.EmployeeNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -60,6 +61,9 @@ class EmployeeControllerTest {
 
     @MockitoBean
     private EmployeeService employeeService;
+
+    @MockitoBean
+    private AuditService auditService;
 
     @Test
     void shouldGetAllEmployees() throws Exception {

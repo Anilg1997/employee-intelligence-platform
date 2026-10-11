@@ -10,6 +10,7 @@ import { PerformancePrediction } from './components/performance-prediction/perfo
 import { PromotionPrediction } from './components/promotion-prediction/promotion-prediction';
 import { RiskIntelligence } from './components/risk-intelligence/risk-intelligence';
 import { authGuard } from './guards/auth.guard';
+import { Audit } from './components/audit/audit';
 
 export const routes: Routes = [
 
@@ -46,6 +47,7 @@ export const routes: Routes = [
   { path: 'performance-prediction', component: PerformancePrediction, canActivate: [authGuard] },
   { path: 'promotion-prediction', component: PromotionPrediction, canActivate: [authGuard] },
   { path: 'risk-intelligence', component: RiskIntelligence, canActivate: [authGuard] },
+  { path: 'audit', component: Audit, canActivate: [authGuard] },
 
   {
     path: 'hr-assistant',

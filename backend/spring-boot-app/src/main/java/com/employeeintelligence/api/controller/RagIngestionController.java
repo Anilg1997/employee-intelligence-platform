@@ -5,17 +5,20 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.employeeintelligence.api.service.AuditService;
 
 @RestController
 @RequestMapping("/api/rag/ingestion")
 public class RagIngestionController {
 
     private final RagDocumentIngestionService ingestionService;
+    private final AuditService auditService;
 
     public RagIngestionController(
-            RagDocumentIngestionService ingestionService) {
+            RagDocumentIngestionService ingestionService, AuditService auditService) {
 
         this.ingestionService = ingestionService;
+        this.auditService = auditService;
     }
 
     @PostMapping
@@ -28,6 +31,7 @@ public class RagIngestionController {
                 filePath,
                 source
         );
+        auditService.record("RAG_INGESTION", "document", source, "SUCCESS", "document ingested; content omitted");
 
         return Map.of(
                 "message",

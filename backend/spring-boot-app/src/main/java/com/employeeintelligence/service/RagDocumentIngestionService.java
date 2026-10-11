@@ -24,7 +24,7 @@ public class RagDocumentIngestionService {
     public RagDocumentIngestionService(
             EmbeddingModel embeddingModel,
             JdbcTemplate jdbcTemplate,
-            @Value("${rag.ingestion.directory}") String trustedDirectory,
+            @Value("${rag.ingestion.directory:./documents}") String trustedDirectory,
             @Value("${rag.ingestion.max-file-size-bytes:10485760}") long maxFileSizeBytes,
             @Value("${rag.ingestion.allowed-extensions:txt,md,csv,json}") String allowedExtensions) {
 

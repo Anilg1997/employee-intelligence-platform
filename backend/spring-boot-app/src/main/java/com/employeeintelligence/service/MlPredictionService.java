@@ -20,7 +20,7 @@ public class MlPredictionService {
 
     @Autowired
     public MlPredictionService(
-            @Value("${ml.service.url}") String mlServiceUrl) {
+            @Value("${ml.service.url:http://127.0.0.1:8000}") String mlServiceUrl) {
 
         this.restClient = RestClient.builder()
                 .baseUrl(mlServiceUrl)
