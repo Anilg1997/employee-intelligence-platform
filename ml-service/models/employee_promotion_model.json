@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "metadata": {
+    "model_version": "promotion-readiness-rules-v1",
+    "algorithm": "deterministic-business-rules",
+    "target_type": "portfolio_demo_rule_target",
+    "trained": false,
+    "limitations": [
+      "No promotion outcome exists in the IBM HR dataset; this is a portfolio/demo target, not ground truth.",
+      "The score is a rule score, not a calibrated probability or likelihood of promotion.",
+      "Synthetic IBM HR data and policy assumptions are not representative of a real employer.",
+      "This estimate must not be used as a standalone employment or promotion decision."
+    ]
+  },
+  "rules": [
+    {"name": "tenure", "feature": "YearsAtCompany", "operator": "gte", "value": 2},
+    {"name": "time_since_promotion", "feature": "YearsSinceLastPromotion", "operator": "gte", "value": 2},
+    {"name": "performance", "feature": "PerformanceRating", "operator": "gte", "value": 3},
+    {"name": "level_headroom", "feature": "JobLevel", "operator": "lt", "value": 5}
+  ],
+  "score": "fraction_of_checks_passed",
+  "threshold": 0.75
+}

@@ -3,8 +3,9 @@
 ## Training and evaluation
 
 From `ml-service/`, run `python -m src.train_salary_model` explicitly to generate
-`models/employee_salary_model.pkl` and `models/employee_salary_model.json`.
-The JSON and embedded artifact metadata record the dataset SHA256, UTC training
+only `models/employee_salary_model.json`. It contains preprocessing, fitted tree
+parameters, schema version, and metadata in one data-only file, with no binary
+companion. The nested metadata records the dataset SHA256, UTC training
 timestamp, scikit-learn version, feature allowlist, hyperparameters, row counts,
 partition row indices, metrics, and limitations. Reproduction requires the same
 dataset and dependency versions; timestamps intentionally change on retraining.
@@ -54,7 +55,7 @@ decisions.** It has no validated prediction interval or production accuracy clai
 
 Inference never trains or writes artifacts. Missing, corrupt, or incompatible
 salary artifacts raise a controlled unavailable error; `/predict/salary` returns
-HTTP 503. The operator must explicitly train before serving salary predictions.
+HTTP 503. Restore a compatible JSON artifact or explicitly train if it is missing.
 The response retains its existing fields, with version `salary-regression-v2`.
 
 Checks: `python -m pytest -q` from `ml-service/`. Tests protect disjoint,

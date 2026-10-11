@@ -5,10 +5,8 @@ MonthlyIncome is the target and is deliberately absent from SALARY_FEATURES.
 from pathlib import Path
 from datetime import datetime, timezone
 import hashlib
-import json
 import numpy as np
 import sklearn
-import joblib
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
@@ -17,9 +15,14 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
+if __package__:
+    from .json_models import export_pipeline, load_artifact
+else:
+    from json_models import export_pipeline, load_artifact
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_PATH = BASE_DIR / "data" / "raw" / "employee_data.csv"
-MODEL_PATH = BASE_DIR / "models" / "employee_salary_model.pkl"
+MODEL_PATH = BASE_DIR / "models" / "employee_salary_model.json"
 MODEL_VERSION = "salary-regression-v2"
 ALGORITHM = "random-forest-regressor"
 SALARY_FEATURES = ["Age", "Department", "JobLevel", "JobRole", "TotalWorkingYears",
@@ -85,8 +88,8 @@ def train_salary_model(output_path: Path = MODEL_PATH):
         "limitations": LIMITATIONS,
     }
     output_path = Path(output_path)
-    joblib.dump({"model": model, "metadata": metadata}, output_path)
-    output_path.with_suffix(".json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    export_pipeline(model, metadata, output_path)
     return model
 
 
@@ -94,7 +97,7 @@ def load_salary_model():
     if not MODEL_PATH.exists():
         raise SalaryModelUnavailable("Salary model unavailable; run python -m src.train_salary_model explicitly.")
     try:
-        artifact = joblib.load(MODEL_PATH)
+        artifact = load_artifact(MODEL_PATH)
         if artifact["metadata"]["model_version"] != MODEL_VERSION:
             raise ValueError("Incompatible model version")
         return artifact

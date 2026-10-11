@@ -118,7 +118,7 @@ The table lists technologies present in source/configuration, not a blanket depl
 | Schema | Spring Boot Flyway starter, scripts V1–V4 | Fresh migrations and V3-to-V4 upgrade tested in isolated PostgreSQL schemas |
 | Frontend | Angular 21.2, TypeScript 5.9, RxJS | Routed application and API interaction |
 | Frontend runtime | Angular SSR, Express | Server output and prerendering configuration |
-| ML | Python, Pandas, NumPy, Scikit-learn, Joblib | Data preparation, training and persisted inference |
+| ML | Python, Pandas, NumPy, Scikit-learn | Training and versioned data-only JSON predictors; NumPy inference |
 | ML API | FastAPI, Pydantic, Uvicorn | Prediction contracts and HTTP serving |
 | GenAI | Ollama, LangChain4j | Chat, embeddings, retrieval and tool calling |
 | Tools | Python MCP SDK, Requests | MCP-to-backend tool adapter |
@@ -150,7 +150,7 @@ Salary and performance trainers split raw rows into deterministic **60/20/20 tra
 
 | Model | Current approach | Evaluation and limitations |
 | --- | --- | --- |
-| Attrition | Existing persisted classifier; `Yes` score compared with **0.55** | Threshold is configured in inference; selection provenance and independent final evaluation need review before asserting validation-only tuning |
+| Attrition | Existing logistic-regression weights in JSON; `Yes` score compared with **0.55** | Threshold is stored in the JSON artifact; selection provenance and independent final evaluation need review before asserting validation-only tuning |
 | Salary | RandomForestRegressor; target `MonthlyIncome` excluded from inputs | Validation/test MAE, RMSE and R² recorded; no calibrated prediction interval or external-validity claim |
 | Performance | RandomForestClassifier; target `PerformanceRating` excluded | Accuracy, balanced accuracy and macro F1 recorded; `PercentSalaryHike` may be an outcome proxy, so temporal leakage needs investigation |
 | Promotion | Four deterministic readiness rules | No observed promotion label; score is not a learned/calibrated probability. API explicitly requires `PerformanceRating` |
@@ -159,7 +159,9 @@ Current fixed salary/performance configurations do not fit on held-out partition
 
 ### Artifacts, versions and serving
 
-Current inference uses `.pkl` artifacts; salary/performance `.json` files contain metadata, not complete predictors. Never load untrusted pickle files. The desired **one complete JSON artifact per model** format is planned and requires an explicit schema plus prediction-parity tests. Do not delete working artifacts or disguise pickle bytes as JSON.
+Inference now uses **one complete JSON artifact per model**. The models directory contains only `employee_attrition_model.json`, `employee_salary_model.json`, `employee_performance_model.json`, and `employee_promotion_model.json`. The first three contain preprocessing, learned coefficients/trees, schema version and metadata; promotion contains its explicitly untrained rule definitions and metadata. There are no companion pickle files, embedded pickle bytes, or runtime executable-object deserialization.
+
+The existing trained predictors were converted without retraining or changing the employee dataset. Conversion parity was verified across all **1,470 existing rows**: salary/performance matched exactly; attrition probabilities differed by at most **2.22e-16**, with identical classification/threshold decisions. This checks serialization equivalence, not new generalization performance. Schema validation rejects unsupported model structures, malformed trees, duplicate keys and nonfinite values. Test fixtures also cover unknown categories and supported preprocessing configurations.
 
 Salary and performance training is explicit, never triggered by prediction requests. Missing/incompatible artifacts yield a service-unavailable response for those models. Attrition loads at import time and can prevent FastAPI startup if its artifact is missing or incompatible.
 
@@ -311,7 +313,7 @@ Core employee operations should remain available when optional AI services fail;
 | Infrastructure | Docker definitions | Testcontainers PostgreSQL/pgvector, Kafka/Redis integration tests |
 | AI/MCP | Tool/retrieval code and manual client scripts | Automated injection, retrieval quality, tool authorization and multi-step agent tests |
 
-Latest local evidence (11 October 2026): backend **48 tests passed**, including application-context startup after Flyway migrations, V3-to-V4 data preservation/tenant uniqueness, and selected tenant-scoped repository reads. The integration test requires reachable PostgreSQL/pgvector and creates isolated schemas; it mocks the chat/agent dependencies and is not a live Ollama smoke test. ML **43 tests passed**, including 27 promotion API cases. Frontend **41 tests across 17 files passed** and its production build completed. Compose configuration validation passed; Docker Engine was unavailable, so image build/runtime health were not verified. No CI badge, coverage percentage, or passing E2E claim is provided.
+Latest local evidence (11 October 2026): backend **48 tests passed**, including application-context startup after Flyway migrations, V3-to-V4 data preservation/tenant uniqueness, and selected tenant-scoped repository reads. The integration test requires reachable PostgreSQL/pgvector and creates isolated schemas; it mocks the chat/agent dependencies and is not a live Ollama smoke test. ML **102 tests passed after binary artifact removal**, including JSON validation/parity, JSON-only directory enforcement, all promotion rule combinations, and 27 promotion API cases. Frontend **41 tests across 17 files passed** and its production build completed. Compose configuration validation passed; Docker Engine was unavailable, so image build/runtime health were not verified. No CI badge, coverage percentage, or passing E2E claim is provided.
 
 Commands from the respective project folders:
 
@@ -378,7 +380,7 @@ frontend/
   package.json
 ml-service/
   data/raw/employee_data.csv
-  models/                    # Existing pickle predictors and JSON metadata
+  models/                    # Four JSON-only model/rule artifacts, metadata included
   notebooks/
   src/                       # FastAPI, model code and explicit training commands
   tests/
@@ -548,7 +550,7 @@ On POSIX, use `python3.12 -m venv .venv` and `.venv/bin/python`. Start with the 
 .\.venv\Scripts\python.exe -m src.train_performance_model
 ```
 
-These commands currently write both pickle predictors and JSON metadata. JSON-only artifact conversion is not implemented. Attrition training/evaluation notebooks remain under `ml-service/notebooks/`; there is no equivalent production training lifecycle for all models.
+These commands write one complete JSON artifact each, with metadata included. Attrition uses the converted existing trained weights; training/evaluation notebooks remain under `ml-service/notebooks/`. There is no equivalent production training lifecycle for all models. Promotion's JSON is an honest rule configuration, not fabricated promotion training data.
 
 ### Ollama — separate terminal
 
@@ -677,7 +679,7 @@ Future ADRs should record concrete decisions about event delivery, artifact form
 | Redis caching | Can reduce repeated work but creates invalidation, authorization and stale-data risks; do not add it before a legitimate access pattern is established |
 | MCP | A reusable tool interface, not a substitute for backend authentication or a requirement for every internal call |
 | Local Ollama | Useful local control and experimentation, but memory, latency, model compatibility and availability remain operational responsibilities |
-| JSON versus pickle models | JSON can avoid executable deserialization and consolidate metadata; conversion requires full preprocessing/model representation and parity tests |
+| JSON versus pickle models | Validated data-only preprocessing/parameter JSON removes runtime pickle loading; limited supported estimators and parity tests are the maintenance cost |
 | Modular monolith versus microservices | Current scope benefits from simpler delivery. Extract only when domain ownership, isolation or independent scaling justifies the added failure modes |
 
 ## Scalability
@@ -727,7 +729,7 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 | Experimental salary training/serving | IMPLEMENTED |
 | Performance modeling and leakage review | IN PROGRESS |
 | Promotion endpoint and honest target definition | IN PROGRESS |
-| JSON-only complete model artifacts | PLANNED |
+| JSON-only complete model/rule artifacts | IMPLEMENTED |
 | Registry and composite risk engine | IN PROGRESS |
 | Flyway wiring, fresh schema and V3-to-V4 fixture migration | IMPLEMENTED |
 | Existing deployment database migration/backup verification | IN PROGRESS |
@@ -797,7 +799,7 @@ Each capability change must update its row, affected API/setup/environment secti
 ## Future Evolution
 
 1. **Complete live baseline verification:** migration wiring, promotion contract, nullable search and secure navigation have regression fixes; next validate the existing deployment database upgrade and full container/service flows without replacing data.
-2. **Complete model contracts:** validate feature timing, consolidate artifacts into a safe JSON schema with parity tests, and populate a truthful lightweight registry. Keep promotion limitations explicit.
+2. **Complete model contracts:** JSON consolidation and parity tests are implemented; validate feature timing and populate a truthful lightweight registry next. Keep promotion limitations explicit.
 3. **Strengthen trusted access:** finish OIDC integration, prove tenant/role isolation and enforce MCP identity/tool policies.
 4. **Deliver one meaningful asynchronous workflow:** approved event delivery and a notification/report path with retries, idempotency and operational evidence.
 5. **Measure and release:** retrieval/AI security evaluation, dependency resilience, integration/E2E coverage and a minimal security-gated deployment pipeline.

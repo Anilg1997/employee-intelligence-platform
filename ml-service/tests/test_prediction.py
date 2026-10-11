@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-import joblib
+import json
 
 
 # Add src directory to Python path
@@ -11,9 +11,10 @@ SRC_DIR = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
 from predict import predict_attrition
+from json_models import load_artifact
 
 
-MODEL_PATH = PROJECT_ROOT / "models" / "employee_attrition_model.pkl"
+MODEL_PATH = PROJECT_ROOT / "models" / "employee_attrition_model.json"
 
 
 sample_employee = {
@@ -57,9 +58,11 @@ def test_model_exists():
 
 def test_model_can_be_loaded():
 
-    model = joblib.load(MODEL_PATH)
-
-    assert model is not None
+    artifact = load_artifact(MODEL_PATH)
+    document = json.loads(MODEL_PATH.read_text(encoding="utf-8"))
+    assert artifact["model"] is not None
+    assert artifact["metadata"] == document["metadata"]
+    assert set(artifact["model"].classes_) == {"No", "Yes"}
 
 
 def test_prediction_result():

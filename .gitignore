@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/
+
+# Models use one data-only JSON artifact per predictor. Do not reintroduce binaries.
+ml-service/models/*.pkl
+ml-service/models/*.pickle
+ml-service/models/*.joblib
+ml-service/models/*.pki

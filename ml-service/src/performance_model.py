@@ -2,8 +2,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
 import hashlib
-import json
-import joblib
 import numpy as np
 import pandas as pd
 import sklearn
@@ -14,9 +12,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
+if __package__:
+    from .json_models import export_pipeline, load_artifact
+else:
+    from json_models import export_pipeline, load_artifact
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_PATH = BASE_DIR / "data" / "raw" / "employee_data.csv"
-MODEL_PATH = BASE_DIR / "models" / "employee_performance_model.pkl"
+MODEL_PATH = BASE_DIR / "models" / "employee_performance_model.json"
 MODEL_VERSION = "performance-classifier-v1"
 ALGORITHM = "random-forest-classifier"
 PERFORMANCE_FEATURES = ["Age", "BusinessTravel", "DailyRate", "Department", "DistanceFromHome", "Education", "EducationField", "EnvironmentSatisfaction", "Gender", "HourlyRate", "JobInvolvement", "JobLevel", "JobRole", "JobSatisfaction", "MaritalStatus", "MonthlyIncome", "MonthlyRate", "NumCompaniesWorked", "OverTime", "PercentSalaryHike", "RelationshipSatisfaction", "StockOptionLevel", "TotalWorkingYears", "TrainingTimesLastYear", "WorkLifeBalance", "YearsAtCompany", "YearsInCurrentRole", "YearsSinceLastPromotion", "YearsWithCurrManager"]
@@ -68,8 +71,7 @@ def train_performance_model(output_path: Path = MODEL_PATH):
     }
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    joblib.dump({"model": model, "metadata": metadata}, output_path)
-    output_path.with_suffix(".json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+    export_pipeline(model, metadata, output_path)
     return model
 
 
@@ -77,7 +79,7 @@ def load_performance_model():
     if not MODEL_PATH.exists():
         raise PerformanceModelUnavailable("Performance model unavailable; run python -m src.train_performance_model explicitly.")
     try:
-        artifact = joblib.load(MODEL_PATH)
+        artifact = load_artifact(MODEL_PATH)
         if artifact["metadata"]["model_version"] != MODEL_VERSION:
             raise ValueError("Incompatible model version")
         return artifact
@@ -90,6 +92,6 @@ def predict_performance(employee_data: dict) -> dict:
     frame = pd.DataFrame([{name: employee_data[name] for name in PERFORMANCE_FEATURES}])
     model = artifact["model"]
     probabilities = model.predict_proba(frame)[0]
-    classes = model.named_steps["classifier"].classes_
+    classes = model.classes_
     index = int(np.argmax(probabilities))
     return {"performance_prediction": int(classes[index]), "performance_probability": float(probabilities[index]), "class_probabilities": {str(int(c)): float(p) for c, p in zip(classes, probabilities)}, "model_version": artifact["metadata"]["model_version"], "algorithm": artifact["metadata"]["algorithm"], "limitations": artifact["metadata"]["limitations"]}

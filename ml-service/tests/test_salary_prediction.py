@@ -5,7 +5,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from salary_model import MODEL_PATH, SALARY_FEATURES, predict_salary
 import hashlib
 import json
-import joblib
 import pandas as pd
 import pytest
 import salary_model as salary
@@ -45,7 +44,7 @@ def test_raw_splits_are_disjoint_complete_and_reproducible():
 
 
 def test_missing_model_never_trains_or_writes(tmp_path, monkeypatch):
-    path = tmp_path / "missing.pkl"
+    path = tmp_path / "missing.json"
     monkeypatch.setattr(salary, "MODEL_PATH", path)
     monkeypatch.setattr(salary, "train_salary_model", lambda: pytest.fail("Inference must not train"))
     with pytest.raises(salary.SalaryModelUnavailable):
@@ -66,11 +65,14 @@ def test_training_fits_only_training_partition_and_persists_evidence(tmp_path, m
         return original_fit(self, X, y, **kwargs)
 
     monkeypatch.setattr(salary.Pipeline, "fit", guarded_fit)
-    path = tmp_path / "salary.pkl"
+    path = tmp_path / "salary.json"
     model = salary.train_salary_model(path)
-    metadata = json.loads(path.with_suffix(".json").read_text())
+    document = json.loads(path.read_text(encoding="utf-8"))
+    metadata = document["metadata"]
+    artifact = salary.load_artifact(path)
+    assert list(tmp_path.iterdir()) == [path]
     assert fitted_indices == [set(train.index)]
-    assert metadata == joblib.load(path)["metadata"]
+    assert metadata == artifact["metadata"]
     assert metadata["dataset_sha256"] == hashlib.sha256(salary.DATA_PATH.read_bytes()).hexdigest()
     assert metadata["counts"] == {"total": 1470, "train": 882, "validation": 294, "test": 294}
     assert metadata["features"] == SALARY_FEATURES
@@ -78,6 +80,7 @@ def test_training_fits_only_training_partition_and_persists_evidence(tmp_path, m
     assert metadata["trained_at_utc"] and metadata["limitations"]
     for name, rows in [("validation", validation), ("test", test)]:
         predictions = model.predict(rows[SALARY_FEATURES])
+        assert artifact["model"].predict(rows[SALARY_FEATURES]) == pytest.approx(predictions)
         assert metadata["metrics"][name]["mae"] == pytest.approx(salary.mean_absolute_error(rows.MonthlyIncome, predictions))
         assert metadata["metrics"][name]["rmse"] == pytest.approx(salary.np.sqrt(salary.mean_squared_error(rows.MonthlyIncome, predictions)))
         assert metadata["metrics"][name]["r2"] == pytest.approx(salary.r2_score(rows.MonthlyIncome, predictions))
@@ -92,7 +95,7 @@ def test_missing_artifact_returns_service_unavailable(tmp_path, monkeypatch):
     from src import salary_model
     from src.api import app
     from fastapi.testclient import TestClient
-    monkeypatch.setattr(salary_model, "MODEL_PATH", tmp_path / "missing.pkl")
+    monkeypatch.setattr(salary_model, "MODEL_PATH", tmp_path / "missing.json")
     response = TestClient(app).post("/predict/salary", json={
         "Age": 35, "Department": "Sales", "JobLevel": 2, "JobRole": "Sales Executive",
         "TotalWorkingYears": 10, "YearsAtCompany": 5, "Education": 3,

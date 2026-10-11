@@ -1,17 +1,19 @@
-import joblib
 import pandas as pd
 from pathlib import Path
 
+if __package__:
+    from .json_models import load_artifact
+else:
+    from json_models import load_artifact
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-MODEL_PATH = BASE_DIR / "models" / "employee_attrition_model.pkl"
+MODEL_PATH = BASE_DIR / "models" / "employee_attrition_model.json"
 
-FINAL_THRESHOLD = 0.55
-
-
-# Load the trained model
-model = joblib.load(MODEL_PATH)
+# Load both weights and decision threshold from the single JSON artifact.
+artifact = load_artifact(MODEL_PATH)
+FINAL_THRESHOLD = float(artifact["metadata"]["threshold"])
+model = artifact["model"]
 
 
 def predict_attrition(employee_data):

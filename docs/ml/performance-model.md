@@ -7,8 +7,9 @@ the one-hot encoder or classifier is fitted. `PerformanceRating` is never sent a
 a feature; identifiers, constants, and `Attrition` are also excluded.
 
 Run explicit training from `ml-service` with `python -m src.train_performance_model`.
-This writes `models/employee_performance_model.pkl` and companion JSON with
-dataset hash, split indices, fixed model metadata, held-out metrics, and limitations.
+This writes only `models/employee_performance_model.json`, including preprocessing,
+fitted trees, dataset hash, split indices, model metadata, held-out metrics, and limitations.
+The runtime loads data-only JSON; no binary companion or executable deserialization is used.
 Inference never trains. A missing or incompatible artifact returns HTTP 503.
 FastAPI exposes `POST /predict/performance`; Spring proxies it at
 `POST /api/ml/predict/performance`.

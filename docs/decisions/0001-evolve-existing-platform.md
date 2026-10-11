@@ -14,7 +14,7 @@ Preserve the existing stack, employee dataset and working behavior. Treat Spring
 
 Use the README's IMPLEMENTED / IN PROGRESS / PLANNED vocabulary. A source file, dependency, diagram or passing unit test is not evidence of a complete production workflow. Keep current topology separate from planned Kafka/Redis/gateway/observability additions.
 
-Retain existing trained artifacts until a replacement format reproduces their behavior. A future JSON-only format must contain preprocessing and model parameters, validate its schema, and pass prediction-parity tests; merely embedding pickle bytes in JSON is not a safe conversion. Preserve the original dataset's provenance and do not manufacture promotion outcomes.
+Retain existing trained artifacts until a replacement format reproduces their behavior. The JSON-only conversion now contains preprocessing and model parameters, validates its schema, and passed prediction-parity checks on all 1,470 existing employee rows before binary removal. It does not embed pickle bytes or retrain models. Preserve the original dataset's provenance and do not manufacture promotion outcomes.
 
 ## Consequences
 
