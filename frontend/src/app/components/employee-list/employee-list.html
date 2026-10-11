@@ -154,7 +154,7 @@
                 <div class="actions">
 
                   <!-- Employee Details -->
-                   <button
+                   @if (policy.canMutateEmployees()) { <button
                      type="button"
                      (click)="toggleDetails(employee.id!)">
 
@@ -164,7 +164,7 @@
                         : 'Details'
                     }}
 
-                   </button>
+                   </button> }
                    <a class="profile-link" [routerLink]="['/employees', employee.id]">
                      View profile
                    </a>

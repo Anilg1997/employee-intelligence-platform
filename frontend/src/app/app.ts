@@ -4,6 +4,7 @@ import {
   RouterLinkActive,
   RouterOutlet
 } from '@angular/router';
+import { RolePolicyService } from './services/role-policy.service';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +18,7 @@ import {
   styleUrl: './app.scss'
 })
 export class App {
+  constructor(readonly policy: RolePolicyService) {}
   protected readonly navigationOpen = signal(false);
 
   protected toggleNavigation(): void {

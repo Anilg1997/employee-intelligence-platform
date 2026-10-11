@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 
 import { EmployeeForm } from '../employee-form/employee-form';
 import { EmployeeList } from '../employee-list/employee-list';
+import { RolePolicyService } from '../../services/role-policy.service';
 
 @Component({
   selector: 'app-employees-page',
@@ -11,6 +12,7 @@ import { EmployeeList } from '../employee-list/employee-list';
   styleUrl: './employees-page.scss'
 })
 export class EmployeesPage {
+  constructor(readonly policy: RolePolicyService) {}
 
   refreshTrigger = 0;
 

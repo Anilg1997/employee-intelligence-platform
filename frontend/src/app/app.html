@@ -56,7 +56,9 @@
         <span class="nav-icon" aria-hidden="true">✦</span>
         <span>HR assistant</span>
       </a>
-      <a routerLink="/audit" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()"><span class="nav-icon" aria-hidden="true">▤</span><span>Audit events</span></a>
+      @if (policy.canViewAudit()) {
+        <a routerLink="/audit" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()"><span class="nav-icon" aria-hidden="true">▤</span><span>Audit events</span></a>
+      }
     </nav>
   </header>
 

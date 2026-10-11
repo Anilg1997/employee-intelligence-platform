@@ -7,6 +7,7 @@ import {
   EmployeeAiService,
   EmployeeAiPrediction
 } from '../../services/employee-ai.service';
+import { RolePolicyService } from '../../services/role-policy.service';
 
 @Component({
   selector: 'app-employee-form',
@@ -43,7 +44,8 @@ export class EmployeeForm {
 
   constructor(
     private employeeService: EmployeeService,
-    private employeeAiService: EmployeeAiService
+    private employeeAiService: EmployeeAiService,
+    readonly policy: RolePolicyService
   ) {}
 
   createEmployee(): void {

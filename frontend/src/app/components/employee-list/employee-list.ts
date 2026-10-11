@@ -12,6 +12,7 @@ import { RouterLink } from '@angular/router';
 
 import { Employee } from '../../models/employee';
 import { EmployeeService } from '../../services/employee';
+import { RolePolicyService } from '../../services/role-policy.service';
 
 import {
   EmployeeAiService,
@@ -97,7 +98,8 @@ predictionErrors: {
 
   constructor(
     private employeeService: EmployeeService,
-    private employeeAiService: EmployeeAiService
+    private employeeAiService: EmployeeAiService,
+    readonly policy: RolePolicyService
   ) {}
 
   // --------------------------------------------------

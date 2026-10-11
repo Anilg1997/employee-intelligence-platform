@@ -11,6 +11,7 @@ import { PromotionPrediction } from './components/promotion-prediction/promotion
 import { RiskIntelligence } from './components/risk-intelligence/risk-intelligence';
 import { authGuard } from './guards/auth.guard';
 import { Audit } from './components/audit/audit';
+import { ROLE_POLICY } from './services/role-policy.service';
 
 export const routes: Routes = [
 
@@ -43,11 +44,11 @@ export const routes: Routes = [
     component: AttritionPrediction,
     canActivate: [authGuard]
   },
-  { path: 'salary-prediction', component: SalaryPrediction, canActivate: [authGuard] },
-  { path: 'performance-prediction', component: PerformancePrediction, canActivate: [authGuard] },
-  { path: 'promotion-prediction', component: PromotionPrediction, canActivate: [authGuard] },
-  { path: 'risk-intelligence', component: RiskIntelligence, canActivate: [authGuard] },
-  { path: 'audit', component: Audit, canActivate: [authGuard] },
+  { path: 'salary-prediction', component: SalaryPrediction, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
+  { path: 'performance-prediction', component: PerformancePrediction, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
+  { path: 'promotion-prediction', component: PromotionPrediction, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
+  { path: 'risk-intelligence', component: RiskIntelligence, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
+  { path: 'audit', component: Audit, canActivate: [authGuard], data: { roles: ROLE_POLICY.audit } },
 
   {
     path: 'hr-assistant',

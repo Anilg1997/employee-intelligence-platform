@@ -5,13 +5,13 @@
     <p>Manage employees and view workforce information.</p>
   </header>
 
-  <section class="create-section">
+  @if (policy.canMutateEmployees()) { <section class="create-section">
 
     <app-employee-form
       (employeeCreated)="refreshEmployees()">
     </app-employee-form>
 
-  </section>
+  </section> }
 
   <section class="directory-section">
 
