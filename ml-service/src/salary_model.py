@@ -3,6 +3,7 @@
 MonthlyIncome is the target and is deliberately absent from SALARY_FEATURES.
 """
 from pathlib import Path
+from functools import lru_cache
 from datetime import datetime, timezone
 import hashlib
 import numpy as np
@@ -93,16 +94,22 @@ def train_salary_model(output_path: Path = MODEL_PATH):
     return model
 
 
-def load_salary_model():
-    if not MODEL_PATH.exists():
+@lru_cache(maxsize=4)
+def _load_salary_model(path):
+    path = Path(path)
+    if not path.exists():
         raise SalaryModelUnavailable("Salary model unavailable; run python -m src.train_salary_model explicitly.")
     try:
-        artifact = load_artifact(MODEL_PATH)
+        artifact = load_artifact(path)
         if artifact["metadata"]["model_version"] != MODEL_VERSION:
             raise ValueError("Incompatible model version")
         return artifact
     except Exception as exc:
         raise SalaryModelUnavailable("Salary model artifact is invalid or incompatible.") from exc
+
+
+def load_salary_model():
+    return _load_salary_model(str(MODEL_PATH))
 
 
 def predict_salary(employee_data: dict) -> dict:

@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+from functools import lru_cache
 
 if __package__:
     from .json_models import load_artifact
@@ -10,10 +11,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 MODEL_PATH = BASE_DIR / "models" / "employee_attrition_model.json"
 
-# Load both weights and decision threshold from the single JSON artifact.
-artifact = load_artifact(MODEL_PATH)
-FINAL_THRESHOLD = float(artifact["metadata"]["threshold"])
-model = artifact["model"]
+
+class ModelUnavailable(RuntimeError):
+    """Raised when a prediction artifact cannot be safely loaded."""
+
+
+@lru_cache(maxsize=4)
+def _load_attrition_model(path):
+    """Load the attrition artifact on first use, never during module import."""
+    try:
+        artifact = load_artifact(Path(path))
+        threshold = float(artifact["metadata"]["threshold"])
+        if not 0 <= threshold <= 1:
+            raise ValueError("invalid threshold")
+        return artifact["model"], threshold
+    except Exception as exc:
+        raise ModelUnavailable("Attrition model unavailable.") from exc
+
+
+def load_attrition_model():
+    return _load_attrition_model(str(MODEL_PATH))
 
 
 def predict_attrition(employee_data):
@@ -27,6 +44,7 @@ def predict_attrition(employee_data):
         dict: Prediction and attrition probability.
     """
 
+    model, final_threshold = load_attrition_model()
     employee_df = pd.DataFrame([employee_data])
 
     probabilities = model.predict_proba(employee_df)[0]
@@ -38,7 +56,7 @@ def predict_attrition(employee_data):
 
     prediction = (
         "Yes"
-        if probability >= FINAL_THRESHOLD
+        if probability >= final_threshold
         else "No"
     )
 

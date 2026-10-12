@@ -119,7 +119,7 @@ The table lists technologies present in source/configuration, not a blanket depl
 | Frontend | Angular 21.2, TypeScript 5.9, RxJS | Routed application and API interaction |
 | Frontend runtime | Angular SSR, Express | Server output and prerendering configuration |
 | ML | Python, Pandas, NumPy, Scikit-learn | Training and versioned data-only JSON predictors; NumPy inference |
-| ML API | FastAPI, Pydantic, Uvicorn | Prediction contracts and HTTP serving |
+| ML API | FastAPI, Pydantic, Uvicorn | Validated prediction contracts, liveness/readiness and HTTP serving |
 | GenAI | Ollama, LangChain4j | Chat, embeddings, retrieval and tool calling |
 | Tools | Python MCP SDK, Requests | MCP-to-backend tool adapter |
 | Tests | JUnit, Mockito, Spring security tests, Pytest, Vitest | Backend, ML and frontend checks |
@@ -163,7 +163,7 @@ Inference now uses **one complete JSON artifact per model**. The models director
 
 The existing trained predictors were converted without retraining or changing the employee dataset. Conversion parity was verified across all **1,470 existing rows**: salary/performance matched exactly; attrition probabilities differed by at most **2.22e-16**, with identical classification/threshold decisions. This checks serialization equivalence, not new generalization performance. Schema validation rejects unsupported model structures, malformed trees, duplicate keys and nonfinite values. Test fixtures also cover unknown categories and supported preprocessing configurations.
 
-Salary and performance training is explicit, never triggered by prediction requests. Missing/incompatible artifacts yield a service-unavailable response for those models. Attrition loads at import time and can prevent FastAPI startup if its artifact is missing or incompatible.
+Salary and performance training is explicit, never triggered by prediction requests. Missing/incompatible artifacts yield a service-unavailable response for those models. All four model artifacts now load lazily through controlled JSON loaders; a missing attrition artifact no longer crashes FastAPI import, and `/ready` reports model-specific availability.
 
 The lightweight Spring model registry is currently hard-coded, omits salary, and is not a model deployment lifecycle manager. See [salary](docs/ml/salary-model.md), [performance](docs/ml/performance-model.md), [promotion](docs/ml/promotion-model.md), and [risk engine](docs/ai/risk-engine.md) notes. Earlier notes must be read alongside the limitations above.
 

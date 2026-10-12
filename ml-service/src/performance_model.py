@@ -1,6 +1,7 @@
 """Deterministic, leakage-safe performance-rating classification model."""
 from datetime import datetime, timezone
 from pathlib import Path
+from functools import lru_cache
 import hashlib
 import numpy as np
 import pandas as pd
@@ -75,16 +76,22 @@ def train_performance_model(output_path: Path = MODEL_PATH):
     return model
 
 
-def load_performance_model():
-    if not MODEL_PATH.exists():
+@lru_cache(maxsize=4)
+def _load_performance_model(path):
+    path = Path(path)
+    if not path.exists():
         raise PerformanceModelUnavailable("Performance model unavailable; run python -m src.train_performance_model explicitly.")
     try:
-        artifact = load_artifact(MODEL_PATH)
+        artifact = load_artifact(path)
         if artifact["metadata"]["model_version"] != MODEL_VERSION:
             raise ValueError("Incompatible model version")
         return artifact
     except Exception as exc:
         raise PerformanceModelUnavailable("Performance model artifact is invalid or incompatible.") from exc
+
+
+def load_performance_model():
+    return _load_performance_model(str(MODEL_PATH))
 
 
 def predict_performance(employee_data: dict) -> dict:
