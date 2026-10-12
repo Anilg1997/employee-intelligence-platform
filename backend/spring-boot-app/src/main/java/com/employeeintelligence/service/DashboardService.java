@@ -4,6 +4,7 @@ import com.employeeintelligence.api.dto.DashboardResponse;
 import com.employeeintelligence.api.model.Employee;
 import com.employeeintelligence.api.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
 import com.employeeintelligence.security.TenantContext;
 
 import java.util.Map;
@@ -20,6 +21,7 @@ public class DashboardService {
         this.employeeRepository = employeeRepository; this.tenantContext = tenantContext;
     }
 
+    @Cacheable(cacheNames = "dashboard", keyGenerator = "tenantCacheKeyGenerator")
     public DashboardResponse getDashboardSummary() {
 
         var employees = employeeRepository.findAllByTenantId(tenantContext.currentTenantId());

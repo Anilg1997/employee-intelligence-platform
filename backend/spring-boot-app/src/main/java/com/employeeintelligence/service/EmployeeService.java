@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import com.employeeintelligence.api.dto.EmployeePageResponse;
 import com.employeeintelligence.api.mapper.EmployeeMapper;
 import com.employeeintelligence.security.TenantContext;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 public class EmployeeService {
@@ -69,6 +70,7 @@ public class EmployeeService {
         }
     }
 
+    @CacheEvict(cacheNames = "dashboard", keyGenerator = "tenantCacheKeyGenerator")
     public Employee createEmployee(Employee employee) {
         employee.setTenantId(tenantContext.currentTenantId());
         return employeeRepository.save(employee);
@@ -76,7 +78,8 @@ public class EmployeeService {
     public Optional<Employee> getEmployeeById(Long id) {
     return employeeRepository.findByIdAndTenantId(id, tenantContext.currentTenantId());
 }
-public Employee updateEmployee(Long id, Employee updatedEmployee) {
+ @CacheEvict(cacheNames = "dashboard", keyGenerator = "tenantCacheKeyGenerator")
+ public Employee updateEmployee(Long id, Employee updatedEmployee) {
 
     Employee existingEmployee = employeeRepository.findByIdAndTenantId(id, tenantContext.currentTenantId())
             .orElseThrow(() -> new EmployeeNotFoundException(id));
@@ -121,8 +124,9 @@ public Employee updateEmployee(Long id, Employee updatedEmployee) {
     return employeeRepository.save(existingEmployee);
 }
 
-@org.springframework.transaction.annotation.Transactional
-public void deleteEmployee(Long id) {
+ @org.springframework.transaction.annotation.Transactional
+ @CacheEvict(cacheNames = "dashboard", keyGenerator = "tenantCacheKeyGenerator")
+ public void deleteEmployee(Long id) {
 
     if (!employeeRepository.existsByIdAndTenantId(id, tenantContext.currentTenantId())) {
         throw new EmployeeNotFoundException(id);

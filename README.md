@@ -16,7 +16,7 @@ Status vocabulary used throughout:
 
 Nexora is a production-oriented enterprise Workforce Intelligence & AI Platform combining employee operations, workforce analytics, Python-based predictions, and document-grounded assistance. Angular provides the user interface; Java/Spring Boot owns business APIs and authorization; PostgreSQL stores transactional data and pgvector supports semantic retrieval. FastAPI serves Scikit-learn models. Ollama and LangChain4j provide LLM, embedding, RAG, and tool-using agent foundations. A separate MCP server exposes selected enterprise capabilities.
 
-The target architecture extends these foundations with **Kafka, Redis, GraphQL, selective gRPC, observability, and DevSecOps**. These technologies are planned, not represented as deployed services. Security and AI security are explicit engineering workstreams, with existing RBAC controls and significant remaining verification work.
+The target architecture extends these foundations with **Kafka, Redis, GraphQL, selective gRPC, observability, and DevSecOps**. Kafka now has a database-backed outbox foundation; Redis and the consumer/realtime layers remain planned. Security and AI security are explicit engineering workstreams, with existing RBAC controls and significant remaining verification work.
 
 The business objective is decision support with traceable evidence, not automated employment decisions. No prediction should independently determine compensation, promotion, performance action, or termination.
 
@@ -225,7 +225,7 @@ The Java agent's tools are currently in-process wrappers, not demonstrated MCP c
 
 ## Kafka
 
-**PLANNED — no broker, topics, producers, or consumers are currently configured.** Proposed initial event scope:
+**IN PROGRESS — transactional outbox persistence and an opt-in Kafka publisher are implemented; no broker or consumer is included in the default local stack.** Proposed initial event scope:
 
 | Proposed topic | Producer | Consumer group proposal | Partition key |
 | --- | --- | --- | --- |
@@ -236,7 +236,7 @@ The Java agent's tools are currently in-process wrappers, not demonstrated MCP c
 
 Proposed envelopes contain event ID, schema version, tenant, resource ID, timestamp, and correlation ID; unnecessary employee data is excluded. Partition counts must follow measured workload. Ordering is per key, not global.
 
-Delivery design should use bounded retries with backoff, retry topics where justified, a dead-letter topic with restricted replay, and consumer deduplication by event ID. An outbox avoids a database-commit/message-publish split. This is an at-least-once design proposal, not an exactly-once claim. Interactive employee reads and predictions remain synchronous where appropriate.
+The audit write path stores the audit row and its outbox row in one transaction. The publisher uses stable outbox IDs as Kafka keys, PostgreSQL `SKIP LOCKED` claiming, bounded synchronous acknowledgements, and retryable unpublished rows. Publishing is disabled by default (`OUTBOX_PUBLISHER_ENABLED=false`) and becomes an at-least-once transport when enabled; consumers, retry topics, dead-letter handling, and deduplication remain unfinished. Interactive employee reads and predictions remain synchronous where appropriate.
 
 ## Security
 
@@ -270,11 +270,11 @@ These controls align with OWASP LLM/GenAI themes including prompt injection, sen
 
 ## Data Architecture
 
-- **PostgreSQL:** `employee`, `rag_documents`, and `audit_events` are the current business tables. JPA handles entities; JDBC handles vector queries. Connection pooling is supplied through the Spring data stack.
-- **Flyway:** V1 enables pgvector; V2 creates employee/document tables; V3 adds audit events; V4 adds tenant columns/indexes and tenant-aware employee-number uniqueness. Previously applied migrations must remain immutable. Hibernate is configured to validate, not automatically update, the schema.
+- **PostgreSQL:** `employee`, `rag_documents`, `audit_events`, and `outbox_events` are the current business tables. JPA handles entities; JDBC handles vector queries. Connection pooling is supplied through the Spring data stack.
+- **Flyway:** V1 enables pgvector; V2 creates employee/document tables; V3 adds audit events; V4 adds tenant columns/indexes and tenant-aware employee-number uniqueness; V5 adds the transactional outbox. Previously applied migrations must remain immutable. Hibernate is configured to validate, not automatically update, the schema.
 - **pgvector:** document embeddings use the existing 768-dimensional schema. Changing the embedding model requires a dimension/provenance check and controlled re-embedding.
-- **Redis — PLANNED:** cache only justified reads and short-lived state; keys must include tenant and authorization-relevant scope. Mutations need explicit invalidation. Do not reuse sensitive AI responses across principals.
-- **Kafka — PLANNED:** event transport, not the transactional source of truth.
+- **Redis — IN PROGRESS:** an opt-in Redis cache is available for the dashboard read model with 30-second TTLs, tenant-qualified keys, JSON serialization, and employee mutation eviction. Enable it only with `CACHE_REDIS_ENABLED=true` and `SPRING_CACHE_TYPE=redis`; sensitive AI responses are not cached.
+- **Kafka — IN PROGRESS:** opt-in event transport, not the transactional source of truth. The outbox publisher uses `KAFKA_BOOTSTRAP_SERVERS`, `OUTBOX_KAFKA_TOPIC`, and bounded retry/ack settings; consumers and DLQ policy are still required.
 
 Employee history, optimistic locking, database-side dashboard aggregation, data retention and comprehensive isolation tests remain outstanding. Fresh migrations and a V3-to-V4 upgrade with employee/document/audit fixtures are tested. Legacy rows backfill into `demo`; deployment owners must review that mapping and the actual schema/history before applying it to existing records. Tests create UUID-named schemas and clean up only their own fixtures, leaving existing employee data untouched.
 

@@ -14,14 +14,16 @@ public class AuditService {
     private static final Logger log = LoggerFactory.getLogger(AuditService.class);
     private final AuditEventRepository repository;
     private final TenantContext tenantContext;
-    public AuditService(AuditEventRepository repository, TenantContext tenantContext) { this.repository = repository; this.tenantContext = tenantContext; }
+    private final AuditWriter auditWriter;
+    public AuditService(AuditEventRepository repository, TenantContext tenantContext, AuditWriter auditWriter) { this.repository = repository; this.tenantContext = tenantContext; this.auditWriter = auditWriter; }
     public void record(String action, String resourceType, Object resourceId, String result, String metadata) {
         try {
             var user = AuthenticatedUser.current();
             String role = user.roles().stream().findFirst().orElse(null);
             String correlationId = MDC.get("correlationId");
             AuditEvent event = new AuditEvent(Instant.now(), safe(user.subject()), safe(role), safe(action), safe(resourceType), resourceId == null ? null : safe(String.valueOf(resourceId)), safe(result), safe(correlationId == null ? UUID.randomUUID().toString() : correlationId), sanitize(metadata));
-            event.setTenantId(tenantContext.currentTenantId()); repository.save(event);
+            event.setTenantId(tenantContext.currentTenantId());
+            auditWriter.write(event);
         } catch (Exception ex) { log.warn("Audit persistence failed; continuing primary operation", ex); }
     }
     public void record(String action, String resourceType, Object resourceId, String result, String metadata, HttpServletRequest request) {
