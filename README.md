@@ -646,7 +646,9 @@ The backend Compose probe now uses `/api/health` with a bounded `curl` request; 
 
 ## CI/CD
 
-**PLANNED.** No checked-in GitHub Actions release workflow is currently provided. The proposed pipeline in [DevSecOps](#devsecops) should promote immutable tested artifacts through an ephemeral environment before deployment.
+**IN PROGRESS.** A checked-in GitHub Actions CI workflow now runs backend tests with PostgreSQL/pgvector, ML tests plus JSON-only artifact enforcement, frontend tests/build, and Docker Compose configuration validation. It is a quality gate, not yet a release/deployment pipeline.
+
+Workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml). It does not claim SonarQube, SAST, SCA, DAST, container scanning, deployment, or coverage enforcement; those remain planned additions.
 
 Target quality gates: practical module-level coverage toward 80%, no leaked secrets, and no unreviewed critical dependency, SAST, or container findings. These are goals, not measured results. DAST must target an authorized disposable environment, never an arbitrary public service. Production deployment and cloud credentials require explicit setup and approval.
 
@@ -751,7 +753,8 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 | Unit tests and selected API tests | IMPLEMENTED |
 | Database/security/E2E test coverage | IN PROGRESS |
 | Testcontainers suites | PLANNED |
-| DevSecOps/CI/CD quality gates | PLANNED |
+| DevSecOps CI quality gates | IN PROGRESS |
+| Release/deployment security pipeline | PLANNED |
 | Full Docker deployment | IN PROGRESS |
 | Kubernetes manifests/readiness validation | PLANNED |
 | Architecture/security/interview documentation | IN PROGRESS |
