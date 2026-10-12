@@ -13,9 +13,12 @@ import { authGuard } from './guards/auth.guard';
 import { Audit } from './components/audit/audit';
 import { ROLE_POLICY } from './services/role-policy.service';
 import { AccessRequired } from './components/access-required/access-required';
+import { Notifications } from './components/notifications/notifications';
+import { AuthCallback } from './components/auth-callback/auth-callback';
 
 export const routes: Routes = [
   { path: 'access-required', component: AccessRequired },
+  { path: 'auth/callback', component: AuthCallback },
 
   {
     path: '',
@@ -51,6 +54,7 @@ export const routes: Routes = [
   { path: 'promotion-prediction', component: PromotionPrediction, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
   { path: 'risk-intelligence', component: RiskIntelligence, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
   { path: 'audit', component: Audit, canActivate: [authGuard], data: { roles: ROLE_POLICY.audit } },
+  { path: 'notifications', component: Notifications, canActivate: [authGuard] },
 
   {
     path: 'hr-assistant',

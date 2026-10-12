@@ -67,7 +67,7 @@ class EmployeeIntelligenceApiApplicationTests {
 	@Test
     void contextLoads() {
 
-        assertEquals("5", flyway.info().current().getVersion().getVersion());
+        assertEquals("6", flyway.info().current().getVersion().getVersion());
         assertTrue(flyway.validateWithResult().validationSuccessful);
 	}
 
@@ -85,7 +85,7 @@ class EmployeeIntelligenceApiApplicationTests {
 
             Flyway upgrade = Flyway.configure().dataSource(dataSource).schemas(legacy).defaultSchema(legacy).load();
             upgrade.migrate();
-            assertEquals("5", upgrade.info().current().getVersion().getVersion());
+            assertEquals("6", upgrade.info().current().getVersion().getVersion());
             assertEquals("Migration fixture", jdbc.queryForObject("SELECT name FROM " + legacy + ".employee WHERE tenant_id = 'demo'", String.class));
             assertEquals("Migration policy fixture", jdbc.queryForObject("SELECT content FROM " + legacy + ".rag_documents WHERE tenant_id = 'demo'", String.class));
             assertEquals("FIXTURE", jdbc.queryForObject("SELECT action FROM " + legacy + ".audit_events WHERE tenant_id = 'demo'", String.class));

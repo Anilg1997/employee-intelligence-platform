@@ -1,0 +1,51 @@
+<section class="notifications-page" aria-labelledby="notifications-title">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Workspace updates</p>
+      <h1 id="notifications-title">Notifications</h1>
+      <p class="intro">Keep up with risk reviews, completed predictions, and newly available reports.</p>
+    </div>
+    <button class="refresh-button" type="button" (click)="load()" [disabled]="loading" aria-label="Refresh notifications">Refresh</button>
+  </div>
+
+  @if (streamState() !== 'idle' && streamState() !== 'connected') {
+    <p class="stream-status" role="status" aria-live="polite">{{ stateLabel(streamState()) }}</p>
+  } @else if (streamState() === 'connected') {
+    <p class="stream-status connected" role="status" aria-live="polite">{{ stateLabel(streamState()) }}</p>
+  }
+
+  @if (loading) {
+    <p class="state" role="status" aria-live="polite">Loading notifications…</p>
+  } @else if (errorMessage) {
+    <div class="state error" role="alert"><p>{{ errorMessage }}</p><button type="button" (click)="load()">Try again</button></div>
+  } @else if (!notifications.length) {
+    <p class="state empty">You’re all caught up. New notifications will appear here.</p>
+  } @else {
+    @if (readError) { <p class="inline-error" role="alert">{{ readError }}</p> }
+    <ul class="notification-list" aria-label="Notifications">
+      @for (notification of notifications; track notification.id) {
+        <li class="notification-card" [class.unread]="!notification.readAt">
+          <div class="notification-copy">
+            <div class="notification-meta">
+              <span class="status" [class.unread-status]="!notification.readAt">{{ notification.readAt ? 'Read' : 'Unread' }}</span>
+              <time [dateTime]="notification.createdAt">{{ notification.createdAt | date:'medium' }}</time>
+            </div>
+            <h2>{{ notification.title }}</h2>
+            <p>{{ notification.body }}</p>
+          </div>
+          @if (notification.readAt) {
+            <span class="read-indicator" aria-label="Notification read">✓</span>
+          } @else {
+            <button
+              class="read-button"
+              type="button"
+              [disabled]="isMarkingRead(notification)"
+              [attr.aria-label]="'Mark ' + notification.title + ' as read'"
+              (click)="markAsRead(notification)"
+            >{{ isMarkingRead(notification) ? 'Saving…' : 'Mark as read' }}</button>
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

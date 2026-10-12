@@ -1,12 +1,18 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
+import { NotificationService } from './services/notification.service';
+import { signal } from '@angular/core';
+import { of, Subject } from 'rxjs';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter([])]
+      providers: [provideRouter([]), {
+        provide: NotificationService,
+        useValue: { streamState: signal('idle'), notifications$: new Subject(), list: () => of([]), connect: () => undefined, disconnect: () => undefined, markAsRead: () => of(null) }
+      }]
     }).compileComponents();
   });
 
@@ -31,10 +37,11 @@ describe('App', () => {
     const links = compiled.querySelectorAll('.main-nav a');
 
     expect(navigation).toBeTruthy();
-    expect(links.length).toBe(9);
+    expect(links.length).toBe(10);
     expect(compiled.querySelector('.main-nav a[routerlink="/audit"]')).toBeTruthy();
     expect(compiled.querySelector('.main-nav a[routerlink="/salary-prediction"]')).toBeTruthy();
     expect(compiled.querySelector('.main-nav a[routerlink="/employees"]')).toBeTruthy();
+    expect(compiled.querySelector('.main-nav a[routerlink="/notifications"]')).toBeTruthy();
     expect(compiled.querySelector('.menu-toggle')?.getAttribute('aria-controls')).toBe('primary-navigation');
   });
 });

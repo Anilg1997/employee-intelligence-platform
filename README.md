@@ -16,7 +16,7 @@ Status vocabulary used throughout:
 
 Nexora is a production-oriented enterprise Workforce Intelligence & AI Platform combining employee operations, workforce analytics, Python-based predictions, and document-grounded assistance. Angular provides the user interface; Java/Spring Boot owns business APIs and authorization; PostgreSQL stores transactional data and pgvector supports semantic retrieval. FastAPI serves Scikit-learn models. Ollama and LangChain4j provide LLM, embedding, RAG, and tool-using agent foundations. A separate MCP server exposes selected enterprise capabilities.
 
-The target architecture extends these foundations with **Kafka, Redis, GraphQL, selective gRPC, observability, and DevSecOps**. Kafka now has a database-backed outbox foundation; Redis and the consumer/realtime layers remain planned. Security and AI security are explicit engineering workstreams, with existing RBAC controls and significant remaining verification work.
+The target architecture extends these foundations with **Kafka, Redis, GraphQL, selective gRPC, observability, and DevSecOps**. Kafka now has a database-backed outbox, an opt-in publisher, a versioned notification contract, and an idempotent notification consumer; real domain event producers and broker operations remain incomplete. Redis is an opt-in dashboard cache. Security and AI security are explicit engineering workstreams, with existing RBAC controls and significant remaining verification work.
 
 The business objective is decision support with traceable evidence, not automated employment decisions. No prediction should independently determine compensation, promotion, performance action, or termination.
 
@@ -41,7 +41,7 @@ The platform brings those concerns into a common workflow: find an employee, ins
 | HR Knowledge Assistant / RAG | IN PROGRESS | Document ingestion, semantic retrieval, answer/source contract; live and security validation remain |
 | Agentic AI | IN PROGRESS | LangChain4j tool registration and agent endpoint |
 | MCP | IN PROGRESS | Four tool definitions; secure identity propagation and runtime verification remain |
-| AI Reports / Real-Time Alerts | PLANNED | No completed reporting or notification delivery pipeline |
+| AI Reports / Real-Time Alerts | IN PROGRESS | Persisted notification/SSE foundation and event contract exist; report workflow, domain producers and Angular notification UI remain |
 | Audit | IN PROGRESS | Selected events, persistence, paged reads and UI; coverage/durability incomplete |
 | AI Governance | IN PROGRESS | Version/limitation metadata and decision-support disclosures; review/override workflow planned |
 
@@ -115,7 +115,7 @@ The table lists technologies present in source/configuration, not a blanket depl
 | Persistence | Spring Data JPA, Hibernate, JDBC | Entity persistence and vector SQL |
 | Security | Spring Security, OAuth2 Resource Server | JWT validation configuration and role checks |
 | Database | PostgreSQL 17, pgvector | Employee/audit records and embeddings |
-| Schema | Spring Boot Flyway starter, scripts V1–V4 | Fresh migrations and V3-to-V4 upgrade tested in isolated PostgreSQL schemas |
+| Schema | Spring Boot Flyway starter, scripts V1–V6 | Fresh migrations, V3-to-V4 upgrade, and V6 notification schema tested in isolated PostgreSQL schemas |
 | Frontend | Angular 21.2, TypeScript 5.9, RxJS | Routed application and API interaction |
 | Frontend runtime | Angular SSR, Express | Server output and prerendering configuration |
 | ML | Python, Pandas, NumPy, Scikit-learn | Training and versioned data-only JSON predictors; NumPy inference |
@@ -127,18 +127,18 @@ The table lists technologies present in source/configuration, not a blanket depl
 | API description | Springdoc/OpenAPI dependency | API documentation integration; compatibility needs verification |
 | Legacy demo | Streamlit | Separate attrition-only UI, not the primary enterprise frontend |
 
-Kafka, Redis, GraphQL, gRPC, Grafana, Testcontainers, and the security pipeline remain target additions, not current stack capabilities. Actuator, Micrometer, and Prometheus exposure are implemented for this slice.
+GraphQL, gRPC, Grafana, Testcontainers, and full release security gates remain target additions. Actuator, Micrometer, Prometheus exposure, the transactional outbox, opt-in Kafka publisher, notification consumer foundation, and selected Redis caching are implemented for this slice.
 
 ## Microservices
 
 | Current boundary | Purpose and responsibilities | APIs | Database/artifacts | Events | Dependencies |
 | --- | --- | --- | --- | --- | --- |
-| Spring Boot process | Employee lifecycle, summary analytics, authorization, ML proxy, risk, RAG, agent and audit modules | `/api/employees`, `/api/dashboard`, `/api/ml`, `/api/ai`, `/api/rag`, `/api/agent`, `/api/audit` | PostgreSQL `employee`, `rag_documents`, `audit_events` | No Kafka events implemented | PostgreSQL/pgvector, FastAPI, Ollama |
+| Spring Boot process | Employee lifecycle, summary analytics, authorization, ML proxy, risk, RAG, agent, audit and notification modules | `/api/employees`, `/api/dashboard`, `/api/ml`, `/api/ai`, `/api/rag`, `/api/agent`, `/api/audit`, `/api/notifications` | PostgreSQL `employee`, `rag_documents`, `audit_events`, `outbox_events`, `notifications` | Audit outbox plus versioned notification envelope; no current risk/report producers | PostgreSQL/pgvector, FastAPI, Ollama |
 | FastAPI process | Prediction inference and model loading | `/predict` and salary/performance/promotion variants | Files in `ml-service/models/` | None | Python ML stack and compatible artifacts |
 | MCP process | Expose selected backend capabilities to MCP clients | Streamable HTTP tools on port 8001 | None owned | None | MCP SDK and Spring API |
-| Angular application | Workforce navigation, forms, tables and intelligence screens | Consumes Spring REST APIs | Browser auth state; no business database | No real-time stream implemented | Spring API |
+| Angular application | Workforce navigation, forms, tables and intelligence screens | Consumes Spring REST APIs | Browser auth state; no business database | Notification UI/SSE client not implemented yet | Spring API |
 
-Gateway/BFF, identity integration, notification, reporting, knowledge, AI orchestration, analytics, and audit service extraction are incremental design options. Extraction requires ownership, load, or deployment independence to justify the operational cost.
+Gateway/BFF, identity integration, reporting, knowledge, AI orchestration, analytics, notification, and audit service extraction are incremental design options. Extraction requires ownership, load, or deployment independence to justify the operational cost.
 
 ## Machine Learning
 
@@ -225,7 +225,7 @@ The Java agent's tools are currently in-process wrappers, not demonstrated MCP c
 
 ## Kafka
 
-**IN PROGRESS — transactional outbox persistence and an opt-in Kafka publisher are implemented; no broker or consumer is included in the default local stack.** Proposed initial event scope:
+**IN PROGRESS — transactional outbox persistence, an opt-in Kafka publisher, a versioned notification envelope, and an idempotent notification consumer are implemented; no broker or consumer is included in the default local stack.** Proposed initial event scope:
 
 | Proposed topic | Producer | Consumer group proposal | Partition key |
 | --- | --- | --- | --- |
@@ -234,9 +234,9 @@ The Java agent's tools are currently in-process wrappers, not demonstrated MCP c
 | `document.uploaded` | Knowledge module | `document-ingestion-v1` | Tenant + document ID |
 | `report.generated` | Report worker | `report-notifications-v1` | Tenant + report ID |
 
-Proposed envelopes contain event ID, schema version, tenant, resource ID, timestamp, and correlation ID; unnecessary employee data is excluded. Partition counts must follow measured workload. Ordering is per key, not global.
+The current notification envelope is version 1 and contains only `schemaVersion`, an allowlisted `eventType` (`risk.detected`, `prediction.completed`, or `report.generated`), `eventId`, `tenantId`, and `recipientSubject`. Titles and bodies are selected server-side. Partition counts must follow measured workload. Ordering is per key, not global. See [notification events](docs/notifications/notification-events.md).
 
-The audit write path stores the audit row and its outbox row in one transaction. The publisher uses stable outbox IDs as Kafka keys, PostgreSQL `SKIP LOCKED` claiming, bounded synchronous acknowledgements, and retryable unpublished rows. Publishing is disabled by default (`OUTBOX_PUBLISHER_ENABLED=false`) and becomes an at-least-once transport when enabled; consumers, retry topics, dead-letter handling, and deduplication remain unfinished. Interactive employee reads and predictions remain synchronous where appropriate.
+The audit write path stores the audit row and its outbox row in one transaction. The publisher uses stable outbox IDs as Kafka keys, PostgreSQL `SKIP LOCKED` claiming, bounded synchronous acknowledgements, and retryable unpublished rows. Publishing is disabled by default (`OUTBOX_PUBLISHER_ENABLED=false`) and becomes an at-least-once transport when enabled. The notification consumer uses bounded parsing, retryable persistence failures, tenant/recipient/source-event deduplication, and fixed display text. Retry topics, dead-letter handling, broker deployment, and operational replay remain unfinished. Existing outbox messages are audit-only and are intentionally ignored as notification events; no risk-event producers have been invented. Interactive employee reads and predictions remain synchronous where appropriate.
 
 ## Security
 
@@ -270,17 +270,17 @@ These controls align with OWASP LLM/GenAI themes including prompt injection, sen
 
 ## Data Architecture
 
-- **PostgreSQL:** `employee`, `rag_documents`, `audit_events`, and `outbox_events` are the current business tables. JPA handles entities; JDBC handles vector queries. Connection pooling is supplied through the Spring data stack.
-- **Flyway:** V1 enables pgvector; V2 creates employee/document tables; V3 adds audit events; V4 adds tenant columns/indexes and tenant-aware employee-number uniqueness; V5 adds the transactional outbox. Previously applied migrations must remain immutable. Hibernate is configured to validate, not automatically update, the schema.
+- **PostgreSQL:** `employee`, `rag_documents`, `audit_events`, `outbox_events`, and `notifications` are the current business tables. JPA handles entities; JDBC handles vector queries and notification cursor/ingestion operations. Connection pooling is supplied through the Spring data stack.
+- **Flyway:** V1 enables pgvector; V2 creates employee/document tables; V3 adds audit events; V4 adds tenant columns/indexes and tenant-aware employee-number uniqueness; V5 adds the transactional outbox; V6 adds tenant/recipient/source-event-scoped notifications and cursor indexes. Previously applied migrations must remain immutable. Hibernate is configured to validate, not automatically update, the schema.
 - **pgvector:** document embeddings use the existing 768-dimensional schema. Changing the embedding model requires a dimension/provenance check and controlled re-embedding.
 - **Redis — IN PROGRESS:** an opt-in Redis cache is available for the dashboard read model with 30-second TTLs, tenant-qualified keys, JSON serialization, and employee mutation eviction. Enable it only with `CACHE_REDIS_ENABLED=true` and `SPRING_CACHE_TYPE=redis`; sensitive AI responses are not cached.
-- **Kafka — IN PROGRESS:** opt-in event transport, not the transactional source of truth. The outbox publisher uses `KAFKA_BOOTSTRAP_SERVERS`, `OUTBOX_KAFKA_TOPIC`, and bounded retry/ack settings; consumers and DLQ policy are still required.
+- **Kafka — IN PROGRESS:** opt-in event transport, not the transactional source of truth. The outbox publisher uses `KAFKA_BOOTSTRAP_SERVERS`, `OUTBOX_KAFKA_TOPIC`, and bounded retry/ack settings. Notification consumer retries, contract validation and deduplication exist; broker deployment, retry topics and DLQ policy are still required.
 
 Employee history, optimistic locking, database-side dashboard aggregation, data retention and comprehensive isolation tests remain outstanding. Fresh migrations and a V3-to-V4 upgrade with employee/document/audit fixtures are tested. Legacy rows backfill into `demo`; deployment owners must review that mapping and the actual schema/history before applying it to existing records. Tests create UUID-named schemas and clean up only their own fixtures, leaving existing employee data untouched.
 
 ## Real-Time Architecture
 
-**PLANNED.** A risk/report event would flow through Kafka to an authorized notification consumer, then through SSE or WebSocket to Angular. Persisted notifications and cursor-based reconnect would avoid making a transient socket the only delivery mechanism. Authorization must scope each subscription to its user/tenant; raw employee data should not be broadcast. No real-time alert stream or notification screen is currently delivered.
+**IN PROGRESS.** An approved versioned event can flow through Kafka to an authorized notification consumer, persist under tenant/recipient/source-event uniqueness, and be delivered through bounded SSE polling with individual event IDs and `Last-Event-ID` reconnect support. Authorization scopes reads and subscriptions to the authenticated tenant and subject; raw employee data is not broadcast. The Angular notification screen and real risk/report event producers are not yet delivered.
 
 ## Observability
 
@@ -307,13 +307,13 @@ Core employee operations should remain available when optional AI services fail;
 
 | Layer | Existing evidence | Gap |
 | --- | --- | --- |
-| Java | JUnit/Mockito controller, service, error, tenant and HTTP authorization tests | Real JWT validation, database-backed isolation and complete API authorization matrix |
+| Java | JUnit/Mockito plus PostgreSQL/Flyway notification, migration, tenant-isolation, SSE cursor and HTTP authorization tests | Real external OIDC validation, complete API authorization matrix and broker/DLQ integration |
 | Python | Pytest prediction/API tests under `ml-service/tests/` | Current full rerun, promotion contract, artifact parity, feature leakage/fairness review |
 | Angular | Vitest component/service and real-router secure/demo navigation tests | Interceptor/visibility coverage and browser E2E |
-| Infrastructure | Docker definitions | Testcontainers PostgreSQL/pgvector, Kafka/Redis integration tests |
+| Infrastructure | Docker/Compose definitions and rendered Kubernetes baseline | Testcontainers PostgreSQL/pgvector, Kafka/Redis integration tests and runtime deployment verification |
 | AI/MCP | Tool/retrieval code and manual client scripts | Automated injection, retrieval quality, tool authorization and multi-step agent tests |
 
-Latest local evidence (11 October 2026): backend **48 tests passed**, including application-context startup after Flyway migrations, V3-to-V4 data preservation/tenant uniqueness, and selected tenant-scoped repository reads. The integration test requires reachable PostgreSQL/pgvector and creates isolated schemas; it mocks the chat/agent dependencies and is not a live Ollama smoke test. ML **102 tests passed after binary artifact removal**, including JSON validation/parity, JSON-only directory enforcement, all promotion rule combinations, and 27 promotion API cases. Frontend **41 tests across 17 files passed** and its production build completed. Compose configuration validation passed; Docker Engine was unavailable, so image build/runtime health were not verified. No CI badge, coverage percentage, or passing E2E claim is provided.
+Latest local evidence (12 October 2026): backend **73 tests passed**, including application-context startup after Flyway V6, migration upgrade coverage, notification contract/consumer tests, PostgreSQL tenant/recipient isolation, duplicate ingestion, rollback visibility, SSE cursor replay and connection-boundary tests. The integration test requires reachable PostgreSQL/pgvector and creates isolated schemas; it mocks chat/agent and OIDC boundaries and is not a live Ollama/Kafka smoke test. ML **106 tests passed** with one pytest-asyncio deprecation warning. Frontend **41 tests across 17 files passed** and its production build completed after data-dependent routes were changed to request-time SSR rather than build-time prerendering. Compose configuration validation and Kubernetes manifest rendering passed; Docker image build/runtime health and cluster rollout were not verified. No CI badge, coverage percentage, or passing E2E claim is provided.
 
 Commands from the respective project folders:
 
@@ -329,7 +329,7 @@ npm run build
 
 ## DevSecOps
 
-**PLANNED — this diagram is the intended pipeline, not an existing workflow.**
+**IN PROGRESS — partial CI/security workflows exist; this is not yet a release/deployment pipeline.**
 
 ```mermaid
 flowchart LR
@@ -349,9 +349,9 @@ Scanning must not print credentials or private payloads. Dependency findings nee
 
 ## Frontend
 
-Angular is the primary UI, with routed dashboard, employee directory/form/profile, prediction screens, risk intelligence, HR assistant, and audit pages. Search, pagination, data display, selected loading/error states and an unguarded access-required page are implemented. Secure/demo navigation has router tests; provider login integration remains unfinished.
+Angular is the primary UI, with routed dashboard, employee directory/form/profile, prediction screens, risk intelligence, HR assistant, and audit pages. Search, pagination, data display, selected loading/error states and an unguarded access-required page are implemented. Data-dependent routes use request-time SSR rather than build-time prerendering so production builds do not require a live backend. Secure/demo navigation has router tests; provider login integration remains unfinished.
 
-The target enterprise experience adds workforce analytics, document/knowledge administration, reports, notifications, AI operations, system health, and administration screens. A consistent sidebar/top-bar layout, dark/light theme, accessible dialogs, skeletons, confirmation flows and responsive states need systematic completion and visual verification. Existing SSR prerendering can attempt unavailable backend calls during builds; this behavior needs correction.
+The target enterprise experience adds workforce analytics, document/knowledge administration, reports, notifications, AI operations, system health, and administration screens. A consistent sidebar/top-bar layout, dark/light theme, accessible dialogs, skeletons, confirmation flows and responsive states need systematic completion and visual verification. Data-dependent routes now use request-time SSR instead of build-time prerendering so frontend builds do not require a live backend.
 
 Screenshot capture is pending. No placeholder screenshot is presented as a working screen.
 
@@ -365,7 +365,7 @@ backend/spring-boot-app/
     api/                     # Controllers, configuration, agent, API DTOs/errors
     dto/ mapper/ model/ repository/ security/ service/
   src/main/resources/
-    db/migration/            # V1 through V4
+    db/migration/            # V1 through V6
     application.properties
     application-local.properties
     application-secure.properties
@@ -395,6 +395,7 @@ documents/hr-policies/
 docs/
   ai/
   ml/
+  notifications/              # Versioned event envelope and producer boundary
   security/
   decisions/
 Dockerfile                   # Older root ML packaging definition
@@ -414,6 +415,8 @@ Spring is the application-facing API. FastAPI is an internal inference boundary 
 | GET / PUT / DELETE | `/api/employees/{id}` | Detail/update/delete |
 | GET | `/api/employees/search?query=...&department=...&page=0&size=20&sortBy=name&sortDirection=ASC` | Paged directory |
 | GET | `/api/dashboard/summary` | Workforce summary |
+| GET / POST | `/api/notifications`, `/api/notifications/{id}/read` | Tenant/subject-scoped notification list and read state |
+| GET | `/api/notifications/stream` | Bounded SSE stream with `Last-Event-ID` reconnect cursor |
 | POST | `/api/ml/predict` | Attrition proxy |
 | POST | `/api/ml/predict/salary` | Salary proxy |
 | POST | `/api/ml/predict/performance` | Performance proxy |
@@ -511,7 +514,7 @@ FastAPI normally exposes `/docs` when startup succeeds. Springdoc is declared fo
 | Database | PostgreSQL 17 with pgvector and a dedicated development database |
 | AI runtime | Ollama with `llama3.2` and `nomic-embed-text`, for AI flows only |
 | Containers | Docker Engine/Desktop and Compose v2, if using the local database container |
-| Kafka / Redis | Not currently required or configured; no startup step yet |
+| Kafka / Redis | Kafka and Redis are optional and not part of the default startup stack; notification consumer and dashboard cache require explicit configuration |
 
 **Known gate:** do not treat these commands as a verified full-stack quickstart. Flyway startup wiring, V1–V4 and a V3-to-V4 fixture upgrade now pass integration tests. Before migrating an existing deployment, back up the database and inspect its actual schema and Flyway history, especially if tables were previously created outside Flyway. The existing local employee database was not migrated by these tests. Do not work around mismatches with `ddl-auto=update`, disabled validation, an arbitrary baseline, or edits to applied migrations.
 
@@ -719,8 +722,8 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 5. **Model registry is static:** it omits salary and does not implement deployment approvals, rollback or monitoring.
 6. **Model limitations:** synthetic data, potential feature-timing leakage, bias/proxy risks, uncalibrated scores, and no external validity guarantee. Artifact metadata is not a substitute for validation.
 7. **RAG/agent/MCP integration remains partial:** no complete prompt-injection defense, retrieval evaluation, document versioning, tool identity propagation or full workflow trace.
-8. **Deployment is unfinished:** the health-check path/tooling is corrected in configuration; development credential fallbacks, incomplete container hardening and no verified complete Compose stack remain.
-9. **Advanced platform capabilities remain planned:** Kafka, Redis, GraphQL, gRPC, real-time alerts, reports, telemetry stack and CI/CD security gates.
+8. **Deployment is unfinished:** the health-check path/tooling is corrected in configuration; development credential fallbacks, incomplete container hardening and no verified complete Compose stack remain. Kubernetes actuator probes now target the separate management port, but cluster rollout is unverified.
+9. **Advanced platform capabilities remain partial or planned:** Kafka broker/DLQ operations, GraphQL, gRPC, reports, telemetry dashboards and release security gates remain incomplete. The outbox, notification contract, consumer deduplication and SSE backend foundation exist.
 10. **Testing is not comprehensive:** no demonstrated E2E/Testcontainers suite or measured 80% coverage. Historical passing tests do not override current defects.
 
 ## Implementation Status
@@ -746,19 +749,20 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 | Hybrid retrieval and retrieval evaluation | PLANNED |
 | Tool-using agent and secure MCP integration | IN PROGRESS |
 | Redis cache/rate limiting | PLANNED |
-| Kafka events/outbox/retry/DLQ/idempotency | PLANNED |
+| Kafka events/outbox/retry/DLQ/idempotency | IN PROGRESS |
 | Reports and human-review workflow | PLANNED |
-| Real-time notifications | PLANNED |
+| Notification persistence, contract, consumer deduplication and SSE cursor backend | IN PROGRESS |
+| Angular notification UI and real domain notification producers | PLANNED |
 | Complete enterprise UI / theme / accessibility verification | IN PROGRESS |
 | GraphQL / justified internal gRPC | PLANNED |
 | Comprehensive resilience and telemetry | PLANNED |
 | Unit tests and selected API tests | IMPLEMENTED |
 | Database/security/E2E test coverage | IN PROGRESS |
 | Testcontainers suites | PLANNED |
-| DevSecOps CI quality gates | IN PROGRESS |
+| DevSecOps CI and security scanning workflows | IN PROGRESS |
 | Release/deployment security pipeline | IN PROGRESS |
 | Full Docker deployment | IN PROGRESS |
-| Kubernetes manifests/readiness validation | PLANNED |
+| Kubernetes manifests/rendering and management-port probes | IN PROGRESS |
 | Architecture/security/interview documentation | IN PROGRESS |
 
 ### Documentation maintenance contract

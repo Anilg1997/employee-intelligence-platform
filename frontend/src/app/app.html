@@ -22,7 +22,11 @@
 
       <div class="header-status" aria-label="Workspace status">
         <span class="status-indicator" aria-hidden="true"></span>
-        <span>Workspace online</span>
+        @if (auth.state().demo) { <span>Demo workspace</span> } @else {
+          <span>{{ auth.state().authenticated ? 'Authenticated workspace' : 'Session required' }}</span>
+          @if (auth.state().authenticated) { <button class="sign-out" type="button" (click)="signOut()">Sign out</button> }
+        }
+        @if (auth.state().authenticated || auth.state().demo) { <app-notification-panel /> }
       </div>
     </div>
 
@@ -59,6 +63,7 @@
       @if (policy.canViewAudit()) {
         <a routerLink="/audit" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()"><span class="nav-icon" aria-hidden="true">▤</span><span>Audit events</span></a>
       }
+      <a routerLink="/notifications" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()"><span class="nav-icon" aria-hidden="true">◌</span><span>Notifications</span></a>
     </nav>
   </header>
 

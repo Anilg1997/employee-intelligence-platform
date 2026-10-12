@@ -56,7 +56,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/agent/ask", "/api/rag/ask", "/api/ai/chat")
                         .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
                         .requestMatchers("/api/audit/**", "/api/rag/ingestion/**", "/api/rag/documents/**")
-                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN")
+                         .hasAnyRole("SUPER_ADMIN", "HR_ADMIN")
+                        .requestMatchers("/api/notifications/**")
+                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions.accessDeniedHandler((request, response, denied) -> {
                     AuditService service = audit.getIfAvailable();

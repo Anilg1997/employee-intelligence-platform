@@ -46,7 +46,7 @@ describe('auth navigation', () => {
     await harness.navigateByUrl(url);
     expect(router.url).toBe('/access-required');
     expect(harness.routeNativeElement?.textContent).toContain('Access required');
-    expect(harness.routeNativeElement?.textContent).toContain('Sign-in is not yet integrated');
+    expect(harness.routeNativeElement?.textContent).toContain('Sign-in is not configured');
   });
 
   it('allows the access-required page to be opened directly', async () => {
