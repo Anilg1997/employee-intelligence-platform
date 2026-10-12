@@ -1,11 +1,11 @@
 package com.employeeintelligence.api.controller;
 
 import com.employeeintelligence.api.dto.RagResponse;
+import com.employeeintelligence.api.dto.RagQuestionRequest;
 import com.employeeintelligence.api.service.RagService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-
-import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/rag")
@@ -19,11 +19,7 @@ public class RagController {
 
     @PostMapping("/ask")
     @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
-    public RagResponse ask(
-            @RequestBody Map<String, String> request) {
-
-        String question = request.get("question");
-
-        return ragService.ask(question);
+    public RagResponse ask(@Valid @RequestBody RagQuestionRequest request) {
+        return ragService.ask(request.question());
     }
 }
