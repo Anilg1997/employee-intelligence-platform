@@ -650,7 +650,9 @@ The backend Compose probe uses `/actuator/health/readiness` with a bounded `curl
 
 Workflow: [`.github/workflows/ci.yml`](.github/workflows/ci.yml). It does not claim SonarQube, SAST, SCA, DAST, container scanning, deployment, or coverage enforcement; those remain planned additions.
 
-Target quality gates: practical module-level coverage toward 80%, no leaked secrets, and no unreviewed critical dependency, SAST, or container findings. These are goals, not measured results. DAST must target an authorized disposable environment, never an arbitrary public service. Production deployment and cloud credentials require explicit setup and approval.
+The repository now includes `.github/workflows/security.yml` with CodeQL for Java/TypeScript/Python, Gitleaks secret scanning, Python `pip-audit`, npm audit, and Trivy configuration scanning. These jobs run on pushes/PRs and weekly, but their results depend on GitHub Actions execution and dependency advisories; no passing run is claimed from this local session.
+
+Target quality gates: practical module-level coverage toward 80%, no leaked secrets, and no unreviewed critical dependency, SAST, or container findings. These are goals, not measured results. DAST and built-image scanning still require an authorized disposable deployment/runner. Production deployment and cloud credentials require explicit setup and approval.
 
 ## Security Testing
 
@@ -754,7 +756,7 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 | Database/security/E2E test coverage | IN PROGRESS |
 | Testcontainers suites | PLANNED |
 | DevSecOps CI quality gates | IN PROGRESS |
-| Release/deployment security pipeline | PLANNED |
+| Release/deployment security pipeline | IN PROGRESS |
 | Full Docker deployment | IN PROGRESS |
 | Kubernetes manifests/readiness validation | PLANNED |
 | Architecture/security/interview documentation | IN PROGRESS |
