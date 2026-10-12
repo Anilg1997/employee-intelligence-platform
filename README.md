@@ -636,9 +636,9 @@ Compose currently defines PostgreSQL/pgvector, FastAPI, and Spring Boot. Angular
 docker compose up --build
 ```
 
-The backend Dockerfile uses a Java 21 multi-stage build and non-root runtime. ML uses Python 3.12 slim but does not yet configure a non-root user. The root Dockerfile is an older ML packaging path; Compose uses `ml-service/Dockerfile`.
+The backend Dockerfile uses a Java 21 multi-stage build and non-root runtime. The ML image uses Python 3.12 slim and a non-root `appuser`; Compose uses `ml-service/Dockerfile`.
 
-The backend Compose probe now uses `/api/health` with a bounded `curl` request; the runtime Dockerfile explicitly installs curl. `docker compose config --quiet` passed, but Docker Engine was unavailable for image/runtime checks. Committed development credential fallbacks are not production-safe. A passing configuration or image build is not a passing deployment test. Do not publish `docker compose config` output when it contains resolved secrets.
+The backend Compose probe uses `/actuator/health/readiness` with a bounded `curl` request; the ML probe uses `/ready`. `docker compose config --quiet` passed, but Docker Engine was unavailable for image/runtime checks. Committed development credential fallbacks are not production-safe. A passing configuration or image build is not a passing deployment test. Do not publish `docker compose config` output when it contains resolved secrets.
 
 ## Kubernetes
 
