@@ -41,7 +41,7 @@ The platform brings those concerns into a common workflow: find an employee, ins
 | HR Knowledge Assistant / RAG | IN PROGRESS | Document ingestion, semantic retrieval, answer/source contract; live and security validation remain |
 | Agentic AI | IN PROGRESS | LangChain4j tool registration and agent endpoint |
 | MCP | IN PROGRESS | Four tool definitions; secure identity propagation and runtime verification remain |
-| AI Reports / Real-Time Alerts | IN PROGRESS | Persisted notification/SSE foundation and event contract exist; report workflow, domain producers and Angular notification UI remain |
+| AI Reports / Real-Time Alerts | IN PROGRESS | Persisted notification/SSE foundation, event contract, Angular notification panel/page, and read-state flow exist; report workflow and real domain producers remain |
 | Audit | IN PROGRESS | Selected events, persistence, paged reads and UI; coverage/durability incomplete |
 | AI Governance | IN PROGRESS | Version/limitation metadata and decision-support disclosures; review/override workflow planned |
 
@@ -136,7 +136,7 @@ GraphQL, gRPC, Grafana, Testcontainers, and full release security gates remain t
 | Spring Boot process | Employee lifecycle, summary analytics, authorization, ML proxy, risk, RAG, agent, audit and notification modules | `/api/employees`, `/api/dashboard`, `/api/ml`, `/api/ai`, `/api/rag`, `/api/agent`, `/api/audit`, `/api/notifications` | PostgreSQL `employee`, `rag_documents`, `audit_events`, `outbox_events`, `notifications` | Audit outbox plus versioned notification envelope; no current risk/report producers | PostgreSQL/pgvector, FastAPI, Ollama |
 | FastAPI process | Prediction inference and model loading | `/predict` and salary/performance/promotion variants | Files in `ml-service/models/` | None | Python ML stack and compatible artifacts |
 | MCP process | Expose selected backend capabilities to MCP clients | Streamable HTTP tools on port 8001 | None owned | None | MCP SDK and Spring API |
-| Angular application | Workforce navigation, forms, tables and intelligence screens | Consumes Spring REST APIs | Browser auth state; no business database | Notification UI/SSE client not implemented yet | Spring API |
+| Angular application | Workforce navigation, forms, tables, intelligence screens, and notification UI | Consumes Spring REST APIs and the notification SSE stream | Browser auth state; no business database | Notification panel/page, read-state actions, and reconnecting SSE client | Spring API |
 
 Gateway/BFF, identity integration, reporting, knowledge, AI orchestration, analytics, notification, and audit service extraction are incremental design options. Extraction requires ownership, load, or deployment independence to justify the operational cost.
 
@@ -280,7 +280,7 @@ Employee history, optimistic locking, database-side dashboard aggregation, data 
 
 ## Real-Time Architecture
 
-**IN PROGRESS.** An approved versioned event can flow through Kafka to an authorized notification consumer, persist under tenant/recipient/source-event uniqueness, and be delivered through bounded SSE polling with individual event IDs and `Last-Event-ID` reconnect support. Authorization scopes reads and subscriptions to the authenticated tenant and subject; raw employee data is not broadcast. The Angular notification screen and real risk/report event producers are not yet delivered.
+**IN PROGRESS.** An approved versioned event can flow through Kafka to an authorized notification consumer, persist under tenant/recipient/source-event uniqueness, and be delivered through bounded SSE polling with individual event IDs and `Last-Event-ID` reconnect support. Authorization scopes reads and subscriptions to the authenticated tenant and subject; raw employee data is not broadcast. The Angular notification screen, compact header panel, read-state actions, and reconnecting SSE client are delivered. Real risk, prediction, and report event producers remain unfinished.
 
 ## Observability
 
@@ -313,7 +313,7 @@ Core employee operations should remain available when optional AI services fail;
 | Infrastructure | Docker/Compose definitions and rendered Kubernetes baseline | Testcontainers PostgreSQL/pgvector, Kafka/Redis integration tests and runtime deployment verification |
 | AI/MCP | Tool/retrieval code and manual client scripts | Automated injection, retrieval quality, tool authorization and multi-step agent tests |
 
-Latest local evidence (12 October 2026): backend **73 tests passed**, including application-context startup after Flyway V6, migration upgrade coverage, notification contract/consumer tests, PostgreSQL tenant/recipient isolation, duplicate ingestion, rollback visibility, SSE cursor replay and connection-boundary tests. The integration test requires reachable PostgreSQL/pgvector and creates isolated schemas; it mocks chat/agent and OIDC boundaries and is not a live Ollama/Kafka smoke test. ML **106 tests passed** with one pytest-asyncio deprecation warning. Frontend **41 tests across 17 files passed** and its production build completed after data-dependent routes were changed to request-time SSR rather than build-time prerendering. Compose configuration validation and Kubernetes manifest rendering passed; Docker image build/runtime health and cluster rollout were not verified. No CI badge, coverage percentage, or passing E2E claim is provided.
+Latest local evidence (12 October 2026): backend **76 tests passed**, including application-context startup after Flyway V6, migration upgrade coverage, notification contract/consumer tests, PostgreSQL tenant/recipient isolation, duplicate ingestion, rollback visibility, SSE cursor replay and connection-boundary tests. The integration test requires reachable PostgreSQL/pgvector and creates isolated schemas; it mocks chat/agent and OIDC boundaries and is not a live Ollama/Kafka smoke test. ML **106 tests passed** with one pytest-asyncio deprecation warning. Frontend **49 tests across 20 files passed** and its production build completed after data-dependent routes were changed to request-time SSR rather than build-time prerendering. Compose configuration validation and Kubernetes manifest rendering passed; Docker image build/runtime health and cluster rollout were not verified. No CI badge, coverage percentage, or passing E2E claim is provided.
 
 Commands from the respective project folders:
 
@@ -752,7 +752,8 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 | Kafka events/outbox/retry/DLQ/idempotency | IN PROGRESS |
 | Reports and human-review workflow | PLANNED |
 | Notification persistence, contract, consumer deduplication and SSE cursor backend | IN PROGRESS |
-| Angular notification UI and real domain notification producers | PLANNED |
+| Angular notification UI | IMPLEMENTED |
+| Real risk, prediction, and report notification producers | PLANNED |
 | Complete enterprise UI / theme / accessibility verification | IN PROGRESS |
 | GraphQL / justified internal gRPC | PLANNED |
 | Comprehensive resilience and telemetry | PLANNED |
