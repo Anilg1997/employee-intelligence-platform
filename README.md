@@ -425,7 +425,7 @@ Spring is the application-facing API. FastAPI is an internal inference boundary 
 | POST / GET | `/api/rag/documents`, `/api/rag/documents/search` | Document insertion/vector search |
 | POST | `/api/rag/ask` | Grounded HR question; blank or over-2000-character questions are rejected |
 | POST | `/api/agent/ask` | Tool-using agent question |
-| POST | `/api/ai/chat` | General AI chat path |
+| POST | `/api/ai/chat` | General AI chat path; blank or over-2000-character messages are rejected |
 | GET | `/api/audit/events` | Filtered/paged audit reads |
 | GET | `/api/health` | Basic health response |
 
