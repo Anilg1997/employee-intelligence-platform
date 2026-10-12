@@ -1,10 +1,9 @@
 import asyncio
 
-from mcp import ClientSession
-from mcp.client.streamable_http import streamable_http_client
-
-
 async def main():
+    from mcp import ClientSession
+    from mcp.client.streamable_http import streamable_http_client
+
     async with streamable_http_client(
         "http://127.0.0.1:8001/mcp"
     ) as (read_stream, write_stream):

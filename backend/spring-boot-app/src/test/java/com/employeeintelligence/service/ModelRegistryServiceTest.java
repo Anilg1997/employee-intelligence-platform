@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.employeeintelligence.api.dto.ModelMetadata;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,6 +74,17 @@ class ModelRegistryServiceTest {
         assertNull(models.get(0).version());
         assertEquals("UNAVAILABLE", models.get(1).status());
         assertEquals("UNAVAILABLE", models.get(3).status());
+    }
+
+    @Test
+    void returnsStableAndDefensivelyImmutableMetadata() throws Exception {
+        Path directory = Files.createTempDirectory("model-registry-immutable");
+        write(directory, "employee_attrition_model.json", "{\"metadata\":{\"model_version\":\"v1\",\"algorithm\":\"lr\",\"metrics\":{\"z\":1,\"a\":2}}}");
+
+        ModelMetadata metadata = new ModelRegistryService(mapper, directory).list().get(0);
+        assertEquals(List.of("a", "z"), metadata.metrics().keySet().stream().toList());
+        assertThrows(UnsupportedOperationException.class, () -> metadata.metrics().put("new", 1));
+        assertThrows(UnsupportedOperationException.class, () -> metadata.limitations().add("new"));
     }
 
     private static void write(Path directory, String fileName, String contents) throws Exception {
