@@ -99,11 +99,9 @@ class EmployeeServiceTest {
         when(employeeRepository.findByIdAndTenantId(1L, "demo"))
                 .thenReturn(Optional.of(employee));
 
-        Optional<Employee> result =
-                employeeService.getEmployeeById(1L);
+        Employee result = employeeService.getEmployeeById(1L);
 
-        assertTrue(result.isPresent());
-        assertEquals("Anil", result.get().getName());
+        assertEquals("Anil", result.getName());
 
         verify(employeeRepository).findByIdAndTenantId(1L, "demo");
     }

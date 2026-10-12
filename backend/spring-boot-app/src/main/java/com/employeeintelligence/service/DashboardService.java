@@ -32,12 +32,24 @@ public class DashboardService {
                         .filter(department -> department != null && !department.isBlank())
                         .collect(Collectors.groupingBy(
                                 Function.identity(),
-                                Collectors.counting()
-                        ));
+                                 Collectors.counting()
+                         ));
+
+        long labeled = employees.stream().filter(e -> e.getAttrition() != null && !e.getAttrition().isBlank()).count();
+        long attritionCount = employees.stream().filter(e -> "yes".equalsIgnoreCase(e.getAttrition())).count();
+        Double attritionRate = labeled == 0 ? null : (double) attritionCount / labeled;
+        Double averageAge = average(employees.stream().map(Employee::getAge).toList());
+        Double averageMonthlyIncome = average(employees.stream().map(Employee::getMonthlyIncome).toList());
 
         return new DashboardResponse(
                 employees.size(),
-                departmentStatistics
+                departmentStatistics, labeled, attritionCount, attritionRate,
+                averageAge, averageMonthlyIncome
         );
+    }
+
+    private static Double average(java.util.List<Integer> values) {
+        return values.stream().filter(java.util.Objects::nonNull).mapToInt(Integer::intValue).average()
+                .stream().boxed().findFirst().orElse(null);
     }
 }

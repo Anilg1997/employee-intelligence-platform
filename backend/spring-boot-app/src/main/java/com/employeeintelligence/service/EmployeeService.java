@@ -45,8 +45,11 @@ public class EmployeeService {
         String property = sortBy == null ? "name" : SORTABLE_FIELDS.getOrDefault(sortBy, "name");
         Sort.Direction direction = "DESC".equalsIgnoreCase(sortDirection)
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(normalizedPage, normalizedSize,
-                Sort.by(direction, property));
+        Sort sort = Sort.by(direction, property);
+        if (!"id".equals(property)) {
+            sort = sort.and(Sort.by(Sort.Direction.ASC, "id"));
+        }
+        Pageable pageable = PageRequest.of(normalizedPage, normalizedSize, sort);
         Page<Employee> result = employeeRepository.search(tenantContext.currentTenantId(), normalize(query), normalize(department), pageable);
         return new EmployeePageResponse(result.getContent().stream().map(EmployeeMapper::toResponse).toList(),
                 result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
@@ -75,9 +78,10 @@ public class EmployeeService {
         employee.setTenantId(tenantContext.currentTenantId());
         return employeeRepository.save(employee);
     }
-    public Optional<Employee> getEmployeeById(Long id) {
-    return employeeRepository.findByIdAndTenantId(id, tenantContext.currentTenantId());
-}
+    public Employee getEmployeeById(Long id) {
+        return employeeRepository.findByIdAndTenantId(id, tenantContext.currentTenantId())
+                .orElseThrow(() -> new EmployeeNotFoundException(id));
+    }
  @CacheEvict(cacheNames = "dashboard", keyGenerator = "tenantCacheKeyGenerator")
  public Employee updateEmployee(Long id, Employee updatedEmployee) {
 

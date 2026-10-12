@@ -19,6 +19,12 @@
     <div class="prediction-result" [class.risk]="prediction.attrition_prediction === 'Yes'">
       <strong>{{ prediction.attrition_prediction === 'Yes' ? 'Higher risk' : 'Lower risk' }}</strong>
       <span>{{ (prediction.attrition_probability * 100).toFixed(1) }}% probability</span>
+      @if (prediction.model_version) { <small>Model: {{ prediction.model_version }}</small> }
+      @if (prediction.decision_threshold != null) { <small>Decision threshold: {{ (prediction.decision_threshold * 100).toFixed(0) }}%</small> }
+      @if (prediction.dataset) { <small>Training data: {{ prediction.dataset }}</small> }
+      @if (prediction.limitations?.length) {
+        <div class="limitations"><strong>Limitations</strong><ul>@for (limitation of prediction.limitations; track limitation) { <li>{{ limitation }}</li> }</ul></div>
+      }
     </div>
   }
 

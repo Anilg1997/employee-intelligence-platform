@@ -70,7 +70,10 @@ class MlPredictionServiceTest {
                                 """
                                 {
                                     "attrition_prediction": "Yes",
-                                    "attrition_probability": 0.6553
+                                     "attrition_probability": 0.6553,
+                                     "model_version": "attrition-service-current",
+                                     "decision_threshold": 0.55,
+                                     "limitations": ["Probability is not calibrated certainty."]
                                 }
                                 """,
                                 MediaType.APPLICATION_JSON
@@ -89,6 +92,9 @@ class MlPredictionServiceTest {
                 response.getAttrition_probability(),
                 0.0001
         );
+        assertEquals("attrition-service-current", response.getModel_version());
+        assertEquals(0.55, response.getDecision_threshold(), 0.0001);
+        assertEquals(1, response.getLimitations().size());
 
         server.verify();
     }

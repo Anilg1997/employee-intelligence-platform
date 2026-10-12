@@ -38,6 +38,21 @@
         <span class="metric-caption">With directory records</span>
       </article>
       <article class="metric-card">
+        <span class="metric-label">Recorded attrition rate</span>
+        <strong>{{ dashboard.attritionRate != null ? (dashboard.attritionRate * 100 | number:'1.0-1') + '%' : '—' }}</strong>
+        <span class="metric-caption">{{ dashboard.attritionLabeledEmployees != null ? dashboard.attritionLabeledEmployees : '—' }} labeled records</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Average age</span>
+        <strong>{{ dashboard.averageAge != null ? (dashboard.averageAge | number:'1.0-1') : '—' }}</strong>
+        <span class="metric-caption">Available employee records</span>
+      </article>
+      <article class="metric-card">
+        <span class="metric-label">Average monthly income</span>
+        <strong>{{ dashboard.averageMonthlyIncome != null ? (dashboard.averageMonthlyIncome | number:'1.0-0') : '—' }}</strong>
+        <span class="metric-caption">Available employee records</span>
+      </article>
+      <article class="metric-card">
         <span class="metric-label">Largest department</span>
         <strong>{{ largestDepartment?.name || '—' }}</strong>
         <span class="metric-caption">{{ largestDepartment ? (largestDepartment.count + ' employees') : 'No department data' }}</span>
@@ -89,7 +104,7 @@
       </section>
     }
 
-    <p class="data-note"><strong>Data scope:</strong> This view reflects the employee directory summary currently returned by the platform. Trends, attrition risk, and other workforce signals are not included in this snapshot.</p>
+    <p class="data-note"><strong>Data scope:</strong> Attrition rate uses only records with a stored attrition label; averages use non-empty values. It describes this directory snapshot and is not a forecast.</p>
   }
 
   @if (!loading && !errorMessage && !dashboard) {

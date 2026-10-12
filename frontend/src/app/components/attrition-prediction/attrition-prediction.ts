@@ -54,7 +54,9 @@ export class AttritionPrediction implements OnInit {
       },
       error: error => {
         console.error('Failed to predict attrition:', error);
-        this.errorMessage = 'Prediction failed. Check that both backend services are running.';
+        this.errorMessage = error?.status === 503
+          ? 'The attrition model is currently unavailable. Try again later.'
+          : 'Prediction failed. Check that both backend services are running and the employee data is valid.';
         this.loading = false;
       }
     });

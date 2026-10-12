@@ -65,7 +65,7 @@
       </section>
 
       <section class="profile-card intelligence-card">
-        <div class="card-heading"><div><p class="eyebrow">03 · Model signal</p><h2>ML intelligence</h2></div><span class="model-badge">Attrition model</span></div>
+        <div class="card-heading"><div><p class="eyebrow">03 · Model signal</p><h2>Employee 360 intelligence</h2></div><span class="model-badge">Live risk APIs</span></div>
         @if (riskLoading) {
           <div class="risk-state" aria-live="polite"><span class="spinner" aria-hidden="true"></span><strong>Assessing attrition risk</strong><p>Generating the latest risk signal for this employee.</p></div>
         } @else if (riskErrorMessage) {
@@ -76,6 +76,22 @@
             <div><span class="risk-label">Model prediction</span><strong>{{ riskAssessment.prediction }}</strong></div>
             <div><span class="risk-label">Probability</span><strong>{{ (riskAssessment.probability * 100).toFixed(2) }}%</strong></div>
           </div>
+        }
+        @if (summaryLoading) {
+          <div class="risk-state" aria-live="polite"><strong>Building employee 360 summary</strong><p>Combining current attrition, performance, and promotion signals.</p></div>
+        } @else if (summaryErrorMessage) {
+          <div class="risk-state risk-error" role="alert"><strong>360 summary unavailable</strong><p>{{ summaryErrorMessage }}</p></div>
+        } @else if (riskSummary) {
+          <div class="risk-result risk-summary-result">
+            <div><span class="risk-label">Overall risk</span><strong>{{ (riskSummary.overallRisk * 100).toFixed(1) }}%</strong></div>
+            <div><span class="risk-label">Performance risk</span><strong>{{ (riskSummary.performanceRisk * 100).toFixed(1) }}%</strong></div>
+            <div><span class="risk-label">Promotion readiness</span><strong>{{ (riskSummary.promotionReadiness * 100).toFixed(1) }}%</strong></div>
+          </div>
+          @if (riskSummary.limitations.length) {
+            <ul class="risk-limitations">
+              @for (limitation of riskSummary.limitations; track limitation) { <li>{{ limitation }}</li> }
+            </ul>
+          }
         }
       </section>
 

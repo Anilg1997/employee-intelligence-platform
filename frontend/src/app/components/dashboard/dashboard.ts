@@ -8,6 +8,11 @@ export interface DashboardResponse {
   departmentStatistics: {
     [department: string]: number;
   };
+  attritionLabeledEmployees?: number;
+  attritionCount?: number;
+  attritionRate?: number | null;
+  averageAge?: number | null;
+  averageMonthlyIncome?: number | null;
 }
 
 export interface DepartmentSummary {

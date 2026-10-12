@@ -4,25 +4,30 @@ import { Observable, Subject, of, throwError } from 'rxjs';
 import { EmployeeProfile } from './employee-profile';
 import { EmployeeService } from '../../services/employee';
 import { EmployeeAiService } from '../../services/employee-ai.service';
+import { RiskIntelligenceService } from '../../services/risk-intelligence';
 
 describe('EmployeeProfile', () => {
   let fixture: ComponentFixture<EmployeeProfile>;
   let component: EmployeeProfile;
   let employeeService: { getEmployeeById: ReturnType<typeof vi.fn> };
   let aiService: { assessRisk: ReturnType<typeof vi.fn> };
+  let riskService: { getSummary: ReturnType<typeof vi.fn> };
 
   const employee = { id: 7, name: 'Ada Lovelace', department: 'Research & Development', jobRole: 'Engineer', age: 35 };
   const risk = { employeeId: 7, prediction: 'Likely to stay', probability: 0.12, riskLevel: 'Low Risk' };
+  const summary = { employeeId: 7, attritionRisk: 0.12, performanceRisk: 0.2, promotionReadiness: 0.8, overallRisk: 0.17, promotionTargetType: 'promotion', modelVersions: {}, limitations: ['Decision-support only'] };
 
-  async function setup(employeeResult: Observable<typeof employee> = of(employee), riskResult: Observable<typeof risk> = of(risk)) {
+  async function setup(employeeResult: Observable<typeof employee> = of(employee), riskResult: Observable<typeof risk> = of(risk), summaryResult: Observable<typeof summary> = of(summary)) {
     employeeService = { getEmployeeById: vi.fn(() => employeeResult) };
     aiService = { assessRisk: vi.fn(() => riskResult) };
+    riskService = { getSummary: vi.fn(() => summaryResult) };
     await TestBed.configureTestingModule({
       imports: [EmployeeProfile],
       providers: [
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '7' } } } },
         { provide: EmployeeService, useValue: employeeService },
         { provide: EmployeeAiService, useValue: aiService }
+        ,{ provide: RiskIntelligenceService, useValue: riskService }
       ]
     }).compileComponents();
     fixture = TestBed.createComponent(EmployeeProfile);
@@ -34,7 +39,9 @@ describe('EmployeeProfile', () => {
     expect(fixture.nativeElement.textContent).toContain('Ada Lovelace');
     expect(fixture.nativeElement.textContent).toContain('Personal & employment');
     expect(fixture.nativeElement.textContent).toContain('Compensation & performance');
-    expect(fixture.nativeElement.textContent).toContain('ML intelligence');
+    expect(fixture.nativeElement.textContent).toContain('Employee 360 intelligence');
+    expect(fixture.nativeElement.textContent).toContain('Employee 360 intelligence');
+    expect(fixture.nativeElement.textContent).toContain('Overall risk');
     expect(fixture.nativeElement.textContent).toContain('Timeline & audit');
     expect(fixture.nativeElement.textContent).toContain('Not yet available');
     expect(aiService.assessRisk).toHaveBeenCalledWith(7);
@@ -56,5 +63,11 @@ describe('EmployeeProfile', () => {
     await setup(of(employee), throwError(() => new Error('offline'))); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Ada Lovelace');
     expect(fixture.nativeElement.textContent).toContain('Risk assessment unavailable');
+  });
+
+  it('shows the employee profile when the 360 summary is unavailable', async () => {
+    await setup(of(employee), of(risk), throwError(() => new Error('offline'))); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Ada Lovelace');
+    expect(fixture.nativeElement.textContent).toContain('360 summary unavailable');
   });
 });

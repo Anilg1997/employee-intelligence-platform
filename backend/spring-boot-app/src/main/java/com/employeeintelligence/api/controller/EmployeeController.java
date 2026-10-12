@@ -53,13 +53,9 @@ public class EmployeeController {
     }
     @GetMapping("/{id}")
     @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
-public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long id) {
-
-    return employeeService.getEmployeeById(id)
-            .map(EmployeeMapper::toResponse)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
-}
+    public EmployeeResponse getEmployeeById(@PathVariable Long id) {
+      return EmployeeMapper.toResponse(employeeService.getEmployeeById(id));
+    }
 @PutMapping("/{id}")
  @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER')")
 public ResponseEntity<EmployeeResponse> updateEmployee(

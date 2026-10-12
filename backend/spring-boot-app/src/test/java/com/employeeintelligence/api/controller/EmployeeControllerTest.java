@@ -17,7 +17,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.Optional;
 import com.employeeintelligence.api.dto.EmployeePageResponse;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -97,8 +96,7 @@ class EmployeeControllerTest {
                         30
                 );
 
-        when(employeeService.getEmployeeById(1L))
-                .thenReturn(Optional.of(employee));
+        when(employeeService.getEmployeeById(1L)).thenReturn(employee);
 
         mockMvc.perform(get("/api/employees/1"))
                 .andExpect(status().isOk())
@@ -186,7 +184,7 @@ class EmployeeControllerTest {
     void shouldPreserveEveryResponseFieldOnListAndDetail() throws Exception {
         Employee employee = objectMapper.readValue(FULL_EMPLOYEE, Employee.class);
         when(employeeService.getEmployees()).thenReturn(List.of(employee));
-        when(employeeService.getEmployeeById(7L)).thenReturn(Optional.of(employee));
+        when(employeeService.getEmployeeById(7L)).thenReturn(employee);
 
         mockMvc.perform(get("/api/employees"))
                 .andExpect(status().isOk())
@@ -268,10 +266,11 @@ class EmployeeControllerTest {
 
     @Test
     void shouldReturnEmptyNotFoundForMissingDetail() throws Exception {
-        when(employeeService.getEmployeeById(99L)).thenReturn(Optional.empty());
+        when(employeeService.getEmployeeById(99L)).thenThrow(new EmployeeNotFoundException(99L));
         mockMvc.perform(get("/api/employees/99"))
                 .andExpect(status().isNotFound())
-                .andExpect(content().string(""));
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Employee not found with id: 99"));
     }
 
     @Test

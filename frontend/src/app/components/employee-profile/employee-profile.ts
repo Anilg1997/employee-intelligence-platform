@@ -7,6 +7,8 @@ import {
   AttritionRiskResponse,
   EmployeeAiService
 } from '../../services/employee-ai.service';
+import { RiskIntelligenceService } from '../../services/risk-intelligence';
+import { RiskSummary } from '../../models/risk-summary';
 
 @Component({
   selector: 'app-employee-profile',
@@ -18,16 +20,20 @@ import {
 export class EmployeeProfile implements OnInit {
   employee: Employee | null = null;
   riskAssessment: AttritionRiskResponse | null = null;
+  riskSummary: RiskSummary | null = null;
   loading = true;
   riskLoading = false;
   errorMessage = '';
   notFound = false;
   riskErrorMessage = '';
+  summaryLoading = false;
+  summaryErrorMessage = '';
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly employeeService: EmployeeService,
-    private readonly employeeAiService: EmployeeAiService
+    private readonly employeeAiService: EmployeeAiService,
+    private readonly riskIntelligenceService: RiskIntelligenceService
   ) {}
 
   ngOnInit(): void {
@@ -43,6 +49,7 @@ export class EmployeeProfile implements OnInit {
         this.employee = employee;
         this.loading = false;
         this.loadRisk(id);
+        this.loadRiskSummary(id);
       },
       error: (error: { status?: number }) => {
         this.loading = false;
@@ -51,6 +58,18 @@ export class EmployeeProfile implements OnInit {
         } else {
           this.errorMessage = 'Unable to load this employee profile.';
         }
+      }
+    });
+  }
+
+  private loadRiskSummary(id: number): void {
+    this.summaryLoading = true;
+    this.summaryErrorMessage = '';
+    this.riskIntelligenceService.getSummary(id).subscribe({
+      next: (summary) => { this.riskSummary = summary; this.summaryLoading = false; },
+      error: () => {
+        this.summaryLoading = false;
+        this.summaryErrorMessage = 'Employee 360 risk summary is currently unavailable.';
       }
     });
   }
