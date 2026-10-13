@@ -8,6 +8,7 @@ import com.employeeintelligence.api.dto.PerformancePredictionResponse;
 import com.employeeintelligence.api.dto.PromotionPredictionResponse;
 import com.employeeintelligence.api.exception.MlServiceException;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -79,8 +80,34 @@ public class MlPredictionService {
     }
 
     public SalaryPredictionResponse predictSalary(SalaryPredictionRequest request) {
-        return restClient.post().uri("/predict/salary").contentType(MediaType.APPLICATION_JSON)
-                .body(request).retrieve().body(SalaryPredictionResponse.class);
+        try {
+            SalaryPredictionResponse response = restClient.post().uri("/predict/salary").contentType(MediaType.APPLICATION_JSON)
+                    .body(request).retrieve().body(SalaryPredictionResponse.class);
+            validateSalary(response);
+            return response;
+        } catch (RestClientException exception) {
+            throw new MlServiceException("Salary prediction service unavailable", exception);
+        }
+    }
+
+    private static void validateSalary(SalaryPredictionResponse response) {
+        if (response == null || response.getEstimated_monthly_income() == null
+                || !Double.isFinite(response.getEstimated_monthly_income())
+                || response.getEstimated_monthly_income() < 0 || isBlank(response.getModel_version())
+                || isBlank(response.getAlgorithm()) || isBlank(response.getDataset())
+                || isBlank(response.getTraining_provenance()) || response.getMetrics() == null
+                || !response.getMetrics().keySet().equals(Set.of("validation", "test")) || response.getLimitations() == null
+                || response.getLimitations().isEmpty()
+                || response.getLimitations().stream().anyMatch(item -> item == null || item.isBlank())) {
+            throw new MlServiceException("Invalid salary prediction response", null);
+        }
+        response.getMetrics().forEach((partition, values) -> {
+            if (isBlank(partition) || values == null || !values.keySet().equals(Set.of("mae", "rmse", "r2"))
+                    || values.values().stream().anyMatch(value -> value == null || !Double.isFinite(value))
+                    || values.get("mae") < 0 || values.get("rmse") < 0 || values.get("r2") > 1) {
+                throw new MlServiceException("Invalid salary prediction response metrics", null);
+            }
+        });
     }
 
     public PerformancePredictionResponse predictPerformance(Map<String, Object> request) {

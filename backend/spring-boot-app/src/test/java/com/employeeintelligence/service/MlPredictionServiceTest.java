@@ -4,6 +4,8 @@ import com.employeeintelligence.api.dto.MlPredictionRequest;
 import com.employeeintelligence.api.dto.MlPredictionResponse;
 import com.employeeintelligence.api.dto.PerformancePredictionResponse;
 import com.employeeintelligence.api.dto.PromotionPredictionResponse;
+import com.employeeintelligence.api.dto.SalaryPredictionRequest;
+import com.employeeintelligence.api.dto.SalaryPredictionResponse;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -114,6 +116,34 @@ class MlPredictionServiceTest {
         org.junit.jupiter.api.Assertions.assertThrows(
                 com.employeeintelligence.api.exception.MlServiceException.class,
                 () -> service.predict(new MlPredictionRequest()));
+        server.verify();
+    }
+
+    @Test
+    void shouldValidateSalaryMetadataAndUseDedicatedEndpoint() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("http://127.0.0.1:8000");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        MlPredictionService service = new MlPredictionService(builder.build());
+        server.expect(requestTo("http://127.0.0.1:8000/predict/salary")).andExpect(method(POST))
+                .andRespond(withSuccess("""
+                        {"estimated_monthly_income":5421.25,"model_version":"salary-regression-v2","algorithm":"random-forest-regressor","dataset":"IBM HR synthetic employee_data.csv","training_provenance":"trained_at_utc=2026-10-10;dataset_sha256=abc","metrics":{"validation":{"mae":1.0,"rmse":2.0,"r2":0.9},"test":{"mae":2.0,"rmse":3.0,"r2":-0.1}},"limitations":["Synthetic data only."]}
+                        """, MediaType.APPLICATION_JSON));
+        SalaryPredictionResponse response = service.predictSalary(new SalaryPredictionRequest());
+        assertEquals(5421.25, response.getEstimated_monthly_income());
+        assertEquals("salary-regression-v2", response.getModel_version());
+        assertEquals(2, response.getMetrics().size());
+        server.verify();
+    }
+
+    @Test
+    void shouldTranslateSalaryUpstreamErrors() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("http://127.0.0.1:8000");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        MlPredictionService service = new MlPredictionService(builder.build());
+        server.expect(requestTo("http://127.0.0.1:8000/predict/salary")).andRespond(
+                org.springframework.test.web.client.response.MockRestResponseCreators.withServerError());
+        org.junit.jupiter.api.Assertions.assertThrows(com.employeeintelligence.api.exception.MlServiceException.class,
+                () -> service.predictSalary(new SalaryPredictionRequest()));
         server.verify();
     }
 }

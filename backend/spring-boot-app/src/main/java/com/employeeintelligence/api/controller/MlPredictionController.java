@@ -49,7 +49,12 @@ public class MlPredictionController {
     @PostMapping("/predict/salary")
     @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
     public SalaryPredictionResponse predictSalary(@RequestBody @Valid SalaryPredictionRequest request) {
-        var response = mlPredictionService.predictSalary(request); auditService.record("ML_PREDICTION", "model", "salary", "SUCCESS", "prediction completed"); return response;
+        var response = mlPredictionService.predictSalary(request);
+        auditService.record("ML_PREDICTION", "model", "salary", "SUCCESS",
+                String.format(Locale.ROOT, "model_version=%s;algorithm=%s;dataset=%s;estimated_monthly_income=%.2f",
+                        response.getModel_version(), response.getAlgorithm(), response.getDataset(),
+                        response.getEstimated_monthly_income()));
+        return response;
     }
 
     @PostMapping("/predict/performance")

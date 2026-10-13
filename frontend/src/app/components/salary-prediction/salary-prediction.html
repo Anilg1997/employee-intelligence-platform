@@ -1,9 +1,38 @@
 <div class="prediction-container">
   <h2>Salary estimate</h2>
-  <p>Estimate monthly income from role and experience signals. This is a model estimate, not a compensation decision.</p>
-  <label for="salaryEmployee">Employee</label>
-  <select id="salaryEmployee" [(ngModel)]="selectedEmployeeId">@for (employee of employees; track employee.id) { <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option> }</select>
-  <button type="button" [disabled]="loading || !selectedEmployeeId" (click)="predict()">{{ loading ? 'Estimating...' : 'Estimate salary' }}</button>
-  @if (prediction) { <div class="prediction-result"><strong>{{ prediction.estimated_monthly_income.toFixed(2) }} dataset income units / month</strong><span>{{ prediction.algorithm }} · {{ prediction.model_version }}</span></div><p class="note">Synthetic-dataset demonstration only. Not validated for compensation or employment decisions; no calibrated confidence interval is available.</p> }
-  @if (errorMessage) { <p class="error">{{ errorMessage }}</p> }
+  <p>Estimate monthly income from role and experience signals.</p>
+  <div class="disclaimer" role="note"><strong>Decision support only.</strong> This model estimate is not a compensation recommendation and must not be used as the sole basis for an employment decision. Review context and apply consistent human judgment.</div>
+
+  @if (employeesLoading) {
+    <p class="status" role="status" aria-live="polite">Loading employees…</p>
+  } @else if (employeeErrorMessage) {
+    <div class="error" role="alert"><p>{{ employeeErrorMessage }}</p><button type="button" (click)="loadEmployees()">Try again</button></div>
+  } @else if (!employees.length) {
+    <p class="empty" role="status">No employees are available for salary prediction. Import an employee with the required model fields first.</p>
+  } @else {
+    <div class="form-row">
+      <label for="salaryEmployee">Employee</label>
+      <select id="salaryEmployee" [(ngModel)]="selectedEmployeeId" (ngModelChange)="clearPrediction()" [disabled]="predictionLoading" aria-describedby="salary-employee-help">
+        @for (employee of employees; track employee.id) { <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option> }
+      </select>
+      <small id="salary-employee-help">Predictions use only values currently stored for this employee. Missing fields are not replaced with defaults.</small>
+    </div>
+    <button class="primary-action" type="button" [disabled]="predictionLoading || selectedEmployeeId === null" (click)="predict()" [attr.aria-busy]="predictionLoading">{{ predictionLoading ? 'Estimating…' : 'Estimate salary' }}</button>
+  }
+
+  @if (predictionLoading) { <p class="status" role="status" aria-live="polite">Running the salary model…</p> }
+  @if (errorMessage) {
+    <div class="error" role="alert"><p>{{ errorMessage }}</p>@if (modelUnavailable) { <button type="button" (click)="predict()">Try again</button> }</div>
+    @if (missingFields.length) { <p class="missing-fields">Complete these employee fields before retrying: {{ missingFields.join(', ') }}.</p> }
+  }
+  @if (prediction) {
+    <section class="prediction-result" aria-labelledby="salary-result-heading" aria-live="polite">
+      <h3 id="salary-result-heading">Estimated monthly income</h3>
+      <p class="estimate"><strong>{{ prediction.estimated_monthly_income.toFixed(2) }}</strong> dataset income units / month</p>
+      <dl class="metadata"><div><dt>Algorithm</dt><dd>{{ prediction.algorithm || 'Not provided by API' }}</dd></div><div><dt>Model version</dt><dd>{{ prediction.model_version || 'Not provided by API' }}</dd></div>@if (prediction.dataset) { <div><dt>Dataset</dt><dd>{{ prediction.dataset }}</dd></div> }@if (prediction.training_provenance) { <div><dt>Training provenance</dt><dd>{{ prediction.training_provenance }}</dd></div> }</dl>
+      @if (prediction.metrics && metricEntries(prediction.metrics).length) { <div class="metrics"><h4>Evaluation metrics supplied by API</h4><dl class="metadata">@for (metric of metricEntries(prediction.metrics); track metric.name) { <div><dt>{{ metric.name }}</dt><dd>{{ metric.value }}</dd></div> }</dl></div> } @else { <p class="muted">The salary prediction API did not supply evaluation metrics for this estimate.</p> }
+      @if (prediction.limitations?.length) { <div class="limitations"><h4>API-supplied limitations</h4><ul>@for (limitation of prediction.limitations; track limitation) { <li>{{ limitation }}</li> }</ul></div> } @else { <div class="limitations"><h4>Known limitations</h4><ul><li>This endpoint returns a model estimate, not a validated compensation range or confidence interval.</li><li>The training data is synthetic and the API response does not include external or fairness validation.</li></ul><p class="muted">The API did not return additional limitation metadata.</p></div> }
+      <p class="result-disclaimer"><strong>Use with care:</strong> This output is not a fact about an employee or a recommendation to take action.</p>
+    </section>
+  }
 </div>

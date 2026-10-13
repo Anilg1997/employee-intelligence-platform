@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
 
 from .predict import predict_attrition, ModelUnavailable, load_attrition_model
@@ -7,6 +7,7 @@ from .salary_model import predict_salary, SalaryModelUnavailable
 from .performance_model import predict_performance, PerformanceModelUnavailable
 from .promotion_model import predict_promotion, PromotionModelUnavailable, load_promotion_model
 from .salary_model import load_salary_model
+from .salary_contract import SalaryPredictionResponse
 from .performance_model import load_performance_model
 
 app = FastAPI(
@@ -46,6 +47,7 @@ class AttritionPredictionResponse(BaseModel):
 
 
 class SalaryData(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
     Age: int = Field(..., ge=18, le=60); Department: Literal["Sales", "Research & Development", "Human Resources"]
     JobLevel: int = Field(..., ge=1, le=5); JobRole: Literal["Sales Executive", "Research Scientist", "Laboratory Technician", "Manufacturing Director", "Healthcare Representative", "Manager", "Sales Representative", "Research Director", "Human Resources"]
     TotalWorkingYears: int = Field(..., ge=0, le=40); YearsAtCompany: int = Field(..., ge=0, le=40)
@@ -102,7 +104,7 @@ def predict(employee: EmployeeData):
         raise HTTPException(status_code=503, detail="Attrition model unavailable. Contact the service operator.") from exc
 
 
-@app.post("/predict/salary")
+@app.post("/predict/salary", response_model=SalaryPredictionResponse)
 def predict_salary_endpoint(employee: SalaryData):
     try:
         return predict_salary(employee.model_dump())

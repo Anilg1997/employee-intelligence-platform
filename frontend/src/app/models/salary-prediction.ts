@@ -6,4 +6,6 @@ export interface SalaryPredictionRequest {
 }
 export interface SalaryPredictionResponse {
   estimated_monthly_income: number; model_version: string; algorithm: string;
+  dataset?: string; training_provenance?: string; limitations?: string[];
+  metrics?: Record<string, number | string | Record<string, number>>;
 }
