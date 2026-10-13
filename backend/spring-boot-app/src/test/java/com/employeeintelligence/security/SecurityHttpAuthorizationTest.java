@@ -27,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = {EmployeeController.class, RagIngestionController.class})
 @Import(com.employeeintelligence.api.config.SecurityConfig.class)
 @ContextConfiguration(classes = EmployeeIntelligenceApiApplication.class)
-@TestPropertySource(properties = "security.auth.enabled=true")
+@TestPropertySource(properties = {"security.auth.enabled=true", "security.oauth2.issuer-uri=https://issuer.example.test"})
 class SecurityHttpAuthorizationTest {
 
     @Autowired

@@ -24,6 +24,9 @@ public class RagDocumentIngestionService {
     private final long maxFileSizeBytes;
     private final Set<String> allowedExtensions;
     private final TenantContext tenantContext;
+    private static final int MAX_SOURCE_LENGTH = 255;
+    private static final int MAX_CHUNK_LENGTH = 8000;
+    private static final int MAX_CHUNKS = 1000;
 
     public RagDocumentIngestionService(
             EmbeddingModel embeddingModel,
@@ -77,14 +80,20 @@ public class RagDocumentIngestionService {
         if (!allowedExtensions.contains(extension)) {
             throw new IllegalArgumentException("Document extension is not allowed");
         }
+        validateSource(source);
 
         // 1. Read the validated document
         String content = Files.readString(documentPath);
 
         // 2. Split document into paragraph-based chunks
-        List<String> chunks = List.of(
-                content.split("\\n\\s*\\n")
-        );
+        List<String> chunks = Arrays.stream(content.split("\\n\\s*\\n"))
+                .flatMap(chunk -> splitChunk(chunk).stream())
+                .filter(chunk -> !chunk.isBlank())
+                .limit(MAX_CHUNKS + 1L)
+                .toList();
+        if (chunks.size() > MAX_CHUNKS) {
+            throw new IllegalArgumentException("Document exceeds the maximum chunk count");
+        }
 
         // 3. Clean chunks
         List<String> cleanedChunks = chunks.stream()
@@ -117,6 +126,23 @@ public class RagDocumentIngestionService {
                     metadata,
                     embedding
             );
+        }
+    }
+
+    private static List<String> splitChunk(String chunk) {
+        String cleaned = chunk.replace("\r", "").trim();
+        if (cleaned.length() <= MAX_CHUNK_LENGTH) return List.of(cleaned);
+        List<String> pieces = new java.util.ArrayList<>();
+        for (int start = 0; start < cleaned.length(); start += MAX_CHUNK_LENGTH) {
+            pieces.add(cleaned.substring(start, Math.min(cleaned.length(), start + MAX_CHUNK_LENGTH)));
+        }
+        return pieces;
+    }
+
+    private static void validateSource(String source) {
+        if (source == null || source.isBlank() || source.length() > MAX_SOURCE_LENGTH
+                || source.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("Document source metadata is invalid");
         }
     }
 }

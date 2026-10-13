@@ -190,9 +190,9 @@ flowchart TD
     LLM --> ANSWER[Answer plus sources and similarity scores]
 ```
 
-The current ingestion path validates a trusted directory, file size, and extensions, serializes metadata as JSON, and stores paragraph embeddings. Retrieval returns the top three non-null embeddings within the current tenant. The prompt instructs the model to state when the documents contain insufficient information.
+The current ingestion path validates a trusted directory, file size, extensions, source metadata, and bounded chunk size/count, serializes metadata as JSON, and stores paragraph embeddings. Retrieval returns the top three non-null embeddings within the current tenant. The prompt instructs the model to state when the documents contain insufficient information.
 
-**Remaining:** transactional/versioned ingestion, deduplication, bounded/token-aware chunks, relevance thresholds, keyword fusion, retrieval evaluation, document-level permissions, and stronger prompt/data separation. An insufficient-context instruction is not a deterministic refusal mechanism. RAG tenant filtering exists in code but still requires dedicated migrated-database isolation tests.
+**Remaining:** transactional/versioned ingestion, deduplication, token-aware chunks, keyword fusion, retrieval evaluation, document-level permissions, and stronger prompt/data separation. An insufficient-context instruction is not a deterministic refusal mechanism. RAG tenant filtering exists in code but still requires dedicated migrated-database isolation tests.
 
 ## Agentic AI
 
@@ -225,7 +225,7 @@ The Java agent's tools are currently in-process wrappers, not demonstrated MCP c
 
 ## Kafka
 
-**IN PROGRESS — transactional outbox persistence, an opt-in Kafka publisher, a versioned notification envelope, and an idempotent notification consumer are implemented; no broker or consumer is included in the default local stack.** Proposed initial event scope:
+**IN PROGRESS — transactional outbox persistence, an opt-in Kafka publisher, a versioned notification envelope, an idempotent notification consumer, bounded listener retries, and configurable dead-letter topic routing are implemented; no broker or consumer is included in the default local stack.** Proposed initial event scope:
 
 | Proposed topic | Producer | Consumer group proposal | Partition key |
 | --- | --- | --- | --- |
@@ -236,11 +236,11 @@ The Java agent's tools are currently in-process wrappers, not demonstrated MCP c
 
 The current notification envelope is version 1 and contains only `schemaVersion`, an allowlisted `eventType` (`risk.detected`, `prediction.completed`, or `report.generated`), `eventId`, `tenantId`, and `recipientSubject`. Titles and bodies are selected server-side. Partition counts must follow measured workload. Ordering is per key, not global. See [notification events](docs/notifications/notification-events.md).
 
-The audit write path stores the audit row and its outbox row in one transaction. The publisher uses stable outbox IDs as Kafka keys, PostgreSQL `SKIP LOCKED` claiming, bounded synchronous acknowledgements, and retryable unpublished rows. Publishing is disabled by default (`OUTBOX_PUBLISHER_ENABLED=false`) and becomes an at-least-once transport when enabled. The notification consumer uses bounded parsing, retryable persistence failures, tenant/recipient/source-event deduplication, and fixed display text. Retry topics, dead-letter handling, broker deployment, and operational replay remain unfinished. Existing outbox messages are audit-only and are intentionally ignored as notification events; no risk-event producers have been invented. Interactive employee reads and predictions remain synchronous where appropriate.
+The audit write path stores the audit row and its outbox row in one transaction. The publisher uses stable outbox IDs as Kafka keys, PostgreSQL `SKIP LOCKED` claiming, bounded synchronous acknowledgements, and retryable unpublished rows. Publishing is disabled by default (`OUTBOX_PUBLISHER_ENABLED=false`) and becomes an at-least-once transport when enabled. The notification consumer uses bounded parsing, bounded persistence retries, configurable dead-letter topic routing, tenant/recipient/source-event deduplication, and fixed display text. Broker deployment, dead-letter replay tooling, and operational runbooks remain unfinished. Existing outbox messages are audit-only and are intentionally ignored as notification events; no risk-event producers have been invented. Interactive employee reads and predictions remain synchronous where appropriate.
 
 ## Security
 
-**IN PROGRESS.** Spring Security supports a local/demo permit-all mode and a secure OAuth2 resource-server profile. Secure configuration delegates JWT verification to an external issuer and maps its `roles` claim into Spring authorities.
+**IN PROGRESS.** Spring Security supports a local/demo permit-all mode and a secure OAuth2 resource-server profile. Secure configuration requires an HTTPS issuer URI without credentials, query or fragment data, delegates JWT verification to that external issuer, and maps its `roles` claim into Spring authorities.
 
 - Roles: `SUPER_ADMIN`, `HR_ADMIN`, `HR_MANAGER`, `HR_ANALYST`, `EMPLOYEE`.
 - Employee reads, dashboard and most intelligence operations require HR roles in secure mode; mutations require administrator/manager roles. Audit and ingestion are more restricted. Endpoint policy is not identical for every operation.
@@ -274,7 +274,7 @@ These controls align with OWASP LLM/GenAI themes including prompt injection, sen
 - **Flyway:** V1 enables pgvector; V2 creates employee/document tables; V3 adds audit events; V4 adds tenant columns/indexes and tenant-aware employee-number uniqueness; V5 adds the transactional outbox; V6 adds tenant/recipient/source-event-scoped notifications and cursor indexes. Previously applied migrations must remain immutable. Hibernate is configured to validate, not automatically update, the schema.
 - **pgvector:** document embeddings use the existing 768-dimensional schema. Changing the embedding model requires a dimension/provenance check and controlled re-embedding.
 - **Redis — IN PROGRESS:** an opt-in Redis cache is available for the dashboard read model with 30-second TTLs, tenant-qualified keys, JSON serialization, and employee mutation eviction. Enable it only with `CACHE_REDIS_ENABLED=true` and `SPRING_CACHE_TYPE=redis`; sensitive AI responses are not cached.
-- **Kafka — IN PROGRESS:** opt-in event transport, not the transactional source of truth. The outbox publisher uses `KAFKA_BOOTSTRAP_SERVERS`, `OUTBOX_KAFKA_TOPIC`, and bounded retry/ack settings. Notification consumer retries, contract validation and deduplication exist; broker deployment, retry topics and DLQ policy are still required.
+- **Kafka — IN PROGRESS:** opt-in event transport, not the transactional source of truth. The outbox publisher uses `KAFKA_BOOTSTRAP_SERVERS`, `OUTBOX_KAFKA_TOPIC`, and bounded retry/ack settings. Notification consumer retries, contract validation, deduplication, and configurable `.DLT` routing exist; broker deployment, replay operations, and live DLQ verification are still required.
 
 Employee history, optimistic locking, database-side dashboard aggregation, data retention and comprehensive isolation tests remain outstanding. Fresh migrations and a V3-to-V4 upgrade with employee/document/audit fixtures are tested. Legacy rows backfill into `demo`; deployment owners must review that mapping and the actual schema/history before applying it to existing records. Tests create UUID-named schemas and clean up only their own fixtures, leaving existing employee data untouched.
 

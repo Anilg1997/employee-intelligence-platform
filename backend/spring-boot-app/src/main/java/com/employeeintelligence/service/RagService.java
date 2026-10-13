@@ -11,12 +11,15 @@ import com.employeeintelligence.security.TenantContext;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @Service
 public class RagService {
 
     public static final String NO_CONTEXT_ANSWER =
             "The available HR documents do not contain enough information to answer this question.";
+    static final int MAX_QUESTION_LENGTH = 2000;
+    private static final Pattern CONTROL_CHARACTERS = Pattern.compile("[\\p{Cntrl}&&[^\\r\\n\\t]]");
 
     private final EmbeddingModel embeddingModel;
     private final JdbcTemplate jdbcTemplate;
@@ -34,13 +37,14 @@ public class RagService {
         this.jdbcTemplate = jdbcTemplate;
         this.chatModels = chatModels;
         this.tenantContext = tenantContext;
-        if (minimumSimilarity < -1.0 || minimumSimilarity > 1.0) {
+        if (!Double.isFinite(minimumSimilarity) || minimumSimilarity < -1.0 || minimumSimilarity > 1.0) {
             throw new IllegalArgumentException("rag.retrieval.min-similarity must be between -1 and 1");
         }
         this.minimumSimilarity = minimumSimilarity;
     }
 
     public RagResponse ask(String question) {
+        validateQuestion(question);
 
         // 1. Convert question into an embedding
         List<Float> vector = embeddingModel
@@ -91,7 +95,7 @@ public class RagService {
         }
 
         // Retrieved documents are data, never instructions. Keep them delimited
-        // so document text cannot change the task given to the model.
+        // to communicate the data boundary; delimiters alone cannot prevent injection.
         // 5. Build grounded prompt
         String prompt = """
         You are an HR assistant.
@@ -136,5 +140,17 @@ public class RagService {
                 answer,
                 sources
         );
+    }
+
+    static void validateQuestion(String question) {
+        if (question == null || question.isBlank()) {
+            throw new IllegalArgumentException("RAG question must not be blank");
+        }
+        if (question.length() > MAX_QUESTION_LENGTH) {
+            throw new IllegalArgumentException("RAG question exceeds the configured maximum length");
+        }
+        if (CONTROL_CHARACTERS.matcher(question).find()) {
+            throw new IllegalArgumentException("RAG question contains unsupported control characters");
+        }
     }
 }

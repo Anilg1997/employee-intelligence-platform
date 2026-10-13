@@ -50,7 +50,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Kafka transport is intentionally not claimed by these tests: onEvent invokes the real consumer directly.
  */
 @SpringBootTest(properties = {
-        "security.auth.enabled=true", "notifications.consumer.enabled=false", "outbox.publisher.enabled=false",
+        "security.auth.enabled=true", "spring.security.oauth2.resourceserver.jwt.issuer-uri=https://issuer.example.test",
+        "notifications.consumer.enabled=false", "outbox.publisher.enabled=false",
         // Allow only the first (empty) scheduled poll, then drive polls synchronously in tests.
         "notifications.sse.poll-ms=86400000"
 })
