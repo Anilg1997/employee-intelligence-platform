@@ -66,6 +66,7 @@
 
       <section class="profile-card intelligence-card">
         <div class="card-heading"><div><p class="eyebrow">03 · Model signal</p><h2>Employee 360 intelligence</h2></div><span class="model-badge">Live risk APIs</span></div>
+        <p class="decision-support-note"><strong>Decision-support only.</strong> These model signals are estimates based on available records; they do not explain causality or make employment decisions. Review the underlying record and apply human judgment.</p>
         @if (riskLoading) {
           <div class="risk-state" aria-live="polite"><span class="spinner" aria-hidden="true"></span><strong>Assessing attrition risk</strong><p>Generating the latest risk signal for this employee.</p></div>
         } @else if (riskErrorMessage) {
@@ -95,9 +96,24 @@
         }
       </section>
 
-      <section class="profile-card placeholder-card">
-        <div class="card-heading"><div><p class="eyebrow">04 · Coming later</p><h2>Timeline &amp; audit</h2></div><span class="placeholder-badge">Not yet available</span></div>
-        <p>Employment events, manager changes, and audit history will appear here when timeline data is available.</p>
+      <section class="profile-card timeline-card">
+        <div class="card-heading"><div><p class="eyebrow">04 · History</p><h2>Timeline &amp; audit</h2></div><span class="model-badge">Audit history</span></div>
+        @if (timelineLoading) {
+          <div class="timeline-state" aria-live="polite"><span class="spinner" aria-hidden="true"></span><strong>Loading timeline</strong><p>Retrieving audit events associated with this employee.</p></div>
+        } @else if (timelineErrorMessage) {
+          <div class="timeline-state timeline-error" role="alert"><strong>Timeline unavailable</strong><p>{{ timelineErrorMessage }}</p></div>
+        } @else if (!timelineEvents.length) {
+          <div class="timeline-state"><strong>No timeline events yet</strong><p>No audit events are currently associated with this employee.</p></div>
+        } @else {
+          <ol class="timeline-list">
+            @for (event of timelineEvents; track event.id) {
+              <li class="timeline-item">
+                <div class="timeline-marker" aria-hidden="true"></div>
+                <div><p class="timeline-time">{{ formatTimestamp(event.timestamp) }}</p><strong>{{ event.action }}</strong><p>{{ event.result }} · {{ event.actorSubject }}</p>@if (event.metadata) { <small>{{ event.metadata }}</small> }</div>
+              </li>
+            }
+          </ol>
+        }
       </section>
     </div>
   </div>

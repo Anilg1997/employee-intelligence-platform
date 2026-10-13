@@ -31,7 +31,7 @@ The platform brings those concerns into a common workflow: find an employee, ins
 | Capability | Status | Current scope |
 | --- | --- | --- |
 | Employee Management | IMPLEMENTED | Tenant-scoped create, read, update, delete, search, filtering, bounded pagination, allowlisted deterministic sorting, accessible Angular edit/delete controls, and loading/empty/error states; backend and frontend checks pass |
-| Employee 360 | IN PROGRESS | Profile and intelligence sections; historical timeline and comprehensive audit integration remain |
+| Employee 360 | IMPLEMENTED | Tenant-scoped profile, employment/compensation/performance fields, live risk signals, model limitations, bounded audit timeline, loading/empty/error states, and decision-support disclosure |
 | Workforce Analytics | IN PROGRESS | Dashboard summary and department aggregation; longitudinal analytics remain |
 | Attrition Prediction | IMPLEMENTED | Existing persisted classifier and threshold-based inference |
 | Salary Prediction | IMPLEMENTED | Experimental random-forest regression with explicit training and evaluation metadata |

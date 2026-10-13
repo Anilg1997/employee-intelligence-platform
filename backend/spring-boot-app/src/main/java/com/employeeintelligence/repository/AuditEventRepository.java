@@ -8,4 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
     Page<AuditEvent> findByTenantIdAndActionContainingIgnoreCaseAndResultContainingIgnoreCase(
             String tenantId, String action, String result, Pageable pageable);
+
+    Page<AuditEvent> findByTenantIdAndResourceTypeAndResourceId(
+            String tenantId, String resourceType, String resourceId, Pageable pageable);
 }

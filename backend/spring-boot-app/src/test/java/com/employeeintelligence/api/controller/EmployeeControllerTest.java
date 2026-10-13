@@ -3,6 +3,7 @@ package com.employeeintelligence.api.controller;
 import com.employeeintelligence.api.model.Employee;
 import com.employeeintelligence.api.service.EmployeeService;
 import com.employeeintelligence.api.service.AuditService;
+import com.employeeintelligence.api.service.Employee360Service;
 import com.employeeintelligence.api.exception.EmployeeNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -18,6 +19,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 import com.employeeintelligence.api.dto.EmployeePageResponse;
+import com.employeeintelligence.api.dto.Employee360Response;
+import com.employeeintelligence.api.mapper.EmployeeMapper;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -63,6 +66,9 @@ class EmployeeControllerTest {
 
     @MockitoBean
     private AuditService auditService;
+
+    @MockitoBean
+    private Employee360Service employee360Service;
 
     @Test
     void shouldGetAllEmployees() throws Exception {
@@ -127,6 +133,28 @@ class EmployeeControllerTest {
                 .andExpect(jsonPath("$.name").value("Anil"))
                 .andExpect(jsonPath("$.jobRole")
                         .value("Research Scientist"));
+    }
+
+    @Test
+    void shouldGetEmployee360WithBoundedTimelineParameter() throws Exception {
+        Employee employee = new Employee("Anil", "IT", "Developer", 30);
+        when(employee360Service.getEmployee360(7L, 100)).thenReturn(new Employee360Response(
+                EmployeeMapper.toResponse(employee), List.of(), null));
+
+        mockMvc.perform(get("/api/employees/7/360").param("timelineSize", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.employee.name").value("Anil"))
+                .andExpect(jsonPath("$.activity").isArray());
+        verify(employee360Service).getEmployee360(7L, 100);
+    }
+
+    @Test
+    void shouldReturnNotFoundForMissingEmployee360() throws Exception {
+        when(employee360Service.getEmployee360(99L, 25)).thenThrow(new EmployeeNotFoundException(99L));
+
+        mockMvc.perform(get("/api/employees/99/360"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Employee not found with id: 99"));
     }
 
     @Test

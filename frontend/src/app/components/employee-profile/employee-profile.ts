@@ -9,6 +9,8 @@ import {
 } from '../../services/employee-ai.service';
 import { RiskIntelligenceService } from '../../services/risk-intelligence';
 import { RiskSummary } from '../../models/risk-summary';
+import { AuditEvent } from '../../models/audit-event';
+import { AuditService } from '../../services/audit.service';
 
 @Component({
   selector: 'app-employee-profile',
@@ -28,12 +30,16 @@ export class EmployeeProfile implements OnInit {
   riskErrorMessage = '';
   summaryLoading = false;
   summaryErrorMessage = '';
+  timelineEvents: AuditEvent[] = [];
+  timelineLoading = false;
+  timelineErrorMessage = '';
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly employeeService: EmployeeService,
     private readonly employeeAiService: EmployeeAiService,
-    private readonly riskIntelligenceService: RiskIntelligenceService
+    private readonly riskIntelligenceService: RiskIntelligenceService,
+    private readonly auditService: AuditService
   ) {}
 
   ngOnInit(): void {
@@ -50,6 +56,7 @@ export class EmployeeProfile implements OnInit {
         this.loading = false;
         this.loadRisk(id);
         this.loadRiskSummary(id);
+        this.loadTimeline(id);
       },
       error: (error: { status?: number }) => {
         this.loading = false;
@@ -58,6 +65,23 @@ export class EmployeeProfile implements OnInit {
         } else {
           this.errorMessage = 'Unable to load this employee profile.';
         }
+      }
+    });
+  }
+
+  private loadTimeline(employeeId: number): void {
+    this.timelineLoading = true;
+    this.timelineErrorMessage = '';
+    this.auditService.getEvents('', '', 0, 100).subscribe({
+      next: (page) => {
+        // The existing audit contract is global and exposes resourceId, so only
+        // display events explicitly associated with this employee.
+        this.timelineEvents = page.content.filter((event) => event.resourceId === String(employeeId));
+        this.timelineLoading = false;
+      },
+      error: () => {
+        this.timelineLoading = false;
+        this.timelineErrorMessage = 'Timeline and audit history are currently unavailable.';
       }
     });
   }
@@ -91,5 +115,10 @@ export class EmployeeProfile implements OnInit {
 
   formatValue(value: string | number | undefined): string {
     return value === undefined || value === null || value === '' ? 'Not available' : String(value);
+  }
+
+  formatTimestamp(timestamp: string): string {
+    const date = new Date(timestamp);
+    return Number.isNaN(date.getTime()) ? timestamp : date.toLocaleString();
   }
 }
