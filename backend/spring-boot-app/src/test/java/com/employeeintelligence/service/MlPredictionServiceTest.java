@@ -73,6 +73,8 @@ class MlPredictionServiceTest {
                                      "attrition_probability": 0.6553,
                                      "model_version": "attrition-service-current",
                                      "decision_threshold": 0.55,
+                                     "dataset": "IBM HR synthetic employee_data.csv",
+                                     "training_provenance": "Legacy artifact",
                                      "limitations": ["Probability is not calibrated certainty."]
                                 }
                                 """,
@@ -96,6 +98,22 @@ class MlPredictionServiceTest {
         assertEquals(0.55, response.getDecision_threshold(), 0.0001);
         assertEquals(1, response.getLimitations().size());
 
+        server.verify();
+    }
+
+    @Test
+    void shouldRejectMalformedAttritionResponse() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("http://127.0.0.1:8000");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        MlPredictionService service = new MlPredictionService(builder.build());
+        server.expect(requestTo("http://127.0.0.1:8000/predict"))
+                .andExpect(method(POST))
+                .andRespond(withSuccess("{\"attrition_prediction\":\"Yes\",\"attrition_probability\":1.4}",
+                        MediaType.APPLICATION_JSON));
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.employeeintelligence.api.exception.MlServiceException.class,
+                () -> service.predict(new MlPredictionRequest()));
         server.verify();
     }
 }

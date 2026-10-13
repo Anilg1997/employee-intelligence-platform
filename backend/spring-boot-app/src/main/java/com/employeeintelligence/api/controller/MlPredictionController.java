@@ -12,6 +12,7 @@ import com.employeeintelligence.api.service.ModelRegistryService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.employeeintelligence.api.dto.ModelMetadata;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import com.employeeintelligence.api.service.AuditService;
@@ -34,7 +35,11 @@ public class MlPredictionController {
             @RequestBody @Valid MlPredictionRequest request) {
 
         var response = mlPredictionService.predict(request);
-        auditService.record("ML_PREDICTION", "model", "predict", "SUCCESS", "prediction completed"); return response;
+        auditService.record("ML_PREDICTION", "model", "predict", "SUCCESS",
+                String.format(Locale.ROOT, "model_version=%s;threshold=%.4f;probability=%.4f;prediction=%s",
+                        response.getModel_version(), response.getDecision_threshold(),
+                        response.getAttrition_probability(), response.getAttrition_prediction()));
+        return response;
     }
 
     @GetMapping("/models")

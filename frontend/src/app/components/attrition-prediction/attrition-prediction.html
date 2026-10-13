@@ -1,33 +1,52 @@
 <div class="prediction-container">
-
   <h2>Employee Attrition Prediction</h2>
-
   <p>Select an imported employee and run the trained attrition model.</p>
 
-  <label for="predictionEmployee">Employee</label>
-  <select id="predictionEmployee" [(ngModel)]="selectedEmployeeId">
-    @for (employee of employees; track employee.id) {
-      <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option>
-    }
-  </select>
+  <div class="disclaimer" role="note">
+    <strong>Decision support only.</strong> This estimate describes model output and must not be used as the sole basis for an employment decision. Review the employee's context and apply consistent, human judgment.
+  </div>
 
-  <button type="button" [disabled]="loading || !selectedEmployeeId" (click)="predict()">
-    {{ loading ? 'Predicting...' : 'Predict attrition' }}
-  </button>
-
-  @if (prediction) {
-    <div class="prediction-result" [class.risk]="prediction.attrition_prediction === 'Yes'">
-      <strong>{{ prediction.attrition_prediction === 'Yes' ? 'Higher risk' : 'Lower risk' }}</strong>
-      <span>{{ (prediction.attrition_probability * 100).toFixed(1) }}% probability</span>
-      @if (prediction.model_version) { <small>Model: {{ prediction.model_version }}</small> }
-      @if (prediction.decision_threshold != null) { <small>Decision threshold: {{ (prediction.decision_threshold * 100).toFixed(0) }}%</small> }
-      @if (prediction.dataset) { <small>Training data: {{ prediction.dataset }}</small> }
-      @if (prediction.limitations?.length) {
-        <div class="limitations"><strong>Limitations</strong><ul>@for (limitation of prediction.limitations; track limitation) { <li>{{ limitation }}</li> }</ul></div>
-      }
+  @if (employeesLoading) {
+    <p class="status" role="status" aria-live="polite">Loading employees…</p>
+  } @else if (employeeErrorMessage) {
+    <div class="error" role="alert"><p>{{ employeeErrorMessage }}</p><button type="button" (click)="loadEmployees()">Try again</button></div>
+  } @else if (!employees.length) {
+    <p class="empty" role="status">No employees are available for prediction. Import an employee with the required model fields first.</p>
+  } @else {
+    <div class="form-row">
+      <label for="predictionEmployee">Employee</label>
+      <select id="predictionEmployee" [(ngModel)]="selectedEmployeeId" (ngModelChange)="clearPrediction()" [disabled]="predictionLoading" aria-describedby="employee-help">
+        @for (employee of employees; track employee.id) {
+          <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option>
+        }
+      </select>
+      <small id="employee-help">Predictions use the values currently stored for this employee.</small>
     </div>
+    <button class="primary-action" type="button" [disabled]="predictionLoading || selectedEmployeeId === null" (click)="predict()" [attr.aria-busy]="predictionLoading">
+      {{ predictionLoading ? 'Predicting…' : 'Predict attrition' }}
+    </button>
   }
 
-  @if (errorMessage) { <p class="error">{{ errorMessage }}</p> }
+  @if (predictionLoading) { <p class="status" role="status" aria-live="polite">Running the attrition model…</p> }
+  @if (errorMessage) {
+    <div class="error" role="alert"><p>{{ errorMessage }}</p>@if (modelUnavailable) { <button type="button" (click)="predict()">Try again</button> }</div>
+    @if (missingFields.length) { <p>Complete these employee fields before retrying: {{ missingFields.join(', ') }}.</p> }
+  }
 
+  @if (prediction) {
+    <section class="prediction-result" [class.risk]="prediction.attrition_prediction === 'Yes'" aria-labelledby="result-heading" aria-live="polite">
+      <h3 id="result-heading">{{ prediction.attrition_prediction === 'Yes' ? 'Higher model-indicated risk' : 'Lower model-indicated risk' }}</h3>
+      <p class="probability"><strong>{{ (prediction.attrition_probability * 100).toFixed(1) }}%</strong> estimated probability of attrition</p>
+      <dl class="metadata">
+        @if (prediction.model_version) { <div><dt>Model version</dt><dd>{{ prediction.model_version }}</dd></div> }
+        @if (prediction.decision_threshold != null) { <div><dt>Decision threshold</dt><dd>{{ (prediction.decision_threshold * 100).toFixed(0) }}%</dd></div> }
+        @if (prediction.dataset) { <div><dt>Training data</dt><dd>{{ prediction.dataset }}</dd></div> }
+        @if (prediction.training_provenance) { <div><dt>Training provenance</dt><dd>{{ prediction.training_provenance }}</dd></div> }
+      </dl>
+      @if (prediction.limitations?.length) {
+        <div class="limitations"><h4>Limitations</h4><ul>@for (limitation of prediction.limitations; track limitation) { <li>{{ limitation }}</li> }</ul></div>
+      } @else { <p class="muted">No additional limitations were supplied by the model service.</p> }
+      <p class="result-disclaimer"><strong>Use with care:</strong> This is not a fact about an employee or a recommendation to take action.</p>
+    </section>
+  }
 </div>

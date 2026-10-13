@@ -35,6 +35,16 @@ class EmployeeData(BaseModel):
     YearsWithCurrManager: int = Field(..., ge=0, le=17)
 
 
+class AttritionPredictionResponse(BaseModel):
+    attrition_prediction: Literal["Yes", "No"]
+    attrition_probability: float = Field(..., ge=0, le=1)
+    model_version: str = Field(..., min_length=1)
+    decision_threshold: float = Field(..., ge=0, le=1)
+    dataset: str = Field(..., min_length=1)
+    training_provenance: str = Field(..., min_length=1)
+    limitations: list[str]
+
+
 class SalaryData(BaseModel):
     Age: int = Field(..., ge=18, le=60); Department: Literal["Sales", "Research & Development", "Human Resources"]
     JobLevel: int = Field(..., ge=1, le=5); JobRole: Literal["Sales Executive", "Research Scientist", "Laboratory Technician", "Manufacturing Director", "Healthcare Representative", "Manager", "Sales Representative", "Research Director", "Human Resources"]
@@ -84,7 +94,7 @@ def readiness_check():
     return payload
 
 
-@app.post("/predict")
+@app.post("/predict", response_model=AttritionPredictionResponse)
 def predict(employee: EmployeeData):
     try:
         return predict_attrition(employee.model_dump())

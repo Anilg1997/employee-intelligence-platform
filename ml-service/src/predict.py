@@ -24,7 +24,14 @@ def _load_attrition_model(path):
         threshold = float(artifact["metadata"]["threshold"])
         if not 0 <= threshold <= 1:
             raise ValueError("invalid threshold")
-        return artifact["model"], threshold, artifact["metadata"]
+        metadata = artifact["metadata"]
+        required = ("model_version", "dataset", "training_provenance", "limitations")
+        if (any(not isinstance(metadata.get(key), str) or not metadata[key].strip()
+                for key in required[:3])
+                or not isinstance(metadata.get("limitations"), list)
+                or any(not isinstance(item, str) or not item.strip() for item in metadata["limitations"])):
+            raise ValueError("invalid model metadata")
+        return artifact["model"], threshold, metadata
     except Exception as exc:
         raise ModelUnavailable("Attrition model unavailable.") from exc
 

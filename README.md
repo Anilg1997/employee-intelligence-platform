@@ -33,7 +33,7 @@ The platform brings those concerns into a common workflow: find an employee, ins
 | Employee Management | IMPLEMENTED | Tenant-scoped create, read, update, delete, search, filtering, bounded pagination, allowlisted deterministic sorting, accessible Angular edit/delete controls, and loading/empty/error states; backend and frontend checks pass |
 | Employee 360 | IMPLEMENTED | Tenant-scoped profile, employment/compensation/performance fields, live risk signals, model limitations, bounded audit timeline, loading/empty/error states, and decision-support disclosure |
 | Workforce Analytics | IMPLEMENTED | Tenant-scoped snapshot dashboard with employee totals, labeled attrition distribution/rate, average age/income, department and performance distributions, deterministic database aggregation, cache invalidation, and explicit decision-support limitations |
-| Attrition Prediction | IMPLEMENTED | Existing persisted classifier and threshold-based inference |
+| Attrition Prediction | IMPLEMENTED | Validated FastAPI and Spring contracts, persisted classifier/threshold inference, bounded upstream timeouts, prediction metadata/audit, model limitations, authorization, and accessible Angular loading/error/decision-support states |
 | Salary Prediction | IMPLEMENTED | Experimental random-forest regression with explicit training and evaluation metadata |
 | Performance Prediction | IN PROGRESS | Classifier and API exist; feature timing/leakage review remains |
 | Promotion Prediction | IN PROGRESS | Rule-based readiness API with required-rating validation; no historical promotion target or learned classifier |

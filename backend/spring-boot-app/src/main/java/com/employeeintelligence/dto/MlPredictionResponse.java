@@ -5,7 +5,7 @@ import java.util.List;
 public class MlPredictionResponse {
 
     private String attrition_prediction;
-    private double attrition_probability;
+    private Double attrition_probability;
     private String model_version;
     private Double decision_threshold;
     private String dataset;
@@ -20,11 +20,11 @@ public class MlPredictionResponse {
         this.attrition_prediction = attrition_prediction;
     }
 
-    public double getAttrition_probability() {
+    public Double getAttrition_probability() {
         return attrition_probability;
     }
 
-    public void setAttrition_probability(double attrition_probability) {
+    public void setAttrition_probability(Double attrition_probability) {
         this.attrition_probability = attrition_probability;
     }
 

@@ -14,86 +14,106 @@ import { MlPredictionResponse } from '../../models/ml-prediction-response';
   styleUrl: './attrition-prediction.scss'
 })
 export class AttritionPrediction implements OnInit {
-
   employees: Employee[] = [];
   selectedEmployeeId: number | null = null;
   prediction: MlPredictionResponse | null = null;
-  loading = false;
+  employeesLoading = true;
+  predictionLoading = false;
   errorMessage = '';
+  employeeErrorMessage = '';
+  modelUnavailable = false;
+  missingFields: string[] = [];
 
   constructor(
-    private employeeService: EmployeeService,
-    private mlPredictionService: MlPredictionService
+    private readonly employeeService: EmployeeService,
+    private readonly mlPredictionService: MlPredictionService
   ) {}
 
-  ngOnInit(): void {
+  ngOnInit(): void { this.loadEmployees(); }
+
+  loadEmployees(): void {
+    this.employeesLoading = true;
+    this.employeeErrorMessage = '';
     this.employeeService.getEmployees().subscribe({
       next: employees => {
         this.employees = employees.filter(employee => employee.id !== undefined);
         this.selectedEmployeeId = this.employees[0]?.id ?? null;
+        this.employeesLoading = false;
       },
-      error: () => this.errorMessage = 'Unable to load employees for prediction.'
+      error: () => {
+        this.employeesLoading = false;
+        this.employeeErrorMessage = 'Unable to load employees for prediction.';
+      }
     });
   }
 
   predict(): void {
+    if (this.predictionLoading || this.employeesLoading) return;
+    this.clearPrediction();
     const employee = this.employees.find(item => item.id === this.selectedEmployeeId);
     if (!employee) {
       this.errorMessage = 'Select an employee first.';
       return;
     }
 
-    this.loading = true;
-    this.errorMessage = '';
-    this.prediction = null;
+    const request = this.toPredictionRequest(employee);
+    if (!request) {
+      this.errorMessage = 'This employee does not have all fields required by the attrition model.';
+      return;
+    }
 
-    this.mlPredictionService.predict(this.toPredictionRequest(employee)).subscribe({
+    this.predictionLoading = true;
+    this.errorMessage = '';
+    this.modelUnavailable = false;
+    this.prediction = null;
+    this.mlPredictionService.predict(request).subscribe({
       next: result => {
-        this.prediction = result;
-        this.loading = false;
+        if (!result || !['Yes', 'No'].includes(result.attrition_prediction)
+          || !Number.isFinite(result.attrition_probability)
+          || result.attrition_probability < 0 || result.attrition_probability > 1) {
+          this.errorMessage = 'The model returned an invalid prediction. No estimate is available. Please try again.';
+        } else {
+          this.prediction = result;
+        }
+        this.predictionLoading = false;
       },
       error: error => {
-        console.error('Failed to predict attrition:', error);
-        this.errorMessage = error?.status === 503
-          ? 'The attrition model is currently unavailable. Try again later.'
+        this.modelUnavailable = error?.status === 503;
+        this.errorMessage = this.modelUnavailable
+          ? 'The attrition model is currently unavailable. No prediction was returned.'
           : 'Prediction failed. Check that both backend services are running and the employee data is valid.';
-        this.loading = false;
+        this.predictionLoading = false;
       }
     });
   }
 
-  private toPredictionRequest(employee: Employee): MlPredictionRequest {
-    return {
-      Age: employee.age,
-      BusinessTravel: employee.businessTravel ?? 'Travel_Rarely',
-      DailyRate: employee.dailyRate ?? 500,
-      Department: employee.department,
-      DistanceFromHome: employee.distanceFromHome ?? 1,
-      Education: employee.education ?? 3,
-      EducationField: employee.educationField ?? 'Other',
-      EnvironmentSatisfaction: employee.environmentSatisfaction ?? 3,
-      Gender: employee.gender ?? 'Female',
-      HourlyRate: employee.hourlyRate ?? 60,
-      JobInvolvement: employee.jobInvolvement ?? 3,
-      JobLevel: employee.jobLevel ?? 1,
-      JobRole: employee.jobRole,
-      JobSatisfaction: employee.jobSatisfaction ?? 3,
-      MaritalStatus: employee.maritalStatus ?? 'Single',
-      MonthlyIncome: employee.monthlyIncome ?? 3000,
-      MonthlyRate: employee.monthlyRate ?? 14000,
-      NumCompaniesWorked: employee.numCompaniesWorked ?? 1,
-      OverTime: employee.overTime ?? 'No',
-      PercentSalaryHike: employee.percentSalaryHike ?? 15,
-      PerformanceRating: employee.performanceRating ?? 3,
-      RelationshipSatisfaction: employee.relationshipSatisfaction ?? 3,
-      StockOptionLevel: employee.stockOptionLevel ?? 0,
-      TotalWorkingYears: employee.totalWorkingYears ?? 5,
-      TrainingTimesLastYear: employee.trainingTimesLastYear ?? 3,
-      WorkLifeBalance: employee.workLifeBalance ?? 3,
-      YearsAtCompany: employee.yearsAtCompany ?? 1,
-      YearsInCurrentRole: employee.yearsInCurrentRole ?? 1,
-      YearsSinceLastPromotion: employee.yearsSinceLastPromotion ?? 0,
-      YearsWithCurrManager: employee.yearsWithCurrManager ?? 1
+  clearPrediction(): void {
+    this.prediction = null;
+    this.errorMessage = '';
+    this.modelUnavailable = false;
+    this.missingFields = [];
+  }
+
+  private toPredictionRequest(employee: Employee): MlPredictionRequest | null {
+    const values = {
+      Age: employee.age, BusinessTravel: employee.businessTravel, DailyRate: employee.dailyRate,
+      Department: employee.department, DistanceFromHome: employee.distanceFromHome,
+      Education: employee.education, EducationField: employee.educationField,
+      EnvironmentSatisfaction: employee.environmentSatisfaction, Gender: employee.gender,
+      HourlyRate: employee.hourlyRate, JobInvolvement: employee.jobInvolvement,
+      JobLevel: employee.jobLevel, JobRole: employee.jobRole, JobSatisfaction: employee.jobSatisfaction,
+      MaritalStatus: employee.maritalStatus, MonthlyIncome: employee.monthlyIncome,
+      MonthlyRate: employee.monthlyRate, NumCompaniesWorked: employee.numCompaniesWorked,
+      OverTime: employee.overTime, PercentSalaryHike: employee.percentSalaryHike,
+      PerformanceRating: employee.performanceRating, RelationshipSatisfaction: employee.relationshipSatisfaction,
+      StockOptionLevel: employee.stockOptionLevel, TotalWorkingYears: employee.totalWorkingYears,
+      TrainingTimesLastYear: employee.trainingTimesLastYear, WorkLifeBalance: employee.workLifeBalance,
+      YearsAtCompany: employee.yearsAtCompany, YearsInCurrentRole: employee.yearsInCurrentRole,
+      YearsSinceLastPromotion: employee.yearsSinceLastPromotion, YearsWithCurrManager: employee.yearsWithCurrManager
     };
+    this.missingFields = Object.entries(values)
+      .filter(([, value]) => value === undefined || value === null || value === '' || (typeof value === 'number' && !Number.isFinite(value)))
+      .map(([field]) => field);
+    return this.missingFields.length ? null : values as MlPredictionRequest;
   }
 }
