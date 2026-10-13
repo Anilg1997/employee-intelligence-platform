@@ -50,7 +50,8 @@ public class RedisCacheConfig {
 
         @Override
         public Object generate(Object target, Method method, Object... params) {
-            return tenantContext.currentTenantId() + ":" + method.getName();
+            // Reads and all employee mutations must address the same versioned tenant snapshot.
+            return tenantContext.currentTenantId() + ":workforce-summary:v2";
         }
     }
 }

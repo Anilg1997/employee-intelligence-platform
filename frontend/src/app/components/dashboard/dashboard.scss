@@ -7,6 +7,10 @@
 .dashboard-subtitle { margin: 0; color: #68758b; font-size: 16px; }
 .scope-badge, .panel-note { display: inline-flex; align-items: center; padding: 8px 12px; border: 1px solid #d7e1f2; border-radius: 999px; color: #49658f; background: #f4f7fc; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 28px; }
+.snapshot-note { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; padding: 14px 16px; border: 1px solid #d7e4f7; border-radius: 12px; color: #49607f; background: #f6f9ff; line-height: 1.5; }
+.snapshot-note p { margin: 0; font-size: 13px; }
+.snapshot-note strong { color: #263e67; }
+.snapshot-icon { display: inline-grid; flex: 0 0 22px; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #fff; background: #557bd2; font-weight: 800; }
 .metric-card, .panel, .state-card { border: 1px solid #e2e8f2; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(30, 56, 94, .045); }
 .metric-card { min-height: 132px; padding: 22px; display: flex; flex-direction: column; }
 .metric-card-primary { border-color: #bdd0f4; background: linear-gradient(145deg, #f5f8ff, #fff); }
@@ -14,6 +18,7 @@
 .metric-card strong { display: block; overflow: hidden; margin: 12px 0 7px; color: #172b52; font-size: clamp(24px, 3vw, 32px); line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
 .metric-caption { margin-top: auto; font-size: 12px; }
 .panel { padding: 26px; }
+.insight-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
 .panel-heading { align-items: center; margin-bottom: 20px; }
 .panel-heading h3, .state-card h3 { margin: 0; color: #1d2b45; font-size: 20px; }
 .table-wrap { overflow-x: auto; }
@@ -28,6 +33,16 @@ tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
 .share-bar { display: block; height: 100%; min-width: 2px; border-radius: inherit; background: #557bd2; }
 .data-note { margin: 20px 2px 0; color: #718096; font-size: 12px; line-height: 1.6; }
 .data-note strong { color: #52627a; }
+.distribution-list { display: grid; gap: 16px; }
+.distribution-row { display: grid; grid-template-columns: minmax(70px, .7fr) 42px minmax(100px, 1.3fr); align-items: center; gap: 12px; color: #536177; font-size: 13px; }
+.distribution-row strong { color: #273753; text-align: right; font-variant-numeric: tabular-nums; }
+.distribution-track { height: 9px; overflow: hidden; border-radius: 99px; background: #e8eef8; }
+.distribution-bar { display: block; height: 100%; min-width: 2px; border-radius: inherit; }
+.distribution-bar.retained { background: #557bd2; }
+.distribution-bar.left { background: #c56a72; }
+.distribution-bar.performance { background: #6e85bf; }
+.panel-footnote, .panel-empty { margin: 20px 0 0; color: #718096; font-size: 12px; line-height: 1.5; }
+.panel-empty { padding: 14px; border-radius: 8px; background: #f8fafc; }
 .state-card { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 28px; }
 .state-card p:not(.state-kicker) { margin: 7px 0 0; color: #69778c; line-height: 1.5; }
 .loading { justify-content: flex-start; }
@@ -39,5 +54,5 @@ tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
 .empty-state { display: block; border-style: dashed; background: #fbfcfe; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 900px) { .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .insight-grid { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .dashboard { padding: 28px 18px 40px; } .dashboard-header, .panel-heading, .state-card { display: block; } .scope-badge, .panel-note { margin-top: 16px; } .metric-grid { grid-template-columns: 1fr; gap: 12px; } .metric-card { min-height: 112px; } .state-card .retry-button { margin-top: 20px; } }

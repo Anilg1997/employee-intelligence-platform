@@ -49,6 +49,35 @@ describe('Dashboard', () => {
     expect(component.loading).toBe(false);
   });
 
+  it('derives an honest attrition distribution and leaves unsupported performance data empty', async () => {
+    fixture.detectChanges();
+    http.expectOne(request => request.url.endsWith('/api/dashboard/summary')).flush({
+      totalEmployees: 10,
+      departmentStatistics: { Engineering: 10 },
+      attritionLabeledEmployees: 6,
+      attritionCount: 2,
+      attritionRate: 2 / 6
+    });
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(component.attritionRetainedEmployees).toBe(4);
+    expect(component.attritionUnlabeledEmployees).toBe(4);
+    expect(component.hasPerformanceData).toBe(false);
+  });
+
+  it('renders performance distribution only when the response supplies it', async () => {
+    fixture.detectChanges();
+    http.expectOne(request => request.url.endsWith('/api/dashboard/summary')).flush({
+      totalEmployees: 3,
+      departmentStatistics: { Sales: 3 },
+      performanceDistribution: { '3': 2, '4': 1 }
+    });
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(component.hasPerformanceData).toBe(true);
+    expect(component.performanceSummaries[0]).toMatchObject({ name: '3', count: 2 });
+  });
+
   it('shows an error state when the summary request fails', async () => {
     fixture.detectChanges();
     const request = http.expectOne(request => request.url.endsWith('/api/dashboard/summary'));

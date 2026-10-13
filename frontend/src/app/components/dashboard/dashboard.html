@@ -3,7 +3,7 @@
     <div>
       <p class="eyebrow">WORKFORCE INTELLIGENCE</p>
       <h2>Employee Intelligence Dashboard</h2>
-      <p class="dashboard-subtitle">A current view of the employee directory, organized by department.</p>
+      <p class="dashboard-subtitle">A current view of the employee directory, organized by department and available workforce signals.</p>
     </div>
     <span class="scope-badge">Current directory scope</span>
   </header>
@@ -26,7 +26,11 @@
       <button type="button" class="retry-button" (click)="loadDashboard()">Retry</button>
     </section>
   } @else if (dashboard) {
-    <section class="metric-grid" aria-label="Workforce summary">
+     <aside class="snapshot-note" aria-label="Snapshot scope">
+       <span class="snapshot-icon" aria-hidden="true">i</span>
+       <p><strong>Current directory snapshot.</strong> Metrics are descriptive aggregates from the records returned by the dashboard API. They are not forecasts or employment decisions.</p>
+     </aside>
+     <section class="metric-grid" aria-label="Workforce summary">
       <article class="metric-card metric-card-primary">
         <span class="metric-label">Total employees</span>
         <strong>{{ dashboard.totalEmployees | number }}</strong>
@@ -96,15 +100,56 @@
           </table>
         </div>
       </section>
-    } @else {
+     } @else {
       <section class="state-card empty-state">
         <p class="state-kicker">NO DIRECTORY DATA</p>
         <h3>There are no department records yet</h3>
         <p>Department insights will appear here when employee records are available.</p>
       </section>
-    }
+     }
 
-    <p class="data-note"><strong>Data scope:</strong> Attrition rate uses only records with a stored attrition label; averages use non-empty values. It describes this directory snapshot and is not a forecast.</p>
+     <div class="insight-grid">
+       <section class="panel" aria-labelledby="attrition-heading">
+         <div class="panel-heading">
+           <div>
+             <p class="eyebrow">RECORDED OUTCOMES</p>
+             <h3 id="attrition-heading">Attrition distribution</h3>
+           </div>
+           <span class="panel-note">{{ attritionLabeledEmployees }} labeled</span>
+         </div>
+         @if (attritionLabeledEmployees > 0) {
+           <div class="distribution-list">
+             <div class="distribution-row"><span>Stayed</span><strong>{{ attritionRetainedEmployees | number }}</strong><span class="distribution-track"><span class="distribution-bar retained" [style.width.%]="(attritionRetainedEmployees / attritionLabeledEmployees) * 100"></span></span></div>
+             <div class="distribution-row"><span>Left</span><strong>{{ attritionCount | number }}</strong><span class="distribution-track"><span class="distribution-bar left" [style.width.%]="(attritionCount / attritionLabeledEmployees) * 100"></span></span></div>
+           </div>
+           <p class="panel-footnote">Only records with an attrition label are included; unlabeled records: {{ attritionUnlabeledEmployees | number }}.</p>
+         } @else {
+           <p class="panel-empty">No attrition labels are available in this snapshot.</p>
+         }
+       </section>
+
+       <section class="panel" aria-labelledby="performance-heading">
+         <div class="panel-heading">
+           <div>
+             <p class="eyebrow">PERFORMANCE SIGNALS</p>
+             <h3 id="performance-heading">Performance distribution</h3>
+           </div>
+           <span class="panel-note">API-dependent</span>
+         </div>
+         @if (hasPerformanceData) {
+           <div class="distribution-list">
+             @for (performance of performanceSummaries; track performance.name) {
+               <div class="distribution-row"><span>Rating {{ performance.name }}</span><strong>{{ performance.count | number }}</strong><span class="distribution-track"><span class="distribution-bar performance" [style.width.%]="performance.share"></span></span></div>
+             }
+           </div>
+           <p class="panel-footnote">Distribution shown only when supplied by the dashboard API.</p>
+         } @else {
+           <p class="panel-empty">Performance distribution is not included in the current dashboard response.</p>
+         }
+       </section>
+     </div>
+
+     <p class="data-note"><strong>Data scope:</strong> Attrition rate uses only records with a stored attrition label; averages use non-empty values. It describes this directory snapshot and is not a forecast.</p>
   }
 
   @if (!loading && !errorMessage && !dashboard) {
