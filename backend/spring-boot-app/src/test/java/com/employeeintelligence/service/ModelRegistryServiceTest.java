@@ -48,9 +48,13 @@ class ModelRegistryServiceTest {
         Path directory = Files.createTempDirectory("model-registry-salary");
         write(directory, "employee_salary_model.json", "{" +
                 "\"metadata\":{\"model_version\":\"salary-v2\",\"algorithm\":\"rf\",\"metrics\":{" +
-                "\"test\":{\"mae\":840.6,\"r2\":0.93}}}}");
+                "\"test\":{\"mae\":840.6,\"r2\":0.93}},\"dataset\":\"IBM HR synthetic employee_data.csv\","
+                + "\"trained_at_utc\":\"2026-10-13T00:00:00Z\",\"dataset_sha256\":\"abc123\"}}");
         ModelMetadata salary = new ModelRegistryService(mapper, directory).list().get(1);
         assertEquals(840.6, ((java.util.Map<?, ?>) salary.metrics().get("test")).get("mae"));
+        assertEquals("IBM HR synthetic employee_data.csv", salary.dataset());
+        assertEquals("2026-10-13T00:00:00Z", salary.trainedAtUtc());
+        assertEquals("sha256:abc123", salary.datasetVersion());
     }
 
     @Test

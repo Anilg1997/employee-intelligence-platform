@@ -2,6 +2,7 @@ package com.employeeintelligence.api.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
@@ -13,6 +14,7 @@ import com.employeeintelligence.api.dto.PromotionPredictionResponse;
 import com.employeeintelligence.api.dto.RiskSummaryResponse;
 import com.employeeintelligence.api.exception.MlServiceException;
 import com.employeeintelligence.api.model.Employee;
+import java.util.List;
 import java.util.Map;
 import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.Test;
@@ -84,5 +86,37 @@ class RiskSummaryServiceTest {
         ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
         verify(predictions).predictPerformance(captor.capture());
         assertEquals(Map.of("Age", 35), captor.getValue());
+    }
+
+    @Test
+    void carriesAllContributingModelVersionsAndLimitationsIntoDecisionSupportResponse() {
+        EmployeeAiService employees = mock(EmployeeAiService.class);
+        MlPredictionService predictions = mock(MlPredictionService.class);
+        Employee employee = mock(Employee.class);
+        when(employees.getEmployee(7L)).thenReturn(employee);
+        when(employees.assessRisk(7L)).thenReturn(new AttritionRiskResponse(7L, "yes", 0.7, "High Risk",
+                "attrition-service-current", "IBM HR synthetic employee_data.csv", "legacy-artifact", List.of("not calibrated")));
+        when(employees.toPredictionMap(employee)).thenReturn(Map.of("Age", 35));
+        PerformancePredictionResponse performance = new PerformancePredictionResponse();
+        performance.setPerformance_prediction(3);
+        performance.setPerformance_probability(0.8);
+        performance.setClass_probabilities(Map.of("3", 0.8, "4", 0.2));
+        performance.setModel_version("performance-classifier-v1");
+        performance.setLimitations(List.of("held-out metrics only"));
+        when(predictions.predictPerformance(anyMap())).thenReturn(performance);
+        PromotionPredictionResponse promotion = new PromotionPredictionResponse();
+        promotion.setRule_score(0.75);
+        promotion.setModel_version("promotion-readiness-rules-v1");
+        promotion.setTarget_type("portfolio_demo_rule_target");
+        promotion.setLimitations(List.of("not calibrated"));
+        when(predictions.predictPromotion(Map.of("Age", 35))).thenReturn(promotion);
+
+        RiskSummaryResponse response = new RiskSummaryService(employees, predictions).summarize(7L);
+
+        assertEquals("attrition-service-current", response.modelVersions().get("attrition"));
+        assertEquals("performance-classifier-v1", response.modelVersions().get("performance"));
+        assertEquals("promotion-readiness-rules-v1", response.modelVersions().get("promotionReadiness"));
+        assertTrue(response.limitations().contains("not calibrated"));
+        assertTrue(response.limitations().contains("held-out metrics only"));
     }
 }

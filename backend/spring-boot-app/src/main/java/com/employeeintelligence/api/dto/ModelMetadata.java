@@ -8,7 +8,9 @@ import java.util.Map;
 /** Public metadata for one model artifact. Optional fields are null when undeclared. */
 public record ModelMetadata(String name, String version, String algorithm, String status,
                             Map<String, Object> metrics, List<String> limitations,
-                            String artifactFormat, Boolean trained, String targetType) {
+                            String artifactFormat, Boolean trained, String targetType,
+                            String dataset, String trainedAtUtc, String datasetVersion,
+                            Double threshold, String deployedVersion) {
     public ModelMetadata {
         metrics = immutableMap(metrics);
         limitations = limitations == null ? List.of() : List.copyOf(limitations);
@@ -16,7 +18,8 @@ public record ModelMetadata(String name, String version, String algorithm, Strin
 
     public ModelMetadata(String name, String version, String algorithm, String status,
                          Map<String, Object> metrics, List<String> limitations) {
-        this(name, version, algorithm, status, metrics, limitations, null, null, null);
+        this(name, version, algorithm, status, metrics, limitations,
+                null, null, null, null, null, null, null, null);
     }
 
     private static Map<String, Object> immutableMap(Map<String, Object> source) {

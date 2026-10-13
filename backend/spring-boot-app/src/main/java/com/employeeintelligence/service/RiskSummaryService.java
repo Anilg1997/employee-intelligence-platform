@@ -29,6 +29,7 @@ public class RiskSummaryService {
         var attritionResponse = employeeAiService.assessRisk(id);
         if (attritionResponse == null) throw invalidResponse("Missing attrition response");
         double attrition = bounded(attritionResponse.getProbability(), "attrition risk", limitations);
+        if (attritionResponse.getLimitations() != null) limitations.addAll(attritionResponse.getLimitations());
         Map<String, Object> features = employeeAiService.toPredictionMap(employee);
         Map<String, Object> performanceFeatures = new LinkedHashMap<>(features);
         performanceFeatures.remove("PerformanceRating");
@@ -52,7 +53,7 @@ public class RiskSummaryService {
         if (promotion.getLimitations() != null) limitations.addAll(promotion.getLimitations());
 
         Map<String, String> versions = new LinkedHashMap<>();
-        versions.put("attrition", versionOrUnknown(null, "attrition", limitations));
+        versions.put("attrition", versionOrUnknown(attritionResponse.getModelVersion(), "attrition", limitations));
         versions.put("performance", versionOrUnknown(performance.getModel_version(), "performance", limitations));
         versions.put("promotionReadiness", versionOrUnknown(promotion.getModel_version(), "promotion readiness", limitations));
         return new RiskSummaryResponse(id, attrition, performanceRisk, promotionReadiness,

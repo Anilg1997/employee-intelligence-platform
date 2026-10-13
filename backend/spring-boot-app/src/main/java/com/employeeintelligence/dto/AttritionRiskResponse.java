@@ -6,6 +6,10 @@ public class AttritionRiskResponse {
     private String prediction;
     private double probability;
     private String riskLevel;
+    private String modelVersion;
+    private String dataset;
+    private String trainingProvenance;
+    private java.util.List<String> limitations;
 
     public AttritionRiskResponse(
             Long employeeId,
@@ -17,6 +21,22 @@ public class AttritionRiskResponse {
         this.prediction = prediction;
         this.probability = probability;
         this.riskLevel = riskLevel;
+    }
+
+    public AttritionRiskResponse(
+            Long employeeId,
+            String prediction,
+            double probability,
+            String riskLevel,
+            String modelVersion,
+            String dataset,
+            String trainingProvenance,
+            java.util.List<String> limitations) {
+        this(employeeId, prediction, probability, riskLevel);
+        this.modelVersion = modelVersion;
+        this.dataset = dataset;
+        this.trainingProvenance = trainingProvenance;
+        this.limitations = limitations == null ? java.util.List.of() : java.util.List.copyOf(limitations);
     }
 
     public Long getEmployeeId() {
@@ -34,4 +54,9 @@ public class AttritionRiskResponse {
     public String getRiskLevel() {
         return riskLevel;
     }
+
+    public String getModelVersion() { return modelVersion; }
+    public String getDataset() { return dataset; }
+    public String getTrainingProvenance() { return trainingProvenance; }
+    public java.util.List<String> getLimitations() { return limitations; }
 }

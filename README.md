@@ -165,7 +165,7 @@ The existing trained predictors were converted without retraining or changing th
 
 Salary and performance training is explicit, never triggered by prediction requests. Missing/incompatible artifacts yield a service-unavailable response for those models. All four model artifacts now load lazily through controlled JSON loaders; a missing attrition artifact no longer crashes FastAPI import, and `/ready` reports model-specific availability.
 
-The lightweight Spring model registry is currently hard-coded, omits salary, and is not a model deployment lifecycle manager. See [salary](docs/ml/salary-model.md), [performance](docs/ml/performance-model.md), [promotion](docs/ml/promotion-model.md), and [risk engine](docs/ai/risk-engine.md) notes. Earlier notes must be read alongside the limitations above.
+The lightweight Spring model registry reads all four JSON artifacts and exposes safe metadata including version, algorithm, dataset, training timestamp, dataset version hash, threshold where declared, evaluation metrics, artifact status, and limitations. It is not a model deployment lifecycle manager: an explicit deployed version/status is only reported when declared in the artifact. See [salary](docs/ml/salary-model.md), [performance](docs/ml/performance-model.md), [promotion](docs/ml/promotion-model.md), and [risk engine](docs/ai/risk-engine.md) notes. Earlier notes must be read alongside the limitations above.
 
 ## Generative AI
 
