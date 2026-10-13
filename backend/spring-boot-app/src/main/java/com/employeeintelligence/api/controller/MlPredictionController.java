@@ -24,10 +24,13 @@ public class MlPredictionController {
 
     private final MlPredictionService mlPredictionService;
     private final AuditService auditService;
+    private final ModelRegistryService registry;
 
-    public MlPredictionController(MlPredictionService mlPredictionService, AuditService auditService) {
+    public MlPredictionController(MlPredictionService mlPredictionService, AuditService auditService,
+                                  ModelRegistryService registry) {
         this.mlPredictionService = mlPredictionService;
         this.auditService = auditService;
+        this.registry = registry;
     }
 
     @PostMapping("/predict")
@@ -45,7 +48,7 @@ public class MlPredictionController {
 
     @GetMapping("/models")
     @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
-    public List<ModelMetadata> models(ModelRegistryService registry) { return registry.list(); }
+    public List<ModelMetadata> models() { return registry.list(); }
 
     @PostMapping("/predict/salary")
     @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")

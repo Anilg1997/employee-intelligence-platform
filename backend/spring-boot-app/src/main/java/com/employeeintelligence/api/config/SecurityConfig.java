@@ -18,6 +18,7 @@ import com.employeeintelligence.security.TenantFilter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 
 @Configuration
+@org.springframework.context.annotation.Import(com.employeeintelligence.security.SecurityMode.class)
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {

@@ -58,10 +58,6 @@ class EmployeeIntelligenceApiApplicationTests {
             return mock(ChatModel.class);
         }
 
-        @Bean
-        EmployeeAiAgent employeeAiAgent() {
-            return mock(EmployeeAiAgent.class);
-        }
     }
 
 	@Test
@@ -70,6 +66,25 @@ class EmployeeIntelligenceApiApplicationTests {
         assertEquals("6", flyway.info().current().getVersion().getVersion());
         assertTrue(flyway.validateWithResult().validationSuccessful);
 	}
+
+    @Autowired private EmployeeAiAgent employeeAiAgent;
+    @Autowired private com.employeeintelligence.security.SecurityMode securityMode;
+    @Value("${local.server.port}") private int applicationPort;
+
+    @Test
+    void realAgentAndSecurityModeAreWiredAndDemoDirectoryIsAccessible() throws Exception {
+        assertNotNull(employeeAiAgent);
+        assertTrue(securityMode.isDemoMode());
+        var response = HttpClient.newHttpClient().send(HttpRequest.newBuilder(
+                URI.create("http://localhost:" + applicationPort + "/api/employees/search?size=1"))
+                .GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode(), response.body());
+        var models = HttpClient.newHttpClient().send(HttpRequest.newBuilder(
+                URI.create("http://localhost:" + applicationPort + "/api/ml/models"))
+                .GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, models.statusCode(), models.body());
+        assertTrue(models.body().contains("salary"));
+    }
 
     @Test
     void upgradesLegacyRowsWithoutLosingDataAndScopesUniquenessToTenant() {

@@ -14,4 +14,5 @@ public class SecurityMode {
     public boolean isDemoMode() {
         return demoMode;
     }
+
 }

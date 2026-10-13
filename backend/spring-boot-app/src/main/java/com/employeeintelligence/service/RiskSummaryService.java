@@ -30,7 +30,9 @@ public class RiskSummaryService {
         if (attritionResponse == null) throw invalidResponse("Missing attrition response");
         double attrition = bounded(attritionResponse.getProbability(), "attrition risk", limitations);
         Map<String, Object> features = employeeAiService.toPredictionMap(employee);
-        PerformancePredictionResponse performance = mlPredictionService.predictPerformance(features);
+        Map<String, Object> performanceFeatures = new LinkedHashMap<>(features);
+        performanceFeatures.remove("PerformanceRating");
+        PerformancePredictionResponse performance = mlPredictionService.predictPerformance(performanceFeatures);
         PromotionPredictionResponse promotion = mlPredictionService.predictPromotion(features);
         if (performance == null || promotion == null) throw invalidResponse("Missing risk model response");
         if (performance.getClass_probabilities() == null || !performance.getClass_probabilities().containsKey("4")) {
