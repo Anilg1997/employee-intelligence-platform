@@ -5,6 +5,7 @@ import com.employeeintelligence.api.dto.MlPredictionResponse;
 import com.employeeintelligence.api.dto.SalaryPredictionRequest;
 import com.employeeintelligence.api.dto.SalaryPredictionResponse;
 import com.employeeintelligence.api.dto.PerformancePredictionResponse;
+import com.employeeintelligence.api.dto.PerformancePredictionRequest;
 import com.employeeintelligence.api.dto.PromotionPredictionResponse;
 import java.util.Map;
 import com.employeeintelligence.api.service.MlPredictionService;
@@ -59,8 +60,13 @@ public class MlPredictionController {
 
     @PostMapping("/predict/performance")
     @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
-    public PerformancePredictionResponse predictPerformance(@RequestBody Map<String, Object> request) {
-        var response = mlPredictionService.predictPerformance(request); auditService.record("ML_PREDICTION", "model", "performance", "SUCCESS", "prediction completed"); return response;
+    public PerformancePredictionResponse predictPerformance(@RequestBody PerformancePredictionRequest request) {
+        var response = mlPredictionService.predictPerformance(request);
+        auditService.record("ML_PREDICTION", "model", "performance", "SUCCESS",
+                String.format(Locale.ROOT, "model_version=%s;algorithm=%s;dataset=%s;prediction=%d;probability=%.4f",
+                        response.getModel_version(), response.getAlgorithm(), response.getDataset(),
+                        response.getPerformance_prediction(), response.getPerformance_probability()));
+        return response;
     }
 
     @PostMapping("/predict/promotion")

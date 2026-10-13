@@ -58,6 +58,7 @@ class SalaryData(BaseModel):
 
 
 class PerformanceData(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
     Age: int = Field(..., ge=18, le=60); BusinessTravel: Literal["Travel_Rarely", "Travel_Frequently", "Non-Travel"]; DailyRate: int = Field(..., ge=102, le=1499); Department: Literal["Sales", "Research & Development", "Human Resources"]; DistanceFromHome: int = Field(..., ge=1, le=29); Education: int = Field(..., ge=1, le=5); EducationField: Literal["Life Sciences", "Medical", "Marketing", "Technical Degree", "Human Resources", "Other"]; EnvironmentSatisfaction: int = Field(..., ge=1, le=4); Gender: Literal["Male", "Female"]; HourlyRate: int = Field(..., ge=30, le=100); JobInvolvement: int = Field(..., ge=1, le=4); JobLevel: int = Field(..., ge=1, le=5); JobRole: Literal["Sales Executive", "Research Scientist", "Laboratory Technician", "Manufacturing Director", "Healthcare Representative", "Manager", "Sales Representative", "Research Director", "Human Resources"]; JobSatisfaction: int = Field(..., ge=1, le=4); MaritalStatus: Literal["Single", "Married", "Divorced"]; MonthlyIncome: int = Field(..., ge=1009, le=19999); MonthlyRate: int = Field(..., ge=2094, le=26999); NumCompaniesWorked: int = Field(..., ge=0, le=9); OverTime: Literal["Yes", "No"]; PercentSalaryHike: int = Field(..., ge=11, le=25); RelationshipSatisfaction: int = Field(..., ge=1, le=4); StockOptionLevel: int = Field(..., ge=0, le=3); TotalWorkingYears: int = Field(..., ge=0, le=40); TrainingTimesLastYear: int = Field(..., ge=0, le=6); WorkLifeBalance: int = Field(..., ge=1, le=4); YearsAtCompany: int = Field(..., ge=0, le=40); YearsInCurrentRole: int = Field(..., ge=0, le=18); YearsSinceLastPromotion: int = Field(..., ge=0, le=15); YearsWithCurrManager: int = Field(..., ge=0, le=17)
 
 class PromotionData(PerformanceData):
@@ -112,7 +113,33 @@ def predict_salary_endpoint(employee: SalaryData):
         raise HTTPException(status_code=503, detail="Salary model unavailable. Contact the service operator.") from exc
 
 
-@app.post("/predict/performance")
+class PerformancePredictionResponse(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+    performance_prediction: Literal[1, 2, 3, 4]
+    performance_probability: float = Field(..., ge=0, le=1)
+    class_probabilities: dict[str, float]
+    model_version: str = Field(..., min_length=1)
+    algorithm: str = Field(..., min_length=1)
+    dataset: str = Field(..., min_length=1)
+    training_provenance: str = Field(..., min_length=1)
+    metrics: dict[str, dict[str, float]]
+    limitations: list[str] = Field(..., min_length=1)
+
+    @classmethod
+    def model_validate(cls, value, *args, **kwargs):
+        result = super().model_validate(value, *args, **kwargs)
+        if (not result.class_probabilities or not set(result.class_probabilities) <= {"1", "2", "3", "4"}
+                or abs(sum(result.class_probabilities.values()) - 1.0) > 1e-6
+                or abs(result.performance_probability - result.class_probabilities[str(result.performance_prediction)]) > 1e-6
+                or set(result.metrics) != {"validation", "test"}
+                or any(set(values) != {"accuracy", "balanced_accuracy", "f1_macro"}
+                       or any(not 0 <= metric <= 1 for metric in values.values()) for values in result.metrics.values())
+                or any(not item.strip() for item in result.limitations)):
+            raise ValueError("Invalid performance prediction contract")
+        return result
+
+
+@app.post("/predict/performance", response_model=PerformancePredictionResponse)
 def predict_performance_endpoint(employee: PerformanceData):
     try:
         return predict_performance(employee.model_dump())

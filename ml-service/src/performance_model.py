@@ -83,8 +83,19 @@ def _load_performance_model(path):
         raise PerformanceModelUnavailable("Performance model unavailable; run python -m src.train_performance_model explicitly.")
     try:
         artifact = load_artifact(path)
-        if artifact["metadata"]["model_version"] != MODEL_VERSION:
+        metadata = artifact["metadata"]
+        if (metadata.get("model_version") != MODEL_VERSION or metadata.get("algorithm") != ALGORITHM
+                or metadata.get("features") != PERFORMANCE_FEATURES or metadata.get("target") != "PerformanceRating"
+                or metadata.get("dataset") != "IBM HR synthetic employee_data.csv"
+                or set(metadata.get("metrics", {})) != {"validation", "test"}
+                or any(set(values) != {"accuracy", "balanced_accuracy", "f1_macro"}
+                       or any(not isinstance(value, (int, float)) or not 0 <= value <= 1 for value in values.values())
+                       for values in metadata["metrics"].values())
+                or not metadata.get("limitations") or any(not isinstance(item, str) or not item.strip() for item in metadata["limitations"])
+                or not metadata.get("trained_at_utc") or not metadata.get("dataset_sha256")):
             raise ValueError("Incompatible model version")
+        if set(int(label) for label in artifact["model"].classes_) - {1, 2, 3, 4}:
+            raise ValueError("Invalid performance rating classes")
         return artifact
     except Exception as exc:
         raise PerformanceModelUnavailable("Performance model artifact is invalid or incompatible.") from exc
@@ -98,7 +109,21 @@ def predict_performance(employee_data: dict) -> dict:
     artifact = load_performance_model()
     frame = pd.DataFrame([{name: employee_data[name] for name in PERFORMANCE_FEATURES}])
     model = artifact["model"]
-    probabilities = model.predict_proba(frame)[0]
-    classes = model.classes_
-    index = int(np.argmax(probabilities))
-    return {"performance_prediction": int(classes[index]), "performance_probability": float(probabilities[index]), "class_probabilities": {str(int(c)): float(p) for c, p in zip(classes, probabilities)}, "model_version": artifact["metadata"]["model_version"], "algorithm": artifact["metadata"]["algorithm"], "limitations": artifact["metadata"]["limitations"]}
+    try:
+        probabilities = model.predict_proba(frame)[0]
+        classes = model.classes_
+        index = int(np.argmax(probabilities))
+        metadata = artifact["metadata"]
+        result = {"performance_prediction": int(classes[index]), "performance_probability": float(probabilities[index]),
+                  "class_probabilities": {str(int(c)): float(p) for c, p in zip(classes, probabilities)},
+                  "model_version": metadata["model_version"], "algorithm": metadata["algorithm"],
+                  "dataset": metadata["dataset"],
+                  "training_provenance": f"trained_at_utc={metadata['trained_at_utc']};dataset_sha256={metadata['dataset_sha256']}",
+                  "metrics": metadata["metrics"], "limitations": metadata["limitations"]}
+        if (not result["class_probabilities"] or not set(result["class_probabilities"]) <= {"1", "2", "3", "4"}
+                or abs(sum(result["class_probabilities"].values()) - 1.0) > 1e-6
+                or abs(result["performance_probability"] - result["class_probabilities"][str(result["performance_prediction"])]) > 1e-6):
+            raise ValueError("Invalid performance prediction output")
+        return result
+    except (ValueError, TypeError, KeyError, OverflowError) as exc:
+        raise PerformanceModelUnavailable("Performance prediction output is invalid.") from exc

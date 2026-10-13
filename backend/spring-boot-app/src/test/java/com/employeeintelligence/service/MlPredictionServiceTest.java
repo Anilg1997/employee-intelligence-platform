@@ -28,7 +28,7 @@ class MlPredictionServiceTest {
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
         MlPredictionService service = new MlPredictionService(builder.build());
         server.expect(requestTo("http://127.0.0.1:8000/predict/performance")).andExpect(method(POST))
-                .andRespond(withSuccess("{\"performance_prediction\":3,\"performance_probability\":0.8,\"model_version\":\"performance-classifier-v1\"}", MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess("{\"performance_prediction\":3,\"performance_probability\":0.8,\"class_probabilities\":{\"3\":0.8,\"4\":0.2},\"model_version\":\"performance-classifier-v1\",\"algorithm\":\"random-forest-classifier\",\"dataset\":\"IBM HR synthetic employee_data.csv\",\"training_provenance\":\"trained_at_utc=x;dataset_sha256=y\",\"metrics\":{\"validation\":{\"accuracy\":0.8,\"balanced_accuracy\":0.7,\"f1_macro\":0.75},\"test\":{\"accuracy\":0.8,\"balanced_accuracy\":0.7,\"f1_macro\":0.75}},\"limitations\":[\"Synthetic data only.\"]}", MediaType.APPLICATION_JSON));
         PerformancePredictionResponse response = service.predictPerformance(Map.of("Age", 35));
         assertEquals(3, response.getPerformance_prediction());
         assertEquals("performance-classifier-v1", response.getModel_version());

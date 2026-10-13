@@ -25,6 +25,10 @@ button:disabled { cursor: not-allowed; opacity: .6; }
 .prediction-result h3 { margin-top: 0; }
 .probability { font-size: 1.2rem; }
 .probability strong { font-size: 2rem; }
+.probability-list { list-style: none; padding: 0; display: grid; gap: 10px; }
+.probability-list li { display: grid; grid-template-columns: minmax(90px, 1fr) 2fr 55px; align-items: center; gap: 10px; }
+.probability-list progress { width: 100%; min-height: 12px; accent-color: #244b82; }
+.probability-list strong { text-align: right; }
 .metadata { display: grid; gap: 10px; margin: 18px 0; }
 .metadata div { display: flex; gap: 10px; flex-wrap: wrap; }
 .metadata dt { font-weight: 700; min-width: 145px; }
@@ -33,5 +37,6 @@ button:disabled { cursor: not-allowed; opacity: .6; }
 .limitations h4 { margin-bottom: 6px; }
 .muted, small { color: #526174; }
 .result-disclaimer { margin-bottom: 0; background: #eef2f7; }
+.missing-fields { color: #6b3d00; }
 button:focus-visible, select:focus-visible { outline: 3px solid #f1b52c; outline-offset: 2px; }
 @media (max-width: 600px) { .prediction-container { padding: 16px; } }

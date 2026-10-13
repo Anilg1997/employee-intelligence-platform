@@ -1,1 +1,45 @@
-<div class="prediction-container"><h2>Performance insights</h2><p>Estimate the dataset performance-rating class for a selected employee.</p><label for="performanceEmployee">Employee</label><select id="performanceEmployee" [(ngModel)]="selectedEmployeeId">@for (employee of employees; track employee.id) { <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option> }</select><button type="button" [disabled]="loading || !selectedEmployeeId" (click)="predict()">{{ loading ? 'Predicting...' : 'Predict performance' }}</button>@if (prediction) { <div class="prediction-result"><strong>Rating {{ prediction.performance_prediction }}</strong><span>{{ (prediction.performance_probability * 100).toFixed(1) }}% probability</span><small>{{ prediction.algorithm }} · {{ prediction.model_version }}</small></div><p class="note">{{ prediction.limitations[0] }} This estimate supports review and is not a standalone performance decision.</p> } @if (errorMessage) { <p class="error">{{ errorMessage }}</p> }</div>
+<div class="prediction-container">
+  <h2>Performance rating estimate</h2>
+  <p>Estimate the dataset performance-rating class for a selected employee.</p>
+  <div class="disclaimer" role="note"><strong>Decision support only.</strong> Ratings are ordinal classes, and the displayed probabilities are un-calibrated model scores—not confidence. This output is not a standalone employment or performance decision.</div>
+
+  @if (employeesLoading) {
+    <p class="status" role="status" aria-live="polite">Loading employees…</p>
+  } @else if (employeeErrorMessage) {
+    <div class="error" role="alert"><p>{{ employeeErrorMessage }}</p><button type="button" (click)="loadEmployees()">Try again</button></div>
+  } @else if (!employees.length) {
+    <p class="empty" role="status">No employees are available for performance prediction. Add an employee with the required model fields first.</p>
+  } @else {
+    <div class="form-row">
+      <label for="performanceEmployee">Employee</label>
+      <select id="performanceEmployee" [(ngModel)]="selectedEmployeeId" (ngModelChange)="clearPrediction()" [disabled]="predictionLoading" aria-describedby="performance-employee-help">
+        @for (employee of employees; track employee.id) { <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option> }
+      </select>
+      <small id="performance-employee-help">Predictions use only values stored for this employee. Missing fields are not replaced with defaults.</small>
+    </div>
+    <button class="primary-action" type="button" [disabled]="predictionLoading || selectedEmployeeId === null" (click)="predict()" [attr.aria-busy]="predictionLoading">{{ predictionLoading ? 'Predicting…' : 'Predict performance' }}</button>
+  }
+
+  @if (predictionLoading) { <p class="status" role="status" aria-live="polite">Running the performance model…</p> }
+  @if (errorMessage) {
+    <div class="error" role="alert"><p>{{ errorMessage }}</p>@if (modelUnavailable) { <button type="button" (click)="predict()">Try again</button> }</div>
+    @if (missingFields.length) { <p class="missing-fields">Complete these employee fields before retrying: {{ missingFields.join(', ') }}.</p> }
+  }
+
+  @if (prediction) {
+    <section class="prediction-result" aria-labelledby="performance-result-heading" aria-live="polite">
+      <h3 id="performance-result-heading">Predicted rating class: {{ prediction.performance_prediction }}</h3>
+      <p class="probability"><strong>{{ (prediction.performance_probability * 100).toFixed(1) }}%</strong> model score for the predicted class</p>
+      <h4>Class probability distribution</h4>
+      <ul class="probability-list" aria-label="Class probability distribution">
+        @for (entry of probabilityEntries(prediction.class_probabilities); track entry.label) {
+          <li><span>Rating {{ entry.label }}</span><progress [value]="entry.value" max="1">{{ entry.percent }}</progress><strong>{{ entry.percent }}</strong></li>
+        }
+      </ul>
+      <dl class="metadata"><div><dt>Algorithm</dt><dd>{{ prediction.algorithm || 'Not provided by API' }}</dd></div><div><dt>Model version</dt><dd>{{ prediction.model_version || 'Not provided by API' }}</dd></div>@if (prediction.dataset) { <div><dt>Dataset</dt><dd>{{ prediction.dataset }}</dd></div> }@if (prediction.training_provenance) { <div><dt>Training provenance</dt><dd>{{ prediction.training_provenance }}</dd></div> }</dl>
+      @if (prediction.metrics && metricEntries(prediction.metrics).length) { <div class="metrics"><h4>Evaluation metrics supplied by API</h4><dl class="metadata">@for (metric of metricEntries(prediction.metrics); track metric.name) { <div><dt>{{ metric.name }}</dt><dd>{{ metric.value }}</dd></div> }</dl></div> } @else { <p class="muted">The performance prediction API did not supply evaluation metrics for this estimate.</p> }
+      @if (prediction.limitations.length) { <div class="limitations"><h4>Model limitations</h4><ul>@for (limitation of prediction.limitations; track limitation) { <li>{{ limitation }}</li> }</ul></div> } @else { <p class="muted">The API did not return limitation metadata.</p> }
+      <p class="result-disclaimer"><strong>Use with care:</strong> Performance labels are ordinal, scores are not calibrated confidence, and this estimate is not a fact about an employee or a recommendation to take action.</p>
+    </section>
+  }
+</div>
