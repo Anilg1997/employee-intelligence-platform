@@ -2,8 +2,6 @@ package com.employeeintelligence.api.service;
 
 import com.employeeintelligence.api.dto.RagResponse;
 import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.embedding.EmbeddingModel;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +10,7 @@ import com.employeeintelligence.security.TenantContext;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class RagService {
@@ -21,20 +20,16 @@ public class RagService {
     static final int MAX_QUESTION_LENGTH = 2000;
     private static final Pattern CONTROL_CHARACTERS = Pattern.compile("[\\p{Cntrl}&&[^\\r\\n\\t]]");
 
-    private final EmbeddingModel embeddingModel;
-    private final JdbcTemplate jdbcTemplate;
+    private final HybridRagRetrievalService retrieval;
     private final ObjectProvider<ChatModel> chatModels;
     private final TenantContext tenantContext;
     private final double minimumSimilarity;
 
-    public RagService(
-            EmbeddingModel embeddingModel,
-            JdbcTemplate jdbcTemplate,
-            ObjectProvider<ChatModel> chatModels, TenantContext tenantContext,
+    @Autowired
+    public RagService(HybridRagRetrievalService retrieval, ObjectProvider<ChatModel> chatModels,
+            TenantContext tenantContext,
             @Value("${rag.retrieval.min-similarity:0.75}") double minimumSimilarity) {
-
-        this.embeddingModel = embeddingModel;
-        this.jdbcTemplate = jdbcTemplate;
+        this.retrieval = retrieval;
         this.chatModels = chatModels;
         this.tenantContext = tenantContext;
         if (!Double.isFinite(minimumSimilarity) || minimumSimilarity < -1.0 || minimumSimilarity > 1.0) {
@@ -43,41 +38,28 @@ public class RagService {
         this.minimumSimilarity = minimumSimilarity;
     }
 
+    RagService(dev.langchain4j.model.embedding.EmbeddingModel embeddingModel,
+               org.springframework.jdbc.core.JdbcTemplate jdbcTemplate,
+               ObjectProvider<ChatModel> chatModels, TenantContext tenantContext,
+               double minimumSimilarity) {
+        this(new HybridRagRetrievalService(embeddingModel, jdbcTemplate, tenantContext),
+                chatModels, tenantContext, minimumSimilarity);
+    }
+
     public RagResponse ask(String question) {
         validateQuestion(question);
 
-        // 1. Convert question into an embedding
-        List<Float> vector = embeddingModel
-                .embed(question)
-                .content()
-                .vectorAsList();
-
-        String embedding = vector.toString();
-
-        // 2. Find the most relevant documents
-        String sql = """
-                SELECT
-                    content,
-                    metadata->>'source' AS source,
-                    1 - (embedding <=> ?::vector) AS similarity
-                FROM rag_documents
-                WHERE tenant_id = ? AND embedding IS NOT NULL
-                  AND 1 - (embedding <=> ?::vector) >= ?
-                ORDER BY embedding <=> ?::vector
-                LIMIT 3
-                """;
-
-        List<Map<String, Object>> documents =
-                jdbcTemplate.queryForList(
-                        sql,
-                        embedding, tenantContext.currentTenantId(), embedding, minimumSimilarity, embedding
-                );
+        // Hybrid retrieval combines tenant-scoped vector similarity with PostgreSQL
+        // full-text matching. Both scores are computed server-side and parameterized.
+        List<Map<String, Object>> documents = retrieval.search(question, 3, minimumSimilarity);
 
         List<Map<String, Object>> sources = documents.stream()
                 .map(document -> Map.of(
-                        "source", document.get("source"),
-                        "similarity", document.get("similarity"),
-                        "content", document.get("content")
+                        "source", document.getOrDefault("source", "unknown"),
+                        "similarity", document.getOrDefault("similarity", 0.0),
+                        "keywordScore", document.getOrDefault("keyword_score", 0.0),
+                        "fusedScore", document.getOrDefault("fused_score", 0.0),
+                        "content", document.getOrDefault("content", "")
                 ))
                 .toList();
 

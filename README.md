@@ -171,7 +171,7 @@ The lightweight Spring model registry reads all four JSON artifacts and exposes 
 
 **IN PROGRESS.** Ollama is the configured local LLM/embedding runtime. Defaults are `llama3.2` for chat and `nomic-embed-text` for embeddings. LangChain4j integrates model calls, document retrieval, and in-process agent tools. PostgreSQL/pgvector stores embeddings; PostgreSQL remains the system of record.
 
-Hybrid keyword/vector retrieval, reranking, conversation persistence, comprehensive tool telemetry, and secure MCP-backed agent execution are not implemented. Neither a prompt instruction nor a source citation proves that an answer is correct or authorized.
+Hybrid keyword/vector retrieval is now implemented through parameterized PostgreSQL full-text and pgvector score fusion with tenant scoping and bounded results. Reranking beyond this deterministic fusion, conversation persistence, comprehensive tool telemetry, and secure MCP-backed agent execution are not implemented. Neither a prompt instruction nor a source citation proves that an answer is correct or authorized.
 
 ## RAG Architecture
 
@@ -190,9 +190,9 @@ flowchart TD
     LLM --> ANSWER[Answer plus sources and similarity scores]
 ```
 
-The current ingestion path validates a trusted directory, file size, extensions, source metadata, and bounded chunk size/count, serializes metadata as JSON, and stores paragraph embeddings. Retrieval returns the top three non-null embeddings within the current tenant. The prompt instructs the model to state when the documents contain insufficient information.
+The current ingestion path validates a trusted directory, file size, extensions, source metadata, and bounded chunk size/count, serializes metadata as JSON, and stores paragraph embeddings. Retrieval fuses PostgreSQL `plainto_tsquery` keyword relevance with pgvector cosine similarity, applies the current tenant and relevance boundaries, and returns bounded source scores. The prompt instructs the model to state when the documents contain insufficient information.
 
-**Remaining:** transactional/versioned ingestion, deduplication, token-aware chunks, keyword fusion, retrieval evaluation, document-level permissions, and stronger prompt/data separation. An insufficient-context instruction is not a deterministic refusal mechanism. RAG tenant filtering exists in code but still requires dedicated migrated-database isolation tests.
+**Remaining:** transactional/versioned ingestion, deduplication, token-aware chunks, retrieval-quality evaluation fixtures, document-level permissions, and stronger prompt/data separation. An insufficient-context instruction is not a deterministic refusal mechanism. RAG tenant filtering exists in code but still requires dedicated migrated-database isolation tests.
 
 ## Agentic AI
 
