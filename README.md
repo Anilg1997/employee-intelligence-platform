@@ -30,7 +30,7 @@ The platform brings those concerns into a common workflow: find an employee, ins
 
 | Capability | Status | Current scope |
 | --- | --- | --- |
-| Employee Management | IMPLEMENTED | CRUD, search, filtering, pagination and sorting; selected search/tenant reads verified against PostgreSQL |
+| Employee Management | IMPLEMENTED | Tenant-scoped create, read, update, delete, search, filtering, bounded pagination, allowlisted deterministic sorting, accessible Angular edit/delete controls, and loading/empty/error states; backend and frontend checks pass |
 | Employee 360 | IN PROGRESS | Profile and intelligence sections; historical timeline and comprehensive audit integration remain |
 | Workforce Analytics | IN PROGRESS | Dashboard summary and department aggregation; longitudinal analytics remain |
 | Attrition Prediction | IMPLEMENTED | Existing persisted classifier and threshold-based inference |

@@ -40,6 +40,8 @@ export class EmployeeForm {
 
   errorMessage = '';
 
+  readonly departments = ['Human Resources', 'Research & Development', 'Sales'];
+
   prediction: EmployeeAiPrediction | null = null;
 
   constructor(
