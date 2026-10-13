@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing import Literal
 
 from .predict import predict_attrition, ModelUnavailable, load_attrition_model
@@ -125,18 +125,18 @@ class PerformancePredictionResponse(BaseModel):
     metrics: dict[str, dict[str, float]]
     limitations: list[str] = Field(..., min_length=1)
 
-    @classmethod
-    def model_validate(cls, value, *args, **kwargs):
-        result = super().model_validate(value, *args, **kwargs)
-        if (not result.class_probabilities or not set(result.class_probabilities) <= {"1", "2", "3", "4"}
-                or abs(sum(result.class_probabilities.values()) - 1.0) > 1e-6
-                or abs(result.performance_probability - result.class_probabilities[str(result.performance_prediction)]) > 1e-6
-                or set(result.metrics) != {"validation", "test"}
+    @model_validator(mode="after")
+    def validate_contract(self):
+        if (not self.class_probabilities or not set(self.class_probabilities) <= {"1", "2", "3", "4"}
+                or any(not 0 <= probability <= 1 for probability in self.class_probabilities.values())
+                or abs(sum(self.class_probabilities.values()) - 1.0) > 1e-6
+                or abs(self.performance_probability - self.class_probabilities.get(str(self.performance_prediction), -1)) > 1e-6
+                or set(self.metrics) != {"validation", "test"}
                 or any(set(values) != {"accuracy", "balanced_accuracy", "f1_macro"}
-                       or any(not 0 <= metric <= 1 for metric in values.values()) for values in result.metrics.values())
-                or any(not item.strip() for item in result.limitations)):
+                       or any(not 0 <= metric <= 1 for metric in values.values()) for values in self.metrics.values())
+                or any(not item.strip() for item in self.limitations)):
             raise ValueError("Invalid performance prediction contract")
-        return result
+        return self
 
 
 @app.post("/predict/performance", response_model=PerformancePredictionResponse)

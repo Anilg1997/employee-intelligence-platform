@@ -94,7 +94,9 @@ def _load_performance_model(path):
                 or not metadata.get("limitations") or any(not isinstance(item, str) or not item.strip() for item in metadata["limitations"])
                 or not metadata.get("trained_at_utc") or not metadata.get("dataset_sha256")):
             raise ValueError("Incompatible model version")
-        if set(int(label) for label in artifact["model"].classes_) - {1, 2, 3, 4}:
+        model = artifact["model"]
+        if (set(int(label) for label in model.classes_) - {1, 2, 3, 4}
+                or getattr(model, "_prep", {}).get("features") != PERFORMANCE_FEATURES):
             raise ValueError("Invalid performance rating classes")
         return artifact
     except Exception as exc:
@@ -121,6 +123,8 @@ def predict_performance(employee_data: dict) -> dict:
                   "training_provenance": f"trained_at_utc={metadata['trained_at_utc']};dataset_sha256={metadata['dataset_sha256']}",
                   "metrics": metadata["metrics"], "limitations": metadata["limitations"]}
         if (not result["class_probabilities"] or not set(result["class_probabilities"]) <= {"1", "2", "3", "4"}
+                or any(not np.isfinite(probability) or not 0 <= probability <= 1 for probability in result["class_probabilities"].values())
+                or not np.isfinite(result["performance_probability"])
                 or abs(sum(result["class_probabilities"].values()) - 1.0) > 1e-6
                 or abs(result["performance_probability"] - result["class_probabilities"][str(result["performance_prediction"])]) > 1e-6):
             raise ValueError("Invalid performance prediction output")

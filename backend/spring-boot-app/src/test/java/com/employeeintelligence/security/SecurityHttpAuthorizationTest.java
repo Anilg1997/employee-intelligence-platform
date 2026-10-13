@@ -5,6 +5,7 @@ import com.employeeintelligence.api.controller.RagIngestionController;
 import com.employeeintelligence.api.EmployeeIntelligenceApiApplication;
 import com.employeeintelligence.api.service.AuditService;
 import com.employeeintelligence.api.service.EmployeeService;
+import com.employeeintelligence.api.service.Employee360Service;
 import com.employeeintelligence.api.service.RagDocumentIngestionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,9 @@ class SecurityHttpAuthorizationTest {
 
     @MockitoBean
     private EmployeeService employeeService;
+
+    @MockitoBean
+    private Employee360Service employee360Service;
 
     @MockitoBean
     private RagDocumentIngestionService ingestionService;

@@ -60,7 +60,7 @@ public class MlPredictionController {
 
     @PostMapping("/predict/performance")
     @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
-    public PerformancePredictionResponse predictPerformance(@RequestBody PerformancePredictionRequest request) {
+    public PerformancePredictionResponse predictPerformance(@RequestBody @Valid PerformancePredictionRequest request) {
         var response = mlPredictionService.predictPerformance(request);
         auditService.record("ML_PREDICTION", "model", "performance", "SUCCESS",
                 String.format(Locale.ROOT, "model_version=%s;algorithm=%s;dataset=%s;prediction=%d;probability=%.4f",
