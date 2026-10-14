@@ -1,13 +1,17 @@
 <div class="prediction-container">
   <h2>Promotion readiness</h2>
-  <p>Portfolio/demo rule-based readiness signal for a selected employee.</p>
-  <label for="promotionEmployee">Employee</label>
-  <select id="promotionEmployee" [(ngModel)]="selectedEmployeeId">@for (employee of employees; track employee.id) { <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option> }</select>
-  <button type="button" [disabled]="loading || !selectedEmployeeId" (click)="predict()">{{ loading ? 'Evaluating...' : 'Evaluate readiness' }}</button>
-  @if (prediction) {
-    <div class="prediction-result"><strong>{{ prediction.promotion_prediction }}</strong><span>{{ (prediction.promotion_probability * 100).toFixed(1) }}% rule score</span><small>{{ prediction.algorithm }} · {{ prediction.model_version }}</small></div>
-    <p class="note">Demo target: {{ prediction.target_type }}. This score is not a calibrated probability or promotion recommendation.</p>
-    <ul>@for (check of (prediction.rule_checks | keyvalue); track check.key) { <li>{{ check.key }}: {{ check.value ? 'met' : 'not met' }}</li> }</ul>
+  <p>Auditable rule-based readiness signal for a selected employee.</p>
+  <div class="disclaimer" role="note"><strong>Decision support only.</strong> This is a non-calibrated, rule-based score—not a probability or promotion recommendation. Never use it as a standalone employment decision; apply human review and organizational context.</div>
+  @if (employeesLoading) { <p class="status" role="status" aria-live="polite">Loading employees…</p> }
+  @else if (employeeErrorMessage) { <div class="error" role="alert"><p>{{ employeeErrorMessage }}</p><button type="button" (click)="loadEmployees()">Try again</button></div> }
+  @else if (!employees.length) { <p class="empty" role="status">No employees are available for promotion prediction. Add an employee with the required model fields first.</p> }
+  @else {
+    <div class="form-row"><label for="promotionEmployee">Employee</label><select id="promotionEmployee" [(ngModel)]="selectedEmployeeId" (ngModelChange)="clearPrediction()" [disabled]="predictionLoading" aria-describedby="promotion-employee-help">@for (employee of employees; track employee.id) { <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option> }</select><small id="promotion-employee-help">Predictions use only values stored for this employee. Missing fields are not replaced with defaults.</small></div>
+    <button class="primary-action" type="button" [disabled]="predictionLoading || selectedEmployeeId === null" (click)="predict()" [attr.aria-busy]="predictionLoading">{{ predictionLoading ? 'Evaluating…' : 'Evaluate readiness' }}</button>
   }
-  @if (errorMessage) { <p class="error">{{ errorMessage }}</p> }
+  @if (predictionLoading) { <p class="status" role="status" aria-live="polite">Running the promotion-readiness rules…</p> }
+  @if (errorMessage) { <div class="error" role="alert"><p>{{ errorMessage }}</p>@if (modelUnavailable) { <button type="button" (click)="predict()">Try again</button> }</div>@if (missingFields.length) { <p class="missing-fields">Complete these employee fields before retrying: {{ missingFields.join(', ') }}.</p> } }
+  @if (prediction) {
+    <section class="prediction-result" aria-labelledby="promotion-result-heading" aria-live="polite"><h3 id="promotion-result-heading">{{ prediction.promotion_prediction }}</h3><p class="probability"><strong>{{ (prediction.rule_score * 100).toFixed(1) }}%</strong> rule score</p><dl class="metadata"><div><dt>Decision threshold</dt><dd>{{ (prediction.decision_threshold * 100).toFixed(0) }}% (3 of 4 rules)</dd></div><div><dt>Algorithm</dt><dd>{{ prediction.algorithm }}</dd></div><div><dt>Model version</dt><dd>{{ prediction.model_version }}</dd></div><div><dt>Target</dt><dd>{{ prediction.target_type }}</dd></div></dl><h4>Rule checks</h4><ul class="rule-list">@for (check of ruleEntries(prediction.rule_checks); track check.name) { <li><span>{{ check.name }}</span><strong [class.met]="check.met">{{ check.met ? 'Met' : 'Not met' }}</strong></li> }</ul>@if (prediction.limitations.length) { <div class="limitations"><h4>Limitations</h4><ul>@for (limitation of prediction.limitations; track limitation) { <li>{{ limitation }}</li> }</ul></div> } @else { <p class="muted">The API did not return limitation metadata.</p> }<p class="result-disclaimer"><strong>Important:</strong> This non-calibrated rule-based output is decision support only, not a promotion decision or fact about an employee.</p></section>
+  }
 </div>

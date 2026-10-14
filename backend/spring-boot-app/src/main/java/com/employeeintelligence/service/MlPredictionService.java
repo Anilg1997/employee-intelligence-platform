@@ -7,6 +7,7 @@ import com.employeeintelligence.api.dto.SalaryPredictionResponse;
 import com.employeeintelligence.api.dto.PerformancePredictionResponse;
 import com.employeeintelligence.api.dto.PerformancePredictionRequest;
 import com.employeeintelligence.api.dto.PromotionPredictionResponse;
+import com.employeeintelligence.api.dto.PromotionPredictionRequest;
 import com.employeeintelligence.api.exception.MlServiceException;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +21,9 @@ import org.springframework.web.client.RestClient;
 
 @Service
 public class MlPredictionService {
+
+    private static final Set<String> PROMOTION_FEATURES = Set.of("Age", "BusinessTravel", "DailyRate", "Department", "DistanceFromHome", "Education", "EducationField", "EnvironmentSatisfaction", "Gender", "HourlyRate", "JobInvolvement", "JobLevel", "JobRole", "JobSatisfaction", "MaritalStatus", "MonthlyIncome", "MonthlyRate", "NumCompaniesWorked", "OverTime", "PercentSalaryHike", "PerformanceRating", "RelationshipSatisfaction", "StockOptionLevel", "TotalWorkingYears", "TrainingTimesLastYear", "WorkLifeBalance", "YearsAtCompany", "YearsInCurrentRole", "YearsSinceLastPromotion", "YearsWithCurrManager");
+    private static final Set<String> PROMOTION_RULES = Set.of("tenure", "time_since_promotion", "performance", "level_headroom");
 
     private final RestClient restClient;
 
@@ -151,8 +155,40 @@ public class MlPredictionService {
             throw new MlServiceException("Invalid performance prediction response", null);
     }
 
+    public PromotionPredictionResponse predictPromotion(PromotionPredictionRequest request) {
+        if (request == null) throw new MlServiceException("Invalid promotion prediction request", null);
+        return predictPromotion(request.features());
+    }
+
+    /** Compatibility adapter for callers that already hold a decoded feature map. */
     public PromotionPredictionResponse predictPromotion(Map<String, Object> request) {
-        return restClient.post().uri("/predict/promotion").contentType(MediaType.APPLICATION_JSON)
-                .body(request).retrieve().body(PromotionPredictionResponse.class);
+        if (request == null || !request.keySet().equals(PROMOTION_FEATURES))
+            throw new MlServiceException("Invalid promotion prediction request", null);
+        try {
+            PromotionPredictionResponse response = restClient.post().uri("/predict/promotion").contentType(MediaType.APPLICATION_JSON)
+                    .body(request).retrieve().body(PromotionPredictionResponse.class);
+            validatePromotion(response);
+            return response;
+        } catch (RestClientException exception) {
+            throw new MlServiceException("Promotion prediction service unavailable", exception);
+        }
+    }
+
+    private static void validatePromotion(PromotionPredictionResponse response) {
+        if (response == null || !("Ready".equals(response.getPromotion_prediction()) || "Not ready".equals(response.getPromotion_prediction()))
+                || !Double.isFinite(response.getPromotion_probability()) || response.getPromotion_probability() < 0 || response.getPromotion_probability() > 1
+                || !Double.isFinite(response.getRule_score()) || response.getRule_score() < 0 || response.getRule_score() > 1
+                || !Double.isFinite(response.getDecision_threshold()) || response.getDecision_threshold() < 0 || response.getDecision_threshold() > 1
+                || Math.abs(response.getPromotion_probability() - response.getRule_score()) > 1e-6
+                || response.getRule_checks() == null || !response.getRule_checks().keySet().equals(PROMOTION_RULES)
+                || response.getRule_checks().values().stream().anyMatch(value -> value == null)
+                || Math.abs(response.getRule_score() - response.getRule_checks().values().stream().mapToInt(value -> value ? 1 : 0).average().orElse(-1)) > 1e-6
+                || response.getPromotion_prediction().equals("Ready") != (response.getRule_score() >= response.getDecision_threshold())
+                || isBlank(response.getModel_version()) || !"deterministic-business-rules".equals(response.getAlgorithm())
+                || !"portfolio_demo_rule_target".equals(response.getTarget_type())
+                || response.getLimitations() == null || response.getLimitations().isEmpty()
+                || response.getLimitations().stream().anyMatch(item -> item == null || item.isBlank())
+                || response.getLimitations().stream().noneMatch(item -> item.toLowerCase(java.util.Locale.ROOT).contains("not a calibrated probability")))
+            throw new MlServiceException("Invalid promotion prediction response", null);
     }
 }

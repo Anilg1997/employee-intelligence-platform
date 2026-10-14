@@ -4,6 +4,7 @@ import com.employeeintelligence.api.dto.MlPredictionRequest;
 import com.employeeintelligence.api.dto.MlPredictionResponse;
 import com.employeeintelligence.api.dto.PerformancePredictionResponse;
 import com.employeeintelligence.api.dto.PromotionPredictionResponse;
+import com.employeeintelligence.api.dto.PromotionPredictionRequest;
 import com.employeeintelligence.api.dto.SalaryPredictionRequest;
 import com.employeeintelligence.api.dto.SalaryPredictionResponse;
 import java.util.Map;
@@ -41,8 +42,8 @@ class MlPredictionServiceTest {
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
         MlPredictionService service = new MlPredictionService(builder.build());
         server.expect(requestTo("http://127.0.0.1:8000/predict/promotion")).andExpect(method(POST))
-                .andRespond(withSuccess("{\"promotion_prediction\":\"Ready\",\"promotion_probability\":0.75,\"target_type\":\"portfolio_demo_rule_target\"}", MediaType.APPLICATION_JSON));
-        PromotionPredictionResponse response = service.predictPromotion(Map.of("YearsAtCompany", 4));
+                .andRespond(withSuccess("{\"promotion_prediction\":\"Ready\",\"promotion_probability\":0.75,\"rule_score\":0.75,\"rule_checks\":{\"tenure\":true,\"time_since_promotion\":true,\"performance\":true,\"level_headroom\":false},\"model_version\":\"promotion-readiness-rules-v1\",\"algorithm\":\"deterministic-business-rules\",\"target_type\":\"portfolio_demo_rule_target\",\"decision_threshold\":0.75,\"limitations\":[\"The score is a rule score, not a calibrated probability.\"]}", MediaType.APPLICATION_JSON));
+        PromotionPredictionResponse response = service.predictPromotion(new PromotionPredictionRequest());
         assertEquals("Ready", response.getPromotion_prediction());
         assertEquals("portfolio_demo_rule_target", response.getTarget_type());
         server.verify();

@@ -7,6 +7,7 @@ public class PromotionPredictionResponse {
     private String promotion_prediction;
     private double promotion_probability;
     private double rule_score;
+    private double decision_threshold;
     private Map<String, Boolean> rule_checks;
     private String model_version;
     private String algorithm;
@@ -18,6 +19,8 @@ public class PromotionPredictionResponse {
     public void setPromotion_probability(double value) { promotion_probability = value; }
     public double getRule_score() { return rule_score; }
     public void setRule_score(double value) { rule_score = value; }
+    public double getDecision_threshold() { return decision_threshold; }
+    public void setDecision_threshold(double value) { decision_threshold = value; }
     public Map<String, Boolean> getRule_checks() { return rule_checks; }
     public void setRule_checks(Map<String, Boolean> value) { rule_checks = value; }
     public String getModel_version() { return model_version; }

@@ -38,5 +38,9 @@ button:disabled { cursor: not-allowed; opacity: .6; }
 .muted, small { color: #526174; }
 .result-disclaimer { margin-bottom: 0; background: #eef2f7; }
 .missing-fields { color: #6b3d00; }
+.rule-list { list-style: none; padding: 0; display: grid; gap: 8px; }
+.rule-list li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 10px; border: 1px solid #d7dee8; border-radius: 5px; background: #fff; }
+.rule-list strong.met { color: #17643a; }
+.rule-list strong:not(.met) { color: #8a1c1c; }
 button:focus-visible, select:focus-visible { outline: 3px solid #f1b52c; outline-offset: 2px; }
 @media (max-width: 600px) { .prediction-container { padding: 16px; } }

@@ -36,7 +36,7 @@ The platform brings those concerns into a common workflow: find an employee, ins
 | Attrition Prediction | IMPLEMENTED | Validated FastAPI and Spring contracts, persisted classifier/threshold inference, bounded upstream timeouts, prediction metadata/audit, model limitations, authorization, and accessible Angular loading/error/decision-support states |
 | Salary Prediction | IMPLEMENTED | Leakage-safe random-forest regression with aligned Java/FastAPI contracts, strict ranges, artifact metadata/metrics/limitations, bounded upstream handling, audit metadata, and accessible Angular states |
 | Performance Prediction | IMPLEMENTED | Leakage-safe classifier with strict Java/FastAPI contracts, class-probability validation, artifact metadata/metrics/limitations, audit metadata, bounded failures, and accessible Angular distribution/decision-support states |
-| Promotion Prediction | IN PROGRESS | Rule-based readiness API with required-rating validation; no historical promotion target or learned classifier |
+| Promotion Prediction | IN PROGRESS | Strict deterministic rule-based readiness contract, threshold/rule consistency validation, artifact safeguards, audit metadata, and accessible Angular states; Java Maven verification remains pending in the current environment |
 | Workforce Risk Intelligence | IN PROGRESS | Composite heuristic over model/rule outputs; not a validated risk measure |
 | HR Knowledge Assistant / RAG | IN PROGRESS | Document ingestion, semantic retrieval, answer/source contract; live and security validation remain |
 | Agentic AI | IN PROGRESS | LangChain4j tool registration and agent endpoint |

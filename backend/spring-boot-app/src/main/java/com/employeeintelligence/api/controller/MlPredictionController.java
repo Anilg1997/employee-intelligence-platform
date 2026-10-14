@@ -7,6 +7,7 @@ import com.employeeintelligence.api.dto.SalaryPredictionResponse;
 import com.employeeintelligence.api.dto.PerformancePredictionResponse;
 import com.employeeintelligence.api.dto.PerformancePredictionRequest;
 import com.employeeintelligence.api.dto.PromotionPredictionResponse;
+import com.employeeintelligence.api.dto.PromotionPredictionRequest;
 import java.util.Map;
 import com.employeeintelligence.api.service.MlPredictionService;
 import com.employeeintelligence.api.service.ModelRegistryService;
@@ -74,7 +75,12 @@ public class MlPredictionController {
 
     @PostMapping("/predict/promotion")
     @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
-    public PromotionPredictionResponse predictPromotion(@RequestBody Map<String, Object> request) {
-        var response = mlPredictionService.predictPromotion(request); auditService.record("ML_PREDICTION", "model", "promotion", "SUCCESS", "prediction completed"); return response;
+    public PromotionPredictionResponse predictPromotion(@RequestBody @Valid PromotionPredictionRequest request) {
+        var response = mlPredictionService.predictPromotion(request);
+        auditService.record("ML_PREDICTION", "model", "promotion", "SUCCESS",
+                String.format(Locale.ROOT, "model_version=%s;target_type=%s;threshold=%.4f;rule_score=%.4f;prediction=%s;rules=%s",
+                        response.getModel_version(), response.getTarget_type(), response.getDecision_threshold(),
+                        response.getRule_score(), response.getPromotion_prediction(), response.getRule_checks()));
+        return response;
     }
 }

@@ -102,3 +102,9 @@ def test_promotion_schema_requires_rating_independently_of_performance(client):
     assert "PerformanceRating" in promotion["required"]
     assert promotion["properties"]["PerformanceRating"]["type"] == "integer"
     assert "PerformanceRating" not in schema["components"]["schemas"]["PerformanceData"]["properties"]
+
+
+def test_promotion_rejects_unknown_feature(client, employee):
+    employee["unexpected"] = 1
+    response = client.post("/predict/promotion", json=employee)
+    assert response.status_code == 422
