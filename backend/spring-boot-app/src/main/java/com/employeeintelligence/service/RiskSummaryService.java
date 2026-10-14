@@ -9,10 +9,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashSet;
 import org.springframework.stereotype.Service;
 
 @Service
 public class RiskSummaryService {
+    public static final String FORMULA_VERSION = "risk-summary-v1";
+    public static final String FORMULA = "overallRisk = (attritionRisk + (1 - class4PerformanceProbability) + (1 - promotionRuleScore)) / 3";
     private final EmployeeAiService employeeAiService;
     private final MlPredictionService mlPredictionService;
 
@@ -23,11 +26,14 @@ public class RiskSummaryService {
 
     public RiskSummaryResponse summarize(Long id) {
         Employee employee = employeeAiService.getEmployee(id);
-        List<String> limitations = new ArrayList<>(List.of(
+        List<String> limitations = new ArrayList<>(new LinkedHashSet<>(List.of(
                 "Decision-support only: never use this as a standalone employment decision.",
-                "Overall risk is the deterministic equal-weight mean of attrition risk, derived performance risk (1 - class 4 score), and inverse promotion rule score; it is not calibrated."));
+                "Overall risk is the deterministic equal-weight mean of attrition risk, derived performance risk (1 - class 4 score), and inverse promotion rule score; it is not calibrated.")));
         var attritionResponse = employeeAiService.assessRisk(id);
         if (attritionResponse == null) throw invalidResponse("Missing attrition response");
+        if (attritionResponse.getEmployeeId() != null && !id.equals(attritionResponse.getEmployeeId())) {
+            throw invalidResponse("Attrition response employee does not match requested employee");
+        }
         double attrition = bounded(attritionResponse.getProbability(), "attrition risk", limitations);
         if (attritionResponse.getLimitations() != null) limitations.addAll(attritionResponse.getLimitations());
         Map<String, Object> features = employeeAiService.toPredictionMap(employee);
@@ -43,6 +49,19 @@ public class RiskSummaryService {
                 && performance.getClass_probabilities().get("4") == null) {
             throw invalidResponse("Missing performance class probability");
         }
+        if (performance.getClass_probabilities() != null) {
+            double sum = 0;
+            for (var entry : performance.getClass_probabilities().entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null || !Double.isFinite(entry.getValue())
+                        || entry.getValue() < 0 || entry.getValue() > 1) {
+                    throw invalidResponse("Invalid performance class probability");
+                }
+                sum += entry.getValue();
+            }
+            if (!Double.isFinite(sum) || Math.abs(sum - 1.0) > 0.01) {
+                throw invalidResponse("Performance class probabilities are inconsistent");
+            }
+        }
         double classFour = performance.getClass_probabilities() == null
                 ? (performance.getPerformance_prediction() >= 4 ? performance.getPerformance_probability() : 0)
                 : performance.getClass_probabilities().getOrDefault("4", 0.0);
@@ -56,9 +75,11 @@ public class RiskSummaryService {
         versions.put("attrition", versionOrUnknown(attritionResponse.getModelVersion(), "attrition", limitations));
         versions.put("performance", versionOrUnknown(performance.getModel_version(), "performance", limitations));
         versions.put("promotionReadiness", versionOrUnknown(promotion.getModel_version(), "promotion readiness", limitations));
+        double overall = (attrition + performanceRisk + (1 - promotionReadiness)) / 3;
+        String band = riskBand(overall);
         return new RiskSummaryResponse(id, attrition, performanceRisk, promotionReadiness,
-                (attrition + performanceRisk + (1 - promotionReadiness)) / 3,
-                promotion.getTarget_type(), versions, limitations);
+                overall, band, interpretation(band), FORMULA, FORMULA_VERSION,
+                promotion.getTarget_type(), versions, deduplicate(limitations));
     }
 
     private static String versionOrUnknown(String version, String model, List<String> limitations) {
@@ -79,5 +100,23 @@ public class RiskSummaryService {
 
     private static MlServiceException invalidResponse(String message) {
         return new MlServiceException(message, null);
+    }
+
+    private static String riskBand(double risk) {
+        if (risk >= 0.70) return "HIGH";
+        if (risk >= 0.40) return "MEDIUM";
+        return "LOW";
+    }
+
+    private static String interpretation(String band) {
+        return switch (band) {
+            case "HIGH" -> "Higher deterministic decision-support signal; review contributing factors and context.";
+            case "MEDIUM" -> "Intermediate deterministic decision-support signal; review contributing factors and context.";
+            default -> "Lower deterministic decision-support signal; review contributing factors and context.";
+        };
+    }
+
+    private static List<String> deduplicate(List<String> values) {
+        return List.copyOf(new LinkedHashSet<>(values));
     }
 }

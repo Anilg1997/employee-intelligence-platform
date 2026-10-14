@@ -44,6 +44,9 @@ class RiskSummaryServiceTest {
         assertEquals("unknown", response.modelVersions().get("performance"));
         assertEquals("unknown", response.modelVersions().get("promotionReadiness"));
         assertEquals("unknown", response.modelVersions().get("attrition"));
+        assertEquals("MEDIUM", response.riskBand());
+        assertEquals(RiskSummaryService.FORMULA_VERSION, response.formulaVersion());
+        assertEquals(RiskSummaryService.FORMULA, response.formula());
         assertEquals(true, response.limitations().stream().anyMatch(value -> value.contains("not fully traceable")));
     }
 
@@ -118,5 +121,22 @@ class RiskSummaryServiceTest {
         assertEquals("promotion-readiness-rules-v1", response.modelVersions().get("promotionReadiness"));
         assertTrue(response.limitations().contains("not calibrated"));
         assertTrue(response.limitations().contains("held-out metrics only"));
+        assertEquals(1, response.limitations().stream().filter("not calibrated"::equals).count());
+    }
+
+    @Test
+    void rejectsInconsistentClassProbabilities() {
+        EmployeeAiService employees = mock(EmployeeAiService.class);
+        MlPredictionService predictions = mock(MlPredictionService.class);
+        Employee employee = mock(Employee.class);
+        when(employees.getEmployee(7L)).thenReturn(employee);
+        when(employees.assessRisk(7L)).thenReturn(new AttritionRiskResponse(7L, "no", 0.2, "Low Risk"));
+        when(employees.toPredictionMap(employee)).thenReturn(Map.of());
+        PerformancePredictionResponse performance = new PerformancePredictionResponse();
+        performance.setClass_probabilities(Map.of("3", 0.8, "4", 0.8));
+        when(predictions.predictPerformance(anyMap())).thenReturn(performance);
+        when(predictions.predictPromotion(Map.of())).thenReturn(new PromotionPredictionResponse());
+
+        assertThrows(MlServiceException.class, () -> new RiskSummaryService(employees, predictions).summarize(7L));
     }
 }

@@ -1,1 +1,57 @@
-<section class="risk-page"><p class="eyebrow">Decision support</p><h1>Risk intelligence</h1><p class="disclaimer">Signals are non-calibrated decision-support aids. They must not be used as a standalone employment decision or substitute for human review.</p><label for="riskEmployee">Employee</label><select id="riskEmployee" [(ngModel)]="selectedEmployeeId"><option [ngValue]="null">Select an employee</option>@for (employee of employees; track employee.id) {<option [ngValue]="employee.id">{{employee.name}} · {{employee.jobRole}}</option>}</select><button type="button" [disabled]="loading || !selectedEmployeeId" (click)="load()">{{loading?'Loading…':'View risk summary'}}</button>@if(errorMessage){<p class="error">{{errorMessage}}</p>}@if(summary){<div class="cards"><article><span>Overall risk</span><strong>{{(summary.overallRisk*100).toFixed(1)}}%</strong><small>Deterministic composite</small></article><article><span>Attrition risk</span><strong>{{(summary.attritionRisk*100).toFixed(1)}}%</strong><small>Existing attrition probability</small></article><article><span>Performance risk</span><strong>{{(summary.performanceRisk*100).toFixed(1)}}%</strong><small>Derived: 1 − class 4 score</small></article><article><span>Promotion readiness</span><strong>{{(summary.promotionReadiness*100).toFixed(1)}}%</strong><small>{{summary.promotionTargetType}} rule score</small></article></div><h2>Model provenance</h2><ul class="provenance">@for(version of (summary.modelVersions|keyvalue);track version.key){<li><b>{{version.key}}</b><span>{{version.value}}</span></li>}</ul><h2>Limitations</h2><ul>@for(limit of summary.limitations;track limit){<li>{{limit}}</li>}</ul> }</section>
+<section class="risk-page" aria-labelledby="risk-heading">
+  <p class="eyebrow">Decision support</p>
+  <h1 id="risk-heading">Risk intelligence</h1>
+  <p class="intro">Review a transparent summary of model and rule-based signals for an employee.</p>
+
+  <div class="disclaimer" role="note">
+    <strong>Human review required.</strong>
+    These signals support consistent review; they are not facts, recommendations, or a standalone employment decision. Consider the employee's context, check for missing or inaccurate data, and document the human decision.
+  </div>
+
+  @if (employeesLoading) {
+    <p class="status" role="status" aria-live="polite">Loading employees…</p>
+  } @else if (employeeErrorMessage) {
+    <div class="error" role="alert"><p>{{ employeeErrorMessage }}</p><button type="button" (click)="loadEmployees()">Try again</button></div>
+  } @else if (!employees.length) {
+    <p class="empty" role="status">No employees are available for risk review. Import an employee first.</p>
+  } @else {
+    <div class="form-row">
+      <label for="riskEmployee">Employee</label>
+      <select id="riskEmployee" [(ngModel)]="selectedEmployeeId" [disabled]="summaryLoading" aria-describedby="employee-help">
+        <option [ngValue]="null">Select an employee</option>
+        @for (employee of employees; track employee.id) {
+          <option [ngValue]="employee.id">{{ employee.name }} · {{ employee.jobRole }}</option>
+        }
+      </select>
+      <small id="employee-help">Signals use the values currently stored for this employee.</small>
+    </div>
+    <button class="primary-action" type="button" [disabled]="summaryLoading || selectedEmployeeId === null" (click)="load()" [attr.aria-busy]="summaryLoading">
+      {{ summaryLoading ? 'Loading risk summary…' : 'View risk summary' }}
+    </button>
+  }
+
+  @if (summaryLoading) { <p class="status" role="status" aria-live="polite">Loading the risk summary…</p> }
+  @if (errorMessage) {
+    <div class="error" role="alert"><p>{{ errorMessage }}</p><button type="button" (click)="load()" [disabled]="employeesLoading || selectedEmployeeId === null">Try again</button></div>
+  }
+
+  @if (summary) {
+    <section class="summary" aria-labelledby="summary-heading" aria-live="polite">
+      <div class="summary-heading"><div><p class="eyebrow">Composite signal</p><h2 id="summary-heading">{{ riskBand(summary.overallRisk) }}</h2><p>{{ riskInterpretation(summary.overallRisk) }}</p></div><div class="overall-score" [attr.aria-label]="'Overall risk ' + (summary.overallRisk * 100).toFixed(1) + ' percent'"><strong>{{ (summary.overallRisk * 100).toFixed(1) }}%</strong><span>overall risk</span></div></div>
+      <p class="method-note">Equal-weight mean of attrition risk, performance risk, and 1 − promotion readiness. This is a prioritization aid, not a calibrated probability.</p>
+      <div class="cards">
+        <article><h3>Attrition risk</h3><strong>{{ (summary.attritionRisk * 100).toFixed(1) }}%</strong><p>Existing attrition model signal.</p></article>
+        <article><h3>Performance risk</h3><strong>{{ (summary.performanceRisk * 100).toFixed(1) }}%</strong><p>Derived as 1 − class 4 performance score; not calibrated.</p></article>
+        <article><h3>Promotion readiness</h3><strong>{{ (summary.promotionReadiness * 100).toFixed(1) }}%</strong><p>Deterministic rule score for {{ summary.promotionTargetType }}.</p></article>
+      </div>
+
+      <h2>Model provenance</h2>
+      @if (summary.modelVersions | keyvalue; as versions) {
+        @if (versions.length) { <dl class="provenance">@for (version of versions; track version.key) { <div><dt>{{ version.key }}</dt><dd>{{ version.value }}</dd></div> }</dl> } @else { <p class="muted">No model versions were supplied.</p> }
+      }
+      <h2>Limitations</h2>
+      @if (summary.limitations.length) { <ul class="limitations">@for (limitation of summary.limitations; track limitation) { <li>{{ limitation }}</li> }</ul> } @else { <p class="muted">The service supplied no additional limitations. Use human review and verify source data.</p> }
+      <p class="result-disclaimer"><strong>Before deciding:</strong> validate the data, seek relevant context from the employee, apply consistent policy, and have a qualified person make the decision.</p>
+    </section>
+  }
+</section>

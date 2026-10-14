@@ -39,5 +39,17 @@ public AttritionRiskResponse assessRisk(
 
     @GetMapping("/{employeeId}/risk-summary")
     @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
-    public RiskSummaryResponse riskSummary(@PathVariable Long employeeId) { var response = riskSummaryService.summarize(employeeId); auditService.record("RISK_SUMMARY", "employee", employeeId, "SUCCESS", "risk summary viewed"); return response; }
+    public RiskSummaryResponse riskSummary(@PathVariable Long employeeId) {
+        try {
+            var response = riskSummaryService.summarize(employeeId);
+            auditService.record("RISK_SUMMARY", "employee", employeeId, "SUCCESS",
+                    "risk summary viewed; formulaVersion=" + response.formulaVersion()
+                            + "; riskBand=" + response.riskBand());
+            return response;
+        } catch (RuntimeException ex) {
+            auditService.record("RISK_SUMMARY", "employee", employeeId, "FAILURE",
+                    "risk summary unavailable; reason=" + ex.getClass().getSimpleName());
+            throw ex;
+        }
+    }
 }

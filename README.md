@@ -37,7 +37,7 @@ The platform brings those concerns into a common workflow: find an employee, ins
 | Salary Prediction | IMPLEMENTED | Leakage-safe random-forest regression with aligned Java/FastAPI contracts, strict ranges, artifact metadata/metrics/limitations, bounded upstream handling, audit metadata, and accessible Angular states |
 | Performance Prediction | IMPLEMENTED | Leakage-safe classifier with strict Java/FastAPI contracts, class-probability validation, artifact metadata/metrics/limitations, audit metadata, bounded failures, and accessible Angular distribution/decision-support states |
 | Promotion Prediction | IN PROGRESS | Strict deterministic rule-based readiness contract, threshold/rule consistency validation, artifact safeguards, audit metadata, and accessible Angular states; Java Maven verification remains pending in the current environment |
-| Workforce Risk Intelligence | IN PROGRESS | Composite heuristic over model/rule outputs; not a validated risk measure |
+| Workforce Risk Intelligence | IN PROGRESS | Deterministic, non-calibrated composite with formula/version metadata, LOW/MEDIUM/HIGH interpretation, provenance, limitation deduplication, audit metadata, and accessible Angular states; Java verification remains pending in the current environment |
 | HR Knowledge Assistant / RAG | IN PROGRESS | Document ingestion, semantic retrieval, answer/source contract; live and security validation remain |
 | Agentic AI | IN PROGRESS | LangChain4j tool registration and agent endpoint |
 | MCP | IN PROGRESS | Four tool definitions; secure identity propagation and runtime verification remain |
