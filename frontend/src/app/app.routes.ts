@@ -15,6 +15,7 @@ import { ROLE_POLICY } from './services/role-policy.service';
 import { AccessRequired } from './components/access-required/access-required';
 import { Notifications } from './components/notifications/notifications';
 import { AuthCallback } from './components/auth-callback/auth-callback';
+import { Reports } from './components/reports/reports';
 
 export const routes: Routes = [
   { path: 'access-required', component: AccessRequired },
@@ -55,6 +56,7 @@ export const routes: Routes = [
   { path: 'risk-intelligence', component: RiskIntelligence, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
   { path: 'audit', component: Audit, canActivate: [authGuard], data: { roles: ROLE_POLICY.audit } },
   { path: 'notifications', component: Notifications, canActivate: [authGuard] },
+  { path: 'reports', component: Reports, canActivate: [authGuard] },
 
   {
     path: 'hr-assistant',

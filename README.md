@@ -41,7 +41,7 @@ The platform brings those concerns into a common workflow: find an employee, ins
 | HR Knowledge Assistant / RAG | IN PROGRESS | Document ingestion, semantic retrieval, answer/source contract; live and security validation remain |
 | Agentic AI | IN PROGRESS | LangChain4j tool registration and agent endpoint |
 | MCP | IN PROGRESS | Four tool definitions; secure identity propagation and runtime verification remain |
-| AI Reports / Real-Time Alerts | IN PROGRESS | Persisted notification/SSE foundation, event contract, Angular notification panel/page, and read-state flow exist; report workflow and real domain producers remain |
+| AI Reports / Real-Time Alerts | IN PROGRESS | Tenant-scoped persisted employee/department/workforce reports, report UI, status, limitations, and human-review state exist; AI generation, progress events, and real domain producers remain |
 | Audit | IN PROGRESS | Selected events, persistence, paged reads and UI; coverage/durability incomplete |
 | AI Governance | IN PROGRESS | Version/limitation metadata and decision-support disclosures; review/override workflow planned |
 
@@ -750,7 +750,7 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 | Tool-using agent and secure MCP integration | IN PROGRESS |
 | Redis cache/rate limiting | PLANNED |
 | Kafka events/outbox/retry/DLQ/idempotency | IN PROGRESS |
-| Reports and human-review workflow | PLANNED |
+| Reports and human-review workflow | IN PROGRESS |
 | Notification persistence, contract, consumer deduplication and SSE cursor backend | IN PROGRESS |
 | Angular notification UI | IMPLEMENTED |
 | Real risk, prediction, and report notification producers | PLANNED |
