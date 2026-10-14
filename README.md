@@ -127,7 +127,7 @@ The table lists technologies present in source/configuration, not a blanket depl
 | API description | Springdoc/OpenAPI dependency | API documentation integration; compatibility needs verification |
 | Legacy demo | Streamlit | Separate attrition-only UI, not the primary enterprise frontend |
 
-GraphQL, gRPC, Grafana, Testcontainers, and full release security gates remain target additions. Actuator, Micrometer, Prometheus exposure, the transactional outbox, opt-in Kafka publisher, notification consumer foundation, and selected Redis caching are implemented for this slice.
+GraphQL, gRPC, Grafana, Testcontainers, and full release security gates remain target additions. Actuator, Micrometer, Prometheus exposure, bounded ML/RAG/outbox/report counters, the transactional outbox, opt-in Kafka publisher, notification consumer foundation, and selected Redis caching are implemented for this slice. See [Observability and DevSecOps](docs/observability-devsecops.md) for metric names, correlation-aware audit/log guidance, CI jobs, and required external services.
 
 ## Microservices
 

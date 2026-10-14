@@ -6,10 +6,15 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
+import static com.employeeintelligence.observability.MetricsSupport.increment;
 
 /** Tenant-scoped keyword/vector fusion. Retrieved text remains untrusted data. */
 @Service
 public class HybridRagRetrievalService {
+    @Autowired(required = false)
+    private MeterRegistry meterRegistry;
     static final int MAX_RESULTS = 20;
     private static final String SEARCH_SQL = """
             WITH scored AS (
@@ -50,6 +55,7 @@ public class HybridRagRetrievalService {
     }
 
     public List<Map<String, Object>> search(String query, int limit, double minimumSimilarity) {
+        increment(meterRegistry, "platform.rag.searches");
         RagService.validateQuestion(query);
         if (limit < 1 || limit > MAX_RESULTS) {
             throw new IllegalArgumentException("RAG result limit must be between 1 and " + MAX_RESULTS);
@@ -59,8 +65,10 @@ public class HybridRagRetrievalService {
         }
         List<Float> vector = embeddingModel.embed(query).content().vectorAsList();
         String embedding = vector.toString();
-        return jdbcTemplate.queryForList(
+        List<Map<String, Object>> results = jdbcTemplate.queryForList(
                 SEARCH_SQL,
                 embedding, query, tenantContext.currentTenantId(), minimumSimilarity, limit);
+        increment(meterRegistry, "platform.rag.results", "outcome", results.isEmpty() ? "empty" : "matched");
+        return results;
     }
 }

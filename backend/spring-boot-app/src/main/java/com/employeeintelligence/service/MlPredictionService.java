@@ -18,9 +18,14 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClient;
+import io.micrometer.core.instrument.MeterRegistry;
+import static com.employeeintelligence.observability.MetricsSupport.increment;
 
 @Service
 public class MlPredictionService {
+
+    @Autowired(required = false)
+    private MeterRegistry meterRegistry;
 
     private static final Set<String> PROMOTION_FEATURES = Set.of("Age", "BusinessTravel", "DailyRate", "Department", "DistanceFromHome", "Education", "EducationField", "EnvironmentSatisfaction", "Gender", "HourlyRate", "JobInvolvement", "JobLevel", "JobRole", "JobSatisfaction", "MaritalStatus", "MonthlyIncome", "MonthlyRate", "NumCompaniesWorked", "OverTime", "PercentSalaryHike", "PerformanceRating", "RelationshipSatisfaction", "StockOptionLevel", "TotalWorkingYears", "TrainingTimesLastYear", "WorkLifeBalance", "YearsAtCompany", "YearsInCurrentRole", "YearsSinceLastPromotion", "YearsWithCurrManager");
     private static final Set<String> PROMOTION_RULES = Set.of("tenure", "time_since_promotion", "performance", "level_headroom");
@@ -50,6 +55,7 @@ public class MlPredictionService {
     }
 
     public MlPredictionResponse predict(MlPredictionRequest request) {
+        increment(meterRegistry, "platform.ml.requests", "model", "attrition");
         try {
             MlPredictionResponse response = restClient.post()
                     .uri("/predict")
@@ -60,6 +66,7 @@ public class MlPredictionService {
             validate(response);
             return response;
         } catch (RestClientException exception) {
+            increment(meterRegistry, "platform.ml.failures", "model", "attrition", "reason", "upstream");
             throw new MlServiceException("Attrition prediction service unavailable", exception);
         }
     }
@@ -85,12 +92,14 @@ public class MlPredictionService {
     }
 
     public SalaryPredictionResponse predictSalary(SalaryPredictionRequest request) {
+        increment(meterRegistry, "platform.ml.requests", "model", "salary");
         try {
             SalaryPredictionResponse response = restClient.post().uri("/predict/salary").contentType(MediaType.APPLICATION_JSON)
                     .body(request).retrieve().body(SalaryPredictionResponse.class);
             validateSalary(response);
             return response;
         } catch (RestClientException exception) {
+            increment(meterRegistry, "platform.ml.failures", "model", "salary", "reason", "upstream");
             throw new MlServiceException("Salary prediction service unavailable", exception);
         }
     }
@@ -116,6 +125,7 @@ public class MlPredictionService {
     }
 
     public PerformancePredictionResponse predictPerformance(PerformancePredictionRequest request) {
+        increment(meterRegistry, "platform.ml.requests", "model", "performance");
         Set<String> expected = Set.of("Age", "BusinessTravel", "DailyRate", "Department", "DistanceFromHome", "Education", "EducationField", "EnvironmentSatisfaction", "Gender", "HourlyRate", "JobInvolvement", "JobLevel", "JobRole", "JobSatisfaction", "MaritalStatus", "MonthlyIncome", "MonthlyRate", "NumCompaniesWorked", "OverTime", "PercentSalaryHike", "RelationshipSatisfaction", "StockOptionLevel", "TotalWorkingYears", "TrainingTimesLastYear", "WorkLifeBalance", "YearsAtCompany", "YearsInCurrentRole", "YearsSinceLastPromotion", "YearsWithCurrManager");
         if (request == null || !request.features().keySet().equals(expected)) throw new MlServiceException("Invalid performance prediction request", null);
         try {
@@ -124,18 +134,21 @@ public class MlPredictionService {
             validatePerformance(response);
             return response;
         } catch (RestClientException exception) {
+            increment(meterRegistry, "platform.ml.failures", "model", "performance", "reason", "upstream");
             throw new MlServiceException("Performance prediction service unavailable", exception);
         }
     }
 
     /** Compatibility adapter for callers that already hold a decoded feature map. */
     public PerformancePredictionResponse predictPerformance(Map<String, Object> request) {
+        increment(meterRegistry, "platform.ml.requests", "model", "performance");
         try {
             PerformancePredictionResponse response = restClient.post().uri("/predict/performance").contentType(MediaType.APPLICATION_JSON)
                     .body(request).retrieve().body(PerformancePredictionResponse.class);
             validatePerformance(response);
             return response;
         } catch (RestClientException exception) {
+            increment(meterRegistry, "platform.ml.failures", "model", "performance", "reason", "upstream");
             throw new MlServiceException("Performance prediction service unavailable", exception);
         }
     }
@@ -162,6 +175,7 @@ public class MlPredictionService {
 
     /** Compatibility adapter for callers that already hold a decoded feature map. */
     public PromotionPredictionResponse predictPromotion(Map<String, Object> request) {
+        increment(meterRegistry, "platform.ml.requests", "model", "promotion");
         if (request == null || !request.keySet().equals(PROMOTION_FEATURES))
             throw new MlServiceException("Invalid promotion prediction request", null);
         try {
@@ -170,6 +184,7 @@ public class MlPredictionService {
             validatePromotion(response);
             return response;
         } catch (RestClientException exception) {
+            increment(meterRegistry, "platform.ml.failures", "model", "promotion", "reason", "upstream");
             throw new MlServiceException("Promotion prediction service unavailable", exception);
         }
     }

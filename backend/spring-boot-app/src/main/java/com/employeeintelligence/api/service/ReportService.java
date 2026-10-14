@@ -11,9 +11,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.*;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
+import static com.employeeintelligence.observability.MetricsSupport.increment;
 
 @Service
 public class ReportService {
+    @Autowired(required = false)
+    private MeterRegistry meterRegistry;
     private static final List<String> LIMITATIONS = List.of(
             "Deterministic report generated from stored employee and dashboard aggregates; no facts are invented.",
             "AI assistance is disabled for this report; content is not an employment decision and requires human review.",
@@ -39,6 +44,7 @@ public class ReportService {
 
     @Transactional
     public ReportResponse generate(ReportRequest request) {
+        increment(meterRegistry, "platform.reports.generated", "type", request.reportType().toUpperCase(Locale.ROOT));
         String type = request.reportType().toUpperCase(Locale.ROOT);
         validateTarget(type, request);
         String tenant = tenantContext.currentTenantId();
