@@ -65,6 +65,9 @@
       }
       <a routerLink="/notifications" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()"><span class="nav-icon" aria-hidden="true">◌</span><span>Notifications</span></a>
       <a routerLink="/reports" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()"><span class="nav-icon" aria-hidden="true">▧</span><span>Reports</span></a>
+      @if (policy.canViewAudit()) { <a routerLink="/knowledge" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()"><span class="nav-icon" aria-hidden="true">▱</span><span>Knowledge</span></a> }
+      @if (policy.canAccess(['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER', 'HR_ANALYST'])) { <a routerLink="/ai-operations" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()"><span class="nav-icon" aria-hidden="true">◌</span><span>AI operations</span></a> }
+      @if (policy.canViewAudit()) { <a routerLink="/system-health" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()"><span class="nav-icon" aria-hidden="true">⌁</span><span>System health</span></a><a routerLink="/administration" routerLinkActive="is-active" ariaCurrentWhenActive="page" (click)="closeNavigation()"><span class="nav-icon" aria-hidden="true">⚙</span><span>Administration</span></a> }
     </nav>
   </header>
 

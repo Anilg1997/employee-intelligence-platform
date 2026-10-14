@@ -16,6 +16,10 @@ import { AccessRequired } from './components/access-required/access-required';
 import { Notifications } from './components/notifications/notifications';
 import { AuthCallback } from './components/auth-callback/auth-callback';
 import { Reports } from './components/reports/reports';
+import { AiOperations } from './components/ai-operations/ai-operations';
+import { SystemHealth } from './components/system-health/system-health';
+import { Administration } from './components/administration/administration';
+import { Knowledge } from './components/knowledge/knowledge';
 
 export const routes: Routes = [
   { path: 'access-required', component: AccessRequired },
@@ -57,6 +61,10 @@ export const routes: Routes = [
   { path: 'audit', component: Audit, canActivate: [authGuard], data: { roles: ROLE_POLICY.audit } },
   { path: 'notifications', component: Notifications, canActivate: [authGuard] },
   { path: 'reports', component: Reports, canActivate: [authGuard] },
+  { path: 'ai-operations', component: AiOperations, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
+  { path: 'system-health', component: SystemHealth, canActivate: [authGuard], data: { roles: ROLE_POLICY.audit } },
+  { path: 'administration', component: Administration, canActivate: [authGuard], data: { roles: ROLE_POLICY.audit } },
+  { path: 'knowledge', component: Knowledge, canActivate: [authGuard], data: { roles: ROLE_POLICY.audit } },
 
   {
     path: 'hr-assistant',

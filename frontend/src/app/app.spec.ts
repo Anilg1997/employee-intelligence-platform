@@ -37,12 +37,16 @@ describe('App', () => {
     const links = compiled.querySelectorAll('.main-nav a');
 
     expect(navigation).toBeTruthy();
-    expect(links.length).toBe(11);
+    expect(links.length).toBe(15);
     expect(compiled.querySelector('.main-nav a[routerlink="/audit"]')).toBeTruthy();
     expect(compiled.querySelector('.main-nav a[routerlink="/salary-prediction"]')).toBeTruthy();
     expect(compiled.querySelector('.main-nav a[routerlink="/employees"]')).toBeTruthy();
     expect(compiled.querySelector('.main-nav a[routerlink="/notifications"]')).toBeTruthy();
     expect(compiled.querySelector('.main-nav a[routerlink="/reports"]')).toBeTruthy();
+    expect(compiled.querySelector('.main-nav a[routerlink="/ai-operations"]')).toBeTruthy();
+    expect(compiled.querySelector('.main-nav a[routerlink="/system-health"]')).toBeTruthy();
+    expect(compiled.querySelector('.main-nav a[routerlink="/administration"]')).toBeTruthy();
+    expect(compiled.querySelector('.main-nav a[routerlink="/knowledge"]')).toBeTruthy();
     expect(compiled.querySelector('.menu-toggle')?.getAttribute('aria-controls')).toBe('primary-navigation');
   });
 });

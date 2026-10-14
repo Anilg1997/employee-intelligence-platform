@@ -1,0 +1,13 @@
+<section class="ops-page" aria-labelledby="knowledge-title">
+  <header class="page-heading"><div><p class="eyebrow">Knowledge</p><h1 id="knowledge-title">Documents</h1><p>Search indexed HR knowledge and request ingestion through the existing APIs.</p></div></header>
+  <p class="notice">A full document inventory is unavailable: the current backend exposes semantic search, not a document-list endpoint. Results below are matching chunks, not a complete inventory.</p>
+  <div class="card"><h2>Search indexed documents</h2><form (ngSubmit)="search()"><label for="query">Question or keywords</label><div class="form-row"><input id="query" name="query" [(ngModel)]="query" [disabled]="loading" placeholder="e.g. parental leave policy" /><button type="submit" [disabled]="loading">{{ loading ? 'Searching…' : 'Search' }}</button></div></form></div>
+  @if (error) { <p class="notice error" role="alert">{{ error }}</p> }
+  @if (loading) { <p class="state" role="status">Searching indexed documents…</p> }
+  @else if (searched && !results.length && !error) { <p class="state" role="status">No matching indexed documents were returned.</p> }
+  @else if (results.length) { <div class="card-grid">@for (result of results; track $index) { <article class="card"><h2>Document result {{ $index + 1 }}</h2><p>{{ result.content || 'Document content is not included in this result.' }}</p>@if (result.metadata) { <h3>Source metadata</h3><pre>{{ result.metadata | json }}</pre> }@if (result.similarity !== undefined) { <small>Similarity: {{ result.similarity }}</small> }</article> }</div> }
+  <div class="card"><h2>Ingest a trusted document</h2><p class="muted">This accepts a server-side path, not a browser file upload. The backend enforces its configured trusted directory and file limits. Search after ingestion to verify indexed content.</p>
+    <form (ngSubmit)="ingest()"><label for="filePath">Server file path</label><input id="filePath" name="filePath" [(ngModel)]="filePath" [disabled]="ingesting" /><label for="source">Source label</label><input id="source" name="source" [(ngModel)]="source" [disabled]="ingesting" /><button type="submit" [disabled]="ingesting">{{ ingesting ? 'Submitting…' : 'Request ingestion' }}</button></form>
+    @if (ingesting) { <p role="status">Ingesting document…</p> }@if (ingestionError) { <p role="alert">{{ ingestionError }}</p> }@if (message) { <p role="status">{{ message }}</p> }
+  </div>
+</section>

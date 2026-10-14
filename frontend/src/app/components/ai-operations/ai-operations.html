@@ -1,0 +1,15 @@
+<section class="ops-page" aria-labelledby="ai-title">
+  <header class="page-heading"><div><p class="eyebrow">Operations</p><h1 id="ai-title">AI operations</h1><p>Model registry metadata and evaluation metrics from the platform API. Registry status does not establish live prediction-service readiness.</p></div><button type="button" (click)="load()" [disabled]="loading">Refresh</button></header>
+  @if (loading) { <p class="state" role="status">Loading model inventory…</p> }
+  @else if (error) { <div class="state error" role="alert"><p>{{ error }}</p><button type="button" (click)="load()">Try again</button></div> }
+  @else if (!models.length) { <p class="state">No models are registered.</p> }
+  @else {
+    <div class="card-grid">@for (model of models; track $index) {
+      <article class="card"><div class="card-header"><h2>{{ model.name }}</h2><span class="badge">{{ model.status || 'status unavailable' }}</span></div>
+        <dl><div><dt>Version</dt><dd>{{ model.version || 'Unavailable' }}</dd></div><div><dt>Algorithm</dt><dd>{{ model.algorithm || 'Unavailable' }}</dd></div></dl>
+        @if (model.metrics && (model.metrics | keyvalue).length) { <h3>Evaluation metrics</h3><pre>{{ model.metrics | json }}</pre> } @else { <p class="muted">Metrics are not published for this model.</p> }
+        @if (model.limitations?.length) { <h3>Limitations</h3><ul>@for (limitation of model.limitations; track $index) { <li>{{ limitation }}</li> }</ul> }
+      </article>
+    }</div>
+  }
+</section>
