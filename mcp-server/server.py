@@ -17,6 +17,9 @@ _TOOL_NAMES = {
     "assess_attrition_risk",
     "search_hr_policy",
     "get_department_statistics",
+    "search_employees",
+    "get_workforce_metrics",
+    "list_reports",
 }
 _ROLE_TOOLS = {
     "employee": {"search_hr_policy"},
@@ -29,6 +32,8 @@ _DEFAULT_TIMEOUTS = {
     "risk": 20.0,
     "policy": 20.0,
     "statistics": 10.0,
+    "search": 10.0,
+    "reports": 10.0,
 }
 _MAX_TIMEOUT = 30.0
 _MAX_EMPLOYEE_ID = 2_147_483_647
@@ -79,7 +84,13 @@ def _headers() -> dict[str, str]:
     token = os.getenv("SPRING_API_BEARER_TOKEN", "").strip()
     if any(char.isspace() or ord(char) < 32 or ord(char) > 126 for char in token):
         raise AdapterValidationError("SPRING_API_BEARER_TOKEN is invalid")
-    return {"Authorization": f"Bearer {token}"} if token else {}
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    correlation = os.getenv("MCP_CORRELATION_ID", "").strip()
+    if correlation:
+        if not all(c.isalnum() or c in "._:-" for c in correlation) or len(correlation) > 64:
+            raise AdapterValidationError("MCP_CORRELATION_ID is invalid")
+        headers["X-Correlation-Id"] = correlation
+    return headers
 
 
 def _allowed_tools() -> set[str]:
@@ -111,6 +122,11 @@ def _validate_question(question: str) -> None:
         raise AdapterValidationError("question exceeds the maximum length")
     if any(ord(char) < 32 and char not in "\n\r\t" for char in question):
         raise AdapterValidationError("question contains invalid control characters")
+
+
+def _validate_search(value: str | None, name: str) -> None:
+    if value is not None and (not isinstance(value, str) or len(value) > 200 or any(ord(c) < 32 for c in value)):
+        raise AdapterValidationError(f"{name} is invalid")
 
 
 def _request(method: str, path: str, *, timeout_name: str, **kwargs: Any) -> str:
@@ -179,6 +195,27 @@ def get_department_statistics() -> str:
         "get_department_statistics",
         lambda: _request("GET", "/api/dashboard/summary", timeout_name="statistics"),
     )
+
+
+@mcp.tool()
+def search_employees(query: str | None = None, department: str | None = None) -> str:
+    """Search employees using the existing paged employee search endpoint."""
+    return _guard("search_employees", lambda: (_validate_search(query, "query"), _validate_search(department, "department"),
+        _request("GET", "/api/employees/search", timeout_name="search", params={k: v for k, v in {"query": query, "department": department}.items() if v is not None}))[2])
+
+
+@mcp.tool()
+def get_workforce_metrics() -> str:
+    """Get workforce metrics from the existing dashboard summary endpoint."""
+    return _guard("get_workforce_metrics", lambda: _request("GET", "/api/dashboard/summary", timeout_name="statistics"))
+
+
+@mcp.tool()
+def list_reports(size: int = 50) -> str:
+    """List generated reports using the existing report endpoint."""
+    if isinstance(size, bool) or not isinstance(size, int) or size < 1 or size > 100:
+        return _error("size must be between 1 and 100")
+    return _guard("list_reports", lambda: _request("GET", "/api/reports", timeout_name="reports", params={"size": size}))
 
 
 if __name__ == "__main__":

@@ -18,6 +18,12 @@ import java.util.Locale;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import com.employeeintelligence.api.service.AuditService;
+import com.employeeintelligence.api.service.OutboxService;
+import com.employeeintelligence.api.notification.NotificationEvent;
+import com.employeeintelligence.api.notification.NotificationEventType;
+import com.employeeintelligence.security.AuthenticatedUser;
+import com.employeeintelligence.security.TenantContext;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/ml")
@@ -26,12 +32,16 @@ public class MlPredictionController {
     private final MlPredictionService mlPredictionService;
     private final AuditService auditService;
     private final ModelRegistryService registry;
+    private final OutboxService outbox;
+    private final TenantContext tenantContext;
 
     public MlPredictionController(MlPredictionService mlPredictionService, AuditService auditService,
-                                  ModelRegistryService registry) {
+                                  ModelRegistryService registry, OutboxService outbox, TenantContext tenantContext) {
         this.mlPredictionService = mlPredictionService;
         this.auditService = auditService;
         this.registry = registry;
+        this.outbox = outbox;
+        this.tenantContext = tenantContext;
     }
 
     @PostMapping("/predict")
@@ -44,6 +54,7 @@ public class MlPredictionController {
                 String.format(Locale.ROOT, "model_version=%s;threshold=%.4f;probability=%.4f;prediction=%s",
                         response.getModel_version(), response.getDecision_threshold(),
                         response.getAttrition_probability(), response.getAttrition_prediction()));
+        notifyPrediction();
         return response;
     }
 
@@ -59,6 +70,7 @@ public class MlPredictionController {
                 String.format(Locale.ROOT, "model_version=%s;algorithm=%s;dataset=%s;estimated_monthly_income=%.2f",
                         response.getModel_version(), response.getAlgorithm(), response.getDataset(),
                         response.getEstimated_monthly_income()));
+        notifyPrediction();
         return response;
     }
 
@@ -70,6 +82,7 @@ public class MlPredictionController {
                 String.format(Locale.ROOT, "model_version=%s;algorithm=%s;dataset=%s;prediction=%d;probability=%.4f",
                         response.getModel_version(), response.getAlgorithm(), response.getDataset(),
                         response.getPerformance_prediction(), response.getPerformance_probability()));
+        notifyPrediction();
         return response;
     }
 
@@ -81,6 +94,13 @@ public class MlPredictionController {
                 String.format(Locale.ROOT, "model_version=%s;target_type=%s;threshold=%.4f;rule_score=%.4f;prediction=%s;rules=%s",
                         response.getModel_version(), response.getTarget_type(), response.getDecision_threshold(),
                         response.getRule_score(), response.getPromotion_prediction(), response.getRule_checks()));
+        notifyPrediction();
         return response;
+    }
+
+    private void notifyPrediction() {
+        var user = AuthenticatedUser.current();
+        outbox.enqueueNotification(new NotificationEvent(1, NotificationEventType.PREDICTION_COMPLETED,
+                "prediction-" + UUID.randomUUID(), tenantContext.currentTenantId(), user.subject()));
     }
 }

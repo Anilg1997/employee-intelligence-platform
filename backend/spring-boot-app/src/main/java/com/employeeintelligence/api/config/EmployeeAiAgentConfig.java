@@ -7,6 +7,8 @@ import com.employeeintelligence.api.agent.tools.HrPolicyTool;
 import dev.langchain4j.model.chat.ChatModel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
+import java.time.Duration;
 
 @Configuration
 public class EmployeeAiAgentConfig {
@@ -16,13 +18,15 @@ public class EmployeeAiAgentConfig {
             ChatModel chatModel,
             EmployeeTool employeeTool,
             AttritionRiskTool attritionRiskTool,
-            HrPolicyTool hrPolicyTool) {
+            HrPolicyTool hrPolicyTool,
+            @Value("${agent.execution.max-tool-calls:8}") int maxToolCalls,
+            @Value("${agent.execution.timeout-seconds:30}") long timeoutSeconds) {
 
         return new EmployeeAiAgent(
                 chatModel,
                 employeeTool,
                 attritionRiskTool,
-                hrPolicyTool
+                hrPolicyTool, maxToolCalls, Duration.ofSeconds(Math.max(1, Math.min(timeoutSeconds, 120)))
         );
     }
 }

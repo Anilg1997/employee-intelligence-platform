@@ -23,11 +23,18 @@ public class ReportService {
     private final DashboardService dashboard;
     private final TenantContext tenantContext;
     private final ObjectMapper mapper;
+    private final OutboxService outbox;
 
     public ReportService(ReportRepository reports, EmployeeRepository employees, DashboardService dashboard,
-                         TenantContext tenantContext, ObjectMapper mapper) {
+                         TenantContext tenantContext, ObjectMapper mapper, OutboxService outbox) {
         this.reports = reports; this.employees = employees; this.dashboard = dashboard;
-        this.tenantContext = tenantContext; this.mapper = mapper;
+        this.tenantContext = tenantContext; this.mapper = mapper; this.outbox = outbox;
+    }
+
+    /** Compatibility constructor for focused unit tests that do not exercise event production. */
+    public ReportService(ReportRepository reports, EmployeeRepository employees, DashboardService dashboard,
+                         TenantContext tenantContext, ObjectMapper mapper) {
+        this(reports, employees, dashboard, tenantContext, mapper, null);
     }
 
     @Transactional
@@ -44,7 +51,11 @@ public class ReportService {
             report.setContent(mapper.writeValueAsString(content(type, request, tenant)));
             report.setLimitations(mapper.writeValueAsString(LIMITATIONS));
         } catch (Exception e) { throw new IllegalStateException("Could not serialize report content", e); }
-        return ReportResponse.from(reports.save(report));
+        Report saved = reports.save(report);
+        if (outbox != null) outbox.enqueueNotification(new com.employeeintelligence.api.notification.NotificationEvent(
+                    1, com.employeeintelligence.api.notification.NotificationEventType.REPORT_GENERATED,
+                    "report-" + saved.getId(), tenant, saved.getRequester()));
+        return ReportResponse.from(saved);
     }
 
     @Transactional(readOnly = true)

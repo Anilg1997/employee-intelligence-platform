@@ -183,3 +183,24 @@ def test_missing_token_omits_authorization(server, monkeypatch):
     with patch.object(server.requests, "request", return_value=response()) as request:
         server.get_employee(1)
     assert request.call_args.kwargs["headers"] == {}
+
+
+def test_new_read_tools_use_existing_endpoints(server):
+    with patch.object(server.requests, "request", return_value=response()) as request:
+        assert server.search_employees("ana", "Engineering") == '{"ok":true}'
+        assert request.call_args.kwargs["params"] == {"query": "ana", "department": "Engineering"}
+        assert server.get_workforce_metrics() == '{"ok":true}'
+        assert request.call_args.args[1].endswith("/api/dashboard/summary")
+        assert server.list_reports(10) == '{"ok":true}'
+        assert request.call_args.kwargs["params"] == {"size": 10}
+
+
+def test_correlation_id_is_propagated_and_validated(server, monkeypatch):
+    monkeypatch.setenv("MCP_CORRELATION_ID", "agent-123")
+    with patch.object(server.requests, "request", return_value=response()) as request:
+        server.get_employee(1)
+    assert request.call_args.kwargs["headers"]["X-Correlation-Id"] == "agent-123"
+    monkeypatch.setenv("MCP_CORRELATION_ID", "bad\r\nheader")
+    with patch.object(server.requests, "request") as request:
+        assert server.get_employee(1) == "Error: MCP_CORRELATION_ID is invalid"
+    request.assert_not_called()
