@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 import { apiUrl } from '../config/api.config';
 import { PromotionPredictionRequest, PromotionPredictionResponse } from '../models/promotion-prediction';
 
@@ -9,6 +10,6 @@ export class PromotionPredictionService {
   private readonly url = apiUrl('ml/predict/promotion');
   constructor(private http: HttpClient) {}
   predict(request: PromotionPredictionRequest): Observable<PromotionPredictionResponse> {
-    return this.http.post<PromotionPredictionResponse>(this.url, request);
+    return this.http.post<PromotionPredictionResponse>(this.url, request).pipe(timeout({ first: 30_000 }));
   }
 }

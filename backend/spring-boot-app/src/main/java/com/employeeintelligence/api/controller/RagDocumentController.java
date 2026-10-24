@@ -20,7 +20,7 @@ public class RagDocumentController {
     }
 
     @PostMapping
-    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN')")
+    @PreAuthorize("@securityMode.isDemoMode() or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN')")
     public Map<String, String> createDocument(
             @RequestParam String content,
             @RequestParam(required = false) String metadata) {
@@ -36,7 +36,7 @@ public class RagDocumentController {
         );
     }
     @GetMapping("/search")
-    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
+    @PreAuthorize("@securityMode.isDemoMode() or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
 public List<Map<String, Object>> search(
         @RequestParam String query,
         @RequestParam(defaultValue = "3") int limit) {

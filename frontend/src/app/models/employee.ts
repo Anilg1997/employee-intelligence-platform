@@ -3,7 +3,7 @@ export interface Employee {
   name: string;
   department: string;
   jobRole: string;
-  age: number;
+  age?: number | null;
   attrition?: string;
   businessTravel?: string;
   dailyRate?: number;

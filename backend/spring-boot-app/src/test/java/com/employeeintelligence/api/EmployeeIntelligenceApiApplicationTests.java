@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import dev.langchain4j.model.chat.ChatModel;
 import com.employeeintelligence.api.agent.EmployeeAiAgent;
 import static org.mockito.Mockito.mock;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.beans.factory.annotation.Value;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -25,6 +27,7 @@ import java.net.http.HttpResponse;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(EmployeeIntelligenceApiApplicationTests.TestChatModelConfig.class)
+@ActiveProfiles("local")
 class EmployeeIntelligenceApiApplicationTests {
 
     private static final String SCHEMA = "nexora_it_" + UUID.randomUUID().toString().replace("-", "");
@@ -59,7 +62,8 @@ class EmployeeIntelligenceApiApplicationTests {
         }
 
         @Bean
-        EmployeeAiAgent employeeAiAgent() {
+        @Primary
+        EmployeeAiAgent testEmployeeAiAgent() {
             return mock(EmployeeAiAgent.class);
         }
     }
@@ -121,6 +125,7 @@ class EmployeeIntelligenceApiApplicationTests {
     void employeeQueriesDoNotReturnAnotherTenantsRows() {
         var employee = new com.employeeintelligence.api.model.Employee("Tenant fixture", "Engineering", "Developer", 30);
         employee.setTenantId("tenant-a");
+        employee.setEmployeeNumber(42);
         var saved = employees.saveAndFlush(employee);
         assertTrue(employees.findByIdAndTenantId(saved.getId(), "tenant-a").isPresent());
         assertTrue(employees.findByIdAndTenantId(saved.getId(), "tenant-b").isEmpty());
@@ -131,6 +136,8 @@ class EmployeeIntelligenceApiApplicationTests {
         assertEquals(1, employees.search("tenant-a", "Tenant", null,
                 org.springframework.data.domain.PageRequest.of(0, 10)).getTotalElements());
         assertEquals(1, employees.search("tenant-a", null, null,
+                org.springframework.data.domain.PageRequest.of(0, 10)).getTotalElements());
+        assertEquals(1, employees.search("tenant-a", "42", null,
                 org.springframework.data.domain.PageRequest.of(0, 10)).getTotalElements());
         assertEquals(1, employees.search("tenant-a", null, "engineering",
                 org.springframework.data.domain.PageRequest.of(0, 10)).getTotalElements());

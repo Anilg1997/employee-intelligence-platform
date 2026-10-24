@@ -18,7 +18,7 @@ public class AiChatController {
     }
 
     @PostMapping("/chat")
-    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
+    @PreAuthorize("@securityMode.isDemoMode() or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
     public Map<String, String> chat(@Valid @RequestBody AiChatRequest request) {
         String message = request.message();
 

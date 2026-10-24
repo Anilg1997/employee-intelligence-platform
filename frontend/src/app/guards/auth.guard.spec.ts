@@ -18,7 +18,14 @@ describe('auth navigation', () => {
   beforeEach(() => {
     sessionStorage.clear();
     TestBed.configureTestingModule({
-      providers: [{ provide: AUTH_ENABLED_TOKEN, useValue: true }, provideRouter(routes.map(route => route.canActivate ? { ...route, component: ProtectedPage } : route))]
+      providers: [
+        { provide: AUTH_ENABLED_TOKEN, useValue: true },
+        provideRouter(routes.map(route =>
+          route.canActivate
+            ? { ...route, component: ProtectedPage, loadComponent: undefined }
+            : route
+        ))
+      ]
     });
     auth = TestBed.inject(AuthService);
     router = TestBed.inject(Router);
@@ -82,7 +89,14 @@ describe('auth navigation', () => {
   it('retains unrestricted local demo navigation', async () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [{ provide: AUTH_ENABLED_TOKEN, useValue: false }, provideRouter(routes.map(route => route.canActivate ? { ...route, component: ProtectedPage } : route))]
+      providers: [
+        { provide: AUTH_ENABLED_TOKEN, useValue: false },
+        provideRouter(routes.map(route =>
+          route.canActivate
+            ? { ...route, component: ProtectedPage, loadComponent: undefined }
+            : route
+        ))
+      ]
     });
     const harness = await RouterTestingHarness.create('/');
     expect(TestBed.inject(Router).url).toBe('/dashboard');

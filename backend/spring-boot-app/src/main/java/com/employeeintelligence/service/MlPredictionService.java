@@ -6,10 +6,13 @@ import com.employeeintelligence.api.dto.SalaryPredictionRequest;
 import com.employeeintelligence.api.dto.SalaryPredictionResponse;
 import com.employeeintelligence.api.dto.PerformancePredictionResponse;
 import com.employeeintelligence.api.dto.PromotionPredictionResponse;
+import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -22,8 +25,14 @@ public class MlPredictionService {
     public MlPredictionService(
             @Value("${ml.service.url:http://127.0.0.1:8000}") String mlServiceUrl) {
 
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        requestFactory.setReadTimeout(Duration.ofSeconds(25));
         this.restClient = RestClient.builder()
                 .baseUrl(mlServiceUrl)
+                .requestFactory(requestFactory)
                 .build();
     }
 

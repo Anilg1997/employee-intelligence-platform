@@ -21,7 +21,7 @@ public class DashboardController {
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
+    @PreAuthorize("@securityMode.isDemoMode() or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
     public DashboardResponse getSummary() {
         var response = dashboardService.getDashboardSummary(); auditService.record("RISK_SUMMARY", "dashboard", "summary", "SUCCESS", "summary viewed"); return response;
     }

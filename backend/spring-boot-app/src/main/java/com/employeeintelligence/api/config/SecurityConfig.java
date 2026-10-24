@@ -1,8 +1,10 @@
 package com.employeeintelligence.api.config;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.http.HttpMethod;
@@ -22,11 +24,11 @@ import org.springframework.security.oauth2.server.resource.web.authentication.Be
 @EnableMethodSecurity
 public class SecurityConfig {
     @Bean
-    TenantContext tenantContext(@org.springframework.beans.factory.annotation.Value("${security.auth.enabled:false}") boolean enabled) {
-        return new TenantContext(enabled);
+    TenantContext tenantContext(Environment environment) {
+        return new TenantContext(!environment.acceptsProfiles(Profiles.of("local")));
     }
     @Bean
-    @ConditionalOnProperty(name = "security.auth.enabled", havingValue = "false", matchIfMissing = true)
+    @Profile("local")
     SecurityFilterChain localSecurityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
@@ -36,13 +38,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "security.auth.enabled", havingValue = "true")
+    @Profile("secure")
     SecurityFilterChain oidcSecurityFilterChain(HttpSecurity http, ObjectProvider<AuditService> audit, TenantContext tenants) throws Exception {
         return http.csrf(csrf -> csrf.disable())
                 .addFilterAfter(new TenantFilter(tenants), BearerTokenAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/metrics", "/actuator/prometheus",
+                        .requestMatchers("/actuator/health/**", "/actuator/info",
                                 "/api/health", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/actuator/metrics/**", "/actuator/prometheus").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/employees", "/api/employees/**", "/api/dashboard/**")
                         .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
                         .requestMatchers(HttpMethod.POST, "/api/employees", "/api/employees/**")
@@ -69,7 +72,7 @@ public class SecurityConfig {
 
     /** Maps the provider's conventional `roles` claim to Spring ROLE_ authorities. */
     @Bean
-    @ConditionalOnProperty(name = "security.auth.enabled", havingValue = "true")
+    @Profile("secure")
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
         authorities.setAuthoritiesClaimName("roles");

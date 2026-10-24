@@ -8,6 +8,7 @@ import {
   EmployeeAiPrediction
 } from '../../services/employee-ai.service';
 import { RolePolicyService } from '../../services/role-policy.service';
+import { toAttritionPredictionFeatures } from '../../services/prediction-features';
 
 @Component({
   selector: 'app-employee-form',
@@ -24,21 +25,14 @@ export class EmployeeForm {
     name: '',
     department: '',
     jobRole: '',
-    age: 18,
-    attrition: 'No',
-    businessTravel: 'Travel_Rarely',
-    gender: 'Female',
-    maritalStatus: 'Single',
-    overTime: 'No',
-    monthlyIncome: 0,
-    totalWorkingYears: 0,
-    yearsAtCompany: 0
+    age: null
   };
 
   loading = false;
   predictionLoading = false;
 
   errorMessage = '';
+  predictionNotice = '';
 
   prediction: EmployeeAiPrediction | null = null;
 
@@ -51,15 +45,24 @@ export class EmployeeForm {
   createEmployee(): void {
 
     this.errorMessage = '';
+    this.predictionNotice = '';
     this.prediction = null;
+    const age = this.employee.age;
 
     if (
-      !this.employee.name ||
-      !this.employee.department ||
-      !this.employee.jobRole ||
-      this.employee.age < 18
+      !this.employee.name?.trim() ||
+      !this.employee.department?.trim() ||
+      !this.employee.jobRole?.trim() ||
+      typeof age !== 'number' ||
+      !Number.isInteger(age) ||
+      age < 18 ||
+      age > 60
     ) {
-      this.errorMessage = 'Please fill all fields correctly.';
+      this.errorMessage = 'Enter a name, department, job role, and an age from 18 to 60.';
+      return;
+    }
+
+    if (this.loading) {
       return;
     }
 
@@ -72,17 +75,21 @@ export class EmployeeForm {
 
         this.loading = false;
 
-        // Get AI prediction for the newly created employee
         if (createdEmployee.id) {
-          this.predictEmployee(createdEmployee.id);
+          try {
+            toAttritionPredictionFeatures(createdEmployee);
+            this.predictEmployee(createdEmployee.id);
+          } catch (error: unknown) {
+            this.predictionNotice = error instanceof Error
+              ? `Employee created. Attrition prediction was skipped: ${error.message}`
+              : 'Employee created. Attrition prediction was skipped because required model features are missing.';
+          }
         }
 
         this.employee = this.emptyEmployee();
       },
 
-      error: (error: unknown) => {
-        console.error('Failed to create employee:', error);
-
+      error: () => {
         this.errorMessage = 'Failed to create employee.';
         this.loading = false;
       }
@@ -103,15 +110,9 @@ export class EmployeeForm {
 
         },
 
-        error: (error: unknown) => {
-
-          console.error(
-            'Failed to predict employee attrition:',
-            error
-          );
-
-          this.errorMessage =
-            'Employee created, but AI prediction failed.';
+        error: () => {
+          this.predictionNotice =
+            'Employee created, but the attrition model is currently unavailable.';
 
           this.predictionLoading = false;
         }
@@ -123,15 +124,7 @@ export class EmployeeForm {
       name: '',
       department: '',
       jobRole: '',
-      age: 18,
-      attrition: 'No',
-      businessTravel: 'Travel_Rarely',
-      gender: 'Female',
-      maritalStatus: 'Single',
-      overTime: 'No',
-      monthlyIncome: 0,
-      totalWorkingYears: 0,
-      yearsAtCompany: 0
+      age: null
     };
   }
 }

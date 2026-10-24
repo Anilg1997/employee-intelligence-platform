@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 
 import { Employee } from '../models/employee';
 import { EmployeePageResponse } from '../models/employee-page-response';
@@ -26,7 +27,7 @@ export class EmployeeService {
   constructor(private http: HttpClient) {}
 
   getEmployees(): Observable<Employee[]> {
-    return this.http.get<Employee[]>(this.employeesUrl);
+    return this.http.get<Employee[]>(this.employeesUrl).pipe(timeout({ first: 15_000 }));
   }
 
   searchEmployees(options: EmployeeSearchOptions = {}): Observable<EmployeePageResponse> {
@@ -46,11 +47,12 @@ export class EmployeeService {
       }
     });
 
-    return this.http.get<EmployeePageResponse>(`${this.employeesUrl}/search`, { params });
+    return this.http.get<EmployeePageResponse>(`${this.employeesUrl}/search`, { params })
+      .pipe(timeout({ first: 15_000 }));
   }
 
   getEmployeeById(id: number): Observable<Employee> {
-    return this.http.get<Employee>(`${this.employeesUrl}/${id}`);
+    return this.http.get<Employee>(`${this.employeesUrl}/${id}`).pipe(timeout({ first: 15_000 }));
   }
 
   createEmployee(employee: Employee): Observable<Employee> {

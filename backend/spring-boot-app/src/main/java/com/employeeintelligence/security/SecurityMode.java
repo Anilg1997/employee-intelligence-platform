@@ -1,14 +1,22 @@
 package com.employeeintelligence.security;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 
 @Component("securityMode")
 public class SecurityMode {
+
     private final boolean demoMode;
 
-    public SecurityMode(@Value("${security.auth.enabled:false}") boolean authEnabled) {
-        this.demoMode = !authEnabled;
+    @Autowired
+    public SecurityMode(Environment environment) {
+        this.demoMode = environment.acceptsProfiles(Profiles.of("local"));
+    }
+
+    public SecurityMode(boolean securityEnabled) {
+        this.demoMode = !securityEnabled;
     }
 
     public boolean isDemoMode() {

@@ -62,6 +62,7 @@
       <div class="form-group">
         <label for="departmentTravel">Business travel</label>
         <select id="departmentTravel" name="businessTravel" [(ngModel)]="employee.businessTravel">
+          <option value="">Select business travel</option>
           <option value="Travel_Rarely">Travel rarely</option>
           <option value="Travel_Frequently">Travel frequently</option>
           <option value="Non-Travel">Non-travel</option>
@@ -71,6 +72,7 @@
       <div class="form-group">
         <label for="gender">Gender</label>
         <select id="gender" name="gender" [(ngModel)]="employee.gender">
+          <option value="">Select gender</option>
           <option value="Female">Female</option>
           <option value="Male">Male</option>
         </select>
@@ -79,6 +81,7 @@
       <div class="form-group">
         <label for="maritalStatus">Marital status</label>
         <select id="maritalStatus" name="maritalStatus" [(ngModel)]="employee.maritalStatus">
+          <option value="">Select marital status</option>
           <option value="Single">Single</option>
           <option value="Married">Married</option>
           <option value="Divorced">Divorced</option>
@@ -88,6 +91,7 @@
       <div class="form-group">
         <label for="overTime">Overtime</label>
         <select id="overTime" name="overTime" [(ngModel)]="employee.overTime">
+          <option value="">Select overtime</option>
           <option value="No">No</option>
           <option value="Yes">Yes</option>
         </select>
@@ -110,7 +114,10 @@
     </div>
 
     @if (errorMessage) {
-      <p class="error">{{ errorMessage }}</p>
+      <p class="error" role="alert">{{ errorMessage }}</p>
+    }
+    @if (predictionNotice) {
+      <p class="note" role="status">{{ predictionNotice }}</p>
     }
 
     <button
@@ -121,14 +128,14 @@
 
   </form>
 @if (predictionLoading) {
-  <div class="prediction-card">
+  <div class="prediction-card" role="status" aria-live="polite">
     <h3>AI Attrition Prediction</h3>
     <p>Analyzing employee data...</p>
   </div>
 }
 
 @if (prediction) {
-  <div class="prediction-card">
+  <div class="prediction-card" role="status" aria-live="polite">
 
     <h3>AI Attrition Prediction</h3>
 

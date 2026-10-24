@@ -1,5 +1,6 @@
 export interface RuntimeConfig {
   apiBaseUrl: string;
+  mlApiBaseUrl: string;
   authEnabled: boolean;
   oidcAuthority: string;
   oidcClientId: string;
@@ -11,6 +12,7 @@ declare global {
 
 const defaults: RuntimeConfig = {
   apiBaseUrl: 'http://localhost:8080/api',
+  mlApiBaseUrl: 'http://127.0.0.1:8000',
   authEnabled: false,
   oidcAuthority: '',
   oidcClientId: ''

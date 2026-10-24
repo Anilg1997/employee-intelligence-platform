@@ -58,6 +58,14 @@ public class RagService {
                         embedding, tenantContext.currentTenantId(), embedding
                 );
 
+        if (documents.isEmpty()) {
+            return new RagResponse(
+                    question,
+                    "The available HR documents do not contain enough information to answer this question.",
+                    List.of()
+            );
+        }
+
         // 3. Build context from retrieved documents
         StringBuilder context = new StringBuilder();
 

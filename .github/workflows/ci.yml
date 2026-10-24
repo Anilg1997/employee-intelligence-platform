@@ -94,6 +94,9 @@ jobs:
   compose:
     name: Compose configuration
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_PASSWORD: compose-validation-placeholder
+      SPRING_PROFILES_ACTIVE: local
     steps:
       - uses: actions/checkout@v4
       - name: Validate Compose file

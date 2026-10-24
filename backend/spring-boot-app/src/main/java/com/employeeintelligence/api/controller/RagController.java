@@ -18,7 +18,7 @@ public class RagController {
     }
 
     @PostMapping("/ask")
-    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
+    @PreAuthorize("@securityMode.isDemoMode() or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER', 'ROLE_HR_ANALYST')")
     public RagResponse ask(@Valid @RequestBody RagQuestionRequest request) {
         return ragService.ask(request.question());
     }

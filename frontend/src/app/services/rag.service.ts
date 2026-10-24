@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 import { apiUrl } from '../config/api.config';
 
 export interface RagSource {
@@ -29,6 +30,6 @@ export class RagService {
     return this.http.post<RagResponse>(
       this.ragUrl,
       { question }
-    );
+    ).pipe(timeout({ first: 90_000 }));
   }
 }

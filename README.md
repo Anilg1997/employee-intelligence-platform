@@ -4,7 +4,7 @@
 
 Nexora Technologies is a **fictional company** used for this engineering portfolio. This repository is not an internal system of a real employer. It evolves the existing Employee Intelligence Platform; it does not replace it with a new application.
 
-> **Engineering status — reviewed 11 October 2026:** production-oriented, not production-ready. Backend migration/startup wiring, nullable employee search, the promotion request contract, and secure navigation have regression fixes. PostgreSQL integration tests verify fresh migration, a V3-to-V4 upgrade, and selected tenant-scoped reads using isolated schemas. Existing deployment databases, real OIDC login, and full-stack/container operation still require verification. See [Limitations](#limitations) before running a demonstration.
+> **Engineering status — reviewed 24 October 2026:** production-oriented, not production-ready. Backend migration/startup wiring, nullable employee search, the promotion request contract, and secure navigation have regression fixes. PostgreSQL integration tests verify fresh migration, a V3-to-V4 upgrade, and selected tenant-scoped reads using isolated schemas. Existing deployment databases, real OIDC login, and full-stack/container operation still require verification. See [Limitations](#limitations) before running a demonstration.
 
 Status vocabulary used throughout:
 
@@ -16,7 +16,7 @@ Status vocabulary used throughout:
 
 Nexora is a production-oriented enterprise Workforce Intelligence & AI Platform combining employee operations, workforce analytics, Python-based predictions, and document-grounded assistance. Angular provides the user interface; Java/Spring Boot owns business APIs and authorization; PostgreSQL stores transactional data and pgvector supports semantic retrieval. FastAPI serves Scikit-learn models. Ollama and LangChain4j provide LLM, embedding, RAG, and tool-using agent foundations. A separate MCP server exposes selected enterprise capabilities.
 
-The target architecture extends these foundations with **Kafka, Redis, GraphQL, selective gRPC, observability, and DevSecOps**. Kafka now has a database-backed outbox foundation; Redis and the consumer/realtime layers remain planned. Security and AI security are explicit engineering workstreams, with existing RBAC controls and significant remaining verification work.
+The target architecture extends these foundations with **Kafka, Redis, GraphQL, selective gRPC, observability, and DevSecOps**. Kafka has an opt-in development broker and database-backed outbox publisher; consumers, DLQ operations, and replay remain planned. Security and AI security are explicit engineering workstreams, with existing RBAC controls and significant remaining verification work.
 
 The business objective is decision support with traceable evidence, not automated employment decisions. No prediction should independently determine compensation, promotion, performance action, or termination.
 
@@ -81,7 +81,7 @@ flowchart TD
     AI --> VEC[(pgvector)]
     AI --> LLM[Ollama or approved LLM]
     AI -. controlled tools .-> MCP[MCP]
-    EMP -. selected events .-> K[Kafka - planned]
+    EMP -. selected events .-> K[Kafka broker configured; consumers planned]
     ML -. prediction events .-> K
     K --> AN[Analytics consumers - planned]
     K --> N[Notifications - planned]
@@ -98,7 +98,7 @@ flowchart TD
 
 - **Domain-driven boundaries:** isolate employee, prediction, knowledge, and audit responsibilities before extracting deployable services.
 - **API-first design:** preserve REST contracts and introduce explicit DTO validation; GraphQL is reserved for justified aggregation.
-- **Event-driven architecture:** publish meaningful business events, not every read or internal method call. Kafka is planned.
+- **Event-driven architecture:** publish meaningful business events, not every read or internal method call. The audit outbox publisher and optional local broker exist; domain consumers are planned.
 - **Asynchronous processing:** reserve background jobs for reports, ingestion, and notifications; return synchronous results when the caller needs them immediately.
 - **Least privilege and zero-trust principles:** backend authorization is authoritative. Network location, an LLM response, or a frontend role check must not grant access. Full enforcement remains in progress.
 - **Observability and resilience:** failures should be diagnosable and dependency failures isolated. Comprehensive telemetry and resilience policies remain planned.
@@ -115,7 +115,7 @@ The table lists technologies present in source/configuration, not a blanket depl
 | Persistence | Spring Data JPA, Hibernate, JDBC | Entity persistence and vector SQL |
 | Security | Spring Security, OAuth2 Resource Server | JWT validation configuration and role checks |
 | Database | PostgreSQL 17, pgvector | Employee/audit records and embeddings |
-| Schema | Spring Boot Flyway starter, scripts V1–V4 | Fresh migrations and V3-to-V4 upgrade tested in isolated PostgreSQL schemas |
+| Schema | Spring Boot Flyway starter, scripts V1–V5 | Fresh migrations and V3-to-V4 upgrade tested in isolated PostgreSQL schemas |
 | Frontend | Angular 21.2, TypeScript 5.9, RxJS | Routed application and API interaction |
 | Frontend runtime | Angular SSR, Express | Server output and prerendering configuration |
 | ML | Python, Pandas, NumPy, Scikit-learn | Training and versioned data-only JSON predictors; NumPy inference |
@@ -127,13 +127,13 @@ The table lists technologies present in source/configuration, not a blanket depl
 | API description | Springdoc/OpenAPI dependency | API documentation integration; compatibility needs verification |
 | Legacy demo | Streamlit | Separate attrition-only UI, not the primary enterprise frontend |
 
-Kafka, Redis, GraphQL, gRPC, Grafana, Testcontainers, and the security pipeline remain target additions, not current stack capabilities. Actuator, Micrometer, and Prometheus exposure are implemented for this slice.
+Redis, GraphQL, gRPC, Grafana, Testcontainers, and complete security gates remain target additions, not current stack capabilities. Kafka producer dependencies, an outbox publisher, and an optional development broker are configured, but consumers are absent. Actuator, Micrometer, and Prometheus exposure are implemented for this slice.
 
 ## Microservices
 
 | Current boundary | Purpose and responsibilities | APIs | Database/artifacts | Events | Dependencies |
 | --- | --- | --- | --- | --- | --- |
-| Spring Boot process | Employee lifecycle, summary analytics, authorization, ML proxy, risk, RAG, agent and audit modules | `/api/employees`, `/api/dashboard`, `/api/ml`, `/api/ai`, `/api/rag`, `/api/agent`, `/api/audit` | PostgreSQL `employee`, `rag_documents`, `audit_events` | No Kafka events implemented | PostgreSQL/pgvector, FastAPI, Ollama |
+| Spring Boot process | Employee CRUD, summary analytics, authorization, ML proxy, risk, RAG, agent and audit modules | `/api/employees`, `/api/dashboard`, `/api/ml`, `/api/ai`, `/api/rag`, `/api/agent`, `/api/audit` | PostgreSQL `employee`, `rag_documents`, `audit_events`, `outbox_events` | Audit outbox and opt-in publisher; consumers remain unfinished | PostgreSQL/pgvector, FastAPI, Ollama; optional Kafka |
 | FastAPI process | Prediction inference and model loading | `/predict` and salary/performance/promotion variants | Files in `ml-service/models/` | None | Python ML stack and compatible artifacts |
 | MCP process | Expose selected backend capabilities to MCP clients | Streamable HTTP tools on port 8001 | None owned | None | MCP SDK and Spring API |
 | Angular application | Workforce navigation, forms, tables and intelligence screens | Consumes Spring REST APIs | Browser auth state; no business database | No real-time stream implemented | Spring API |
@@ -511,9 +511,10 @@ FastAPI normally exposes `/docs` when startup succeeds. Springdoc is declared fo
 | Database | PostgreSQL 17 with pgvector and a dedicated development database |
 | AI runtime | Ollama with `llama3.2` and `nomic-embed-text`, for AI flows only |
 | Containers | Docker Engine/Desktop and Compose v2, if using the local database container |
-| Kafka / Redis | Not currently required or configured; no startup step yet |
+| Kafka | Optional single-node KRaft Compose profile for development; outbox publisher is opt-in and consumers are not implemented |
+| Redis | Cache is opt-in; Redis is not part of the default Compose stack |
 
-**Known gate:** do not treat these commands as a verified full-stack quickstart. Flyway startup wiring, V1–V4 and a V3-to-V4 fixture upgrade now pass integration tests. Before migrating an existing deployment, back up the database and inspect its actual schema and Flyway history, especially if tables were previously created outside Flyway. The existing local employee database was not migrated by these tests. Do not work around mismatches with `ddl-auto=update`, disabled validation, an arbitrary baseline, or edits to applied migrations.
+**Known gate:** do not treat these commands as a verified full-stack quickstart. Flyway startup wiring, V1–V5 and a V3-to-V4 fixture upgrade pass integration tests. The configured local PostgreSQL database also connected successfully and reported its version-5 schema up to date. Before migrating another existing deployment, back up the database and inspect its actual schema and Flyway history, especially if tables were previously created outside Flyway. The local startup check does not certify other databases. Do not work around mismatches with `ddl-auto=update`, disabled validation, an arbitrary baseline, or edits to applied migrations.
 
 Use one canonical checkout of this repository. Do not mirror `.git`, `.venv`, `node_modules`, secrets or database volumes between copies. The following commands assume a terminal at the repository root unless a working folder is specified; run long-lived processes in separate terminals.
 
@@ -527,13 +528,16 @@ Use one canonical checkout of this repository. Do not mirror `.git`, `.venv`, `n
 
 ### Database
 
-Provide `POSTGRES_DB`, `POSTGRES_USER` and `POSTGRES_PASSWORD` through a private local environment or ignored Compose `.env`. Never use committed development defaults for a deployment.
+Provide `POSTGRES_DB`, `POSTGRES_USER` and `POSTGRES_PASSWORD` through a private local environment or ignored Compose `.env`. `POSTGRES_PASSWORD` is required by Compose; no committed database password fallback is provided. Never use local demo configuration for a deployment.
 
 ```powershell
+# Set the password in the current shell, or create an ignored root .env file.
+$env:POSTGRES_PASSWORD = '<inject-privately>'
+$env:SPRING_PROFILES_ACTIVE = 'local'
 docker compose up -d postgres
 ```
 
-This uses the configured PostgreSQL port; avoid a conflict with an existing local PostgreSQL server. Do not delete an existing volume to resolve a migration problem.
+Compose publishes database, ML, API and management ports on loopback only. Select `local` explicitly for a local/demo setup; it permits unauthenticated requests and must never be used for a deployment. Packaged Spring applications default to fail-closed `secure`; the Maven `spring-boot:run` goal selects `local` for developer convenience. Secure mode requires an approved OIDC issuer. Do not expose local demo services beyond a trusted machine. This uses the configured PostgreSQL port; avoid a conflict with an existing local PostgreSQL server. Do not delete an existing volume to resolve a migration problem.
 
 ### Python inference — working folder `ml-service/`
 
@@ -564,15 +568,19 @@ Use the existing Ollama service if it is already running rather than starting a 
 
 ### Spring Boot — working folder `backend/spring-boot-app/`
 
-Inject real connection values privately; the password below is a placeholder, not a usable credential:
+When launched from this folder, Spring Boot imports the ignored root `.env` file for local settings such as `POSTGRES_PASSWORD`. Explicit `SPRING_DATASOURCE_*` environment variables override it. The Maven `spring-boot:run` goal selects the `local` profile by default so a fresh developer launch does not require an OIDC issuer. This applies only to Maven's run goal; packaged applications continue to default to the fail-closed `secure` profile. For a deployment, inject credentials through the deployment secret manager rather than relying on a local `.env` file.
 
 ```powershell
 $env:SPRING_DATASOURCE_URL = 'jdbc:postgresql://localhost:5432/employee_intelligence'
-$env:SPRING_DATASOURCE_USERNAME = '<local-db-user>'
-$env:SPRING_DATASOURCE_PASSWORD = '<inject-privately>'
-$env:SPRING_PROFILES_ACTIVE = 'local'
 $env:RAG_INGESTION_DIRECTORY = (Resolve-Path '..\..\documents').Path
 .\mvnw.cmd spring-boot:run
+```
+
+For secure-mode Maven startup, provide the approved issuer and override the run-goal profile explicitly:
+
+```powershell
+$env:SECURITY_OAUTH2_ISSUER_URI = 'https://<approved-issuer>'
+.\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=secure'
 ```
 
 POSIX uses `./mvnw spring-boot:run` and equivalent environment exports. CSV import is disabled by default. Enable it only after reviewing import behavior and confirming the target database; the existing dataset is `../../ml-service/data/raw/employee_data.csv` relative to this working folder.
@@ -586,7 +594,7 @@ npm ci
 npm start
 ```
 
-Development UI: `http://localhost:4200`; API default: `http://localhost:8080/api`. Runtime configuration reads `window.__APP_CONFIG__` before application initialization, but automatic deployment-time injection and SSR/browser consistency are unfinished.
+Development UI: `http://localhost:4200`; API default: `http://localhost:8080/api`. Runtime configuration reads `window.__APP_CONFIG__` before application initialization, but automatic deployment-time injection is unfinished. Employee/workforce routes render client-side because their live API data requires browser runtime configuration and authorization; do not prerender employee records into static output.
 
 ### Optional MCP — working folder `mcp-server/`
 
@@ -604,13 +612,17 @@ The configured bind address is `127.0.0.1:8001`. These are the intended launch c
 | --- | --- | --- |
 | `SERVER_PORT` | Spring HTTP port | Default 8080 |
 | `MANAGEMENT_SERVER_PORT` | Spring Actuator management port | Default 8081; expose only to the monitoring/network boundary |
-| `SPRING_PROFILES_ACTIVE` | `local` or `secure` | Local mode is not authenticated |
+| `SPRING_PROFILES_ACTIVE` | `local` or `secure` | Packaged default is fail-closed `secure`; Maven `spring-boot:run` defaults to `local`; Compose requires explicit selection |
 | `SPRING_DATASOURCE_URL` | JDBC connection URL | Supply per environment |
 | `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` | Database identity | Inject privately; never commit |
 | `SPRING_JPA_HIBERNATE_DDL_AUTO` | Hibernate schema policy | Keep `validate` for the intended deployment |
 | `SPRING_JPA_SHOW_SQL` | SQL logging | Avoid sensitive-data exposure |
-| `SPRING_FLYWAY_BASELINE_ON_MIGRATE` | Existing-schema baseline behavior | Review before first migration; not a substitute for schema validation |
+| `SPRING_FLYWAY_BASELINE_ON_MIGRATE` | Existing-schema baseline behavior | Defaults to `false`; only enable after reviewing the existing schema and Flyway history; not a substitute for schema validation |
 | `ML_SERVICE_URL` | Spring-to-FastAPI address | Local default `http://127.0.0.1:8000` |
+| `CORS_ALLOWED_ORIGINS` | Browser origins allowed by Spring Boot | Comma-separated exact origins; local defaults are `http://localhost:4200,http://127.0.0.1:4200` |
+| `ML_CORS_ALLOWED_ORIGINS` | Browser origins allowed by FastAPI | Comma-separated exact origins; same local defaults; wildcard origins are rejected |
+| `LANGCHAIN4J_HTTP_CLIENT_BUILDER_FACTORY` | LangChain4j HTTP implementation | Defaults to `dev.langchain4j.http.client.jdk.JdkHttpClientBuilderFactory` to avoid ambiguous classpath discovery |
+| `SPRING_DATASOURCE_PASSWORD` | Spring Boot database password | Required; no source-controlled default |
 | `EMPLOYEE_IMPORT_ENABLED`, `EMPLOYEE_IMPORT_FILE` | Explicit CSV startup import | Default disabled; do not blindly reimport existing records |
 | `RAG_INGESTION_DIRECTORY` | Trusted ingestion root | Configure explicitly for the working folder/container |
 | `RAG_INGESTION_MAX_FILE_SIZE_BYTES` | File size limit | Default 10485760 |
@@ -618,27 +630,30 @@ The configured bind address is `127.0.0.1:8001`. These are the intended launch c
 | `OLLAMA_BASE_URL` | Chat/embedding runtime | Local default `http://localhost:11434` |
 | `OLLAMA_CHAT_MODEL`, `OLLAMA_EMBEDDING_MODEL` | Model identifiers | Defaults above; embedding dimensions must match storage |
 | `OLLAMA_CHAT_TEMPERATURE` | Chat sampling setting | Default 0.7 |
-| `SECURITY_AUTH_ENABLED` | Base security switch | Profile settings also apply; prefer explicit secure profile |
 | `SECURITY_OAUTH2_ISSUER_URI` | JWT issuer in secure profile | Public issuer URL, never an access token |
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Compose database configuration | Supply private environment values |
-| `POSTGRES_PORT`, `ML_SERVICE_PORT`, `BACKEND_PORT` | Compose host ports | Avoid exposing internal services unnecessarily |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Compose database configuration | Supply private environment values; `.env.example` contains placeholders only |
+| `POSTGRES_PORT`, `ML_SERVICE_PORT`, `BACKEND_PORT`, `KAFKA_PORT` | Compose host ports | Avoid exposing internal services unnecessarily; Kafka is profile-gated |
 | `BACKEND_MANAGEMENT_PORT` | Compose host port for Actuator | Default 8081; keep restricted to health/monitoring consumers |
-| `window.__APP_CONFIG__` | Browser `apiBaseUrl`, `authEnabled`, `oidcAuthority`, `oidcClientId` | Public configuration, not a secret store or completed OIDC client |
+| `KAFKA_BOOTSTRAP_SERVERS`, `OUTBOX_PUBLISHER_ENABLED`, `OUTBOX_KAFKA_TOPIC` | Optional outbox publisher | Publisher remains disabled by default; broker profile must be running before enabling |
+| `OLLAMA_BASE_URL` | Chat/embedding runtime | Host-installed or optional Compose `ai` profile; model downloads are manual |
+| `window.__APP_CONFIG__` | Browser `apiBaseUrl`, `mlApiBaseUrl`, `authEnabled`, `oidcAuthority`, `oidcClientId` | Public configuration, not a secret store or completed OIDC client; local ML default is `http://127.0.0.1:8000` |
 
-Spring and Python do not automatically load the root Compose `.env` in the current code. Configure each process explicitly. There are no operative Kafka/Redis environment variables yet. `.env` is ignored, but variant secret filenames and already-tracked files still require review.
+Spring Boot loads the ignored root `.env` when started from `backend/spring-boot-app/`; Compose also reads it. Python does not load it. Configure Python process settings explicitly. Kafka publisher and Redis cache settings are opt-in; only Kafka's development broker is included under the `messaging` Compose profile. `.env` is ignored; never copy real values into `.env.example`.
 
 ## Docker
 
-Compose currently defines PostgreSQL/pgvector, FastAPI, and Spring Boot. Angular, MCP, Ollama, Kafka and Redis are not Compose services.
+The default Compose stack defines PostgreSQL/pgvector, FastAPI, and Spring Boot. Kafka and Ollama are optional `messaging` and `ai` profiles; neither downloads models or enables event publishing automatically. Angular, MCP and Redis are not Compose services.
 
 ```powershell
-# Root; after supplying private environment values and resolving readiness gates
+# Root; Compose requires an explicit profile and private DB password.
+$env:SPRING_PROFILES_ACTIVE = 'local'
+$env:POSTGRES_PASSWORD = '<inject-privately>'
 docker compose up --build
 ```
 
 The backend Dockerfile uses a Java 21 multi-stage build and non-root runtime. The ML image uses Python 3.12 slim and a non-root `appuser`; Compose uses `ml-service/Dockerfile`.
 
-The backend Compose probe uses `/actuator/health/readiness` with a bounded `curl` request; the ML probe uses `/ready`. `docker compose config --quiet` passed, but Docker Engine was unavailable for image/runtime checks. Committed development credential fallbacks are not production-safe. A passing configuration or image build is not a passing deployment test. Do not publish `docker compose config` output when it contains resolved secrets.
+The backend Compose probe uses `/actuator/health/readiness` with a bounded `curl` request; the ML probe uses `/ready`. Use `local` only for trusted demos and `secure` with an approved issuer for deployment. `docker compose config --quiet` validates configuration only; it is not a passing deployment test. Do not publish `docker compose config` output when it contains resolved secrets.
 
 ## Kubernetes
 
@@ -705,7 +720,7 @@ Cloud mapping is possible without making it mandatory: AWS ECS/EKS for processes
 | Corrupt model artifact | Attrition may fail startup; other loaders reject incompatible files | Deploy a validated known-compatible artifact; add readiness and rollback controls |
 | Ollama unavailable | Chat, embeddings and agent features unavailable | Surface an explicit dependency error; do not substitute invented answers |
 | Audit persistence failure | Primary operation continues, audit may be lost | Monitor loss and design durable delivery with documented compliance trade-offs |
-| Future Kafka outage | Not applicable yet | Proposed outbox backlog, bounded retries and replayable consumer recovery |
+| Kafka outage | Publisher is disabled by default; optional broker can be unavailable | Outbox rows remain for retry; production alerting, consumer recovery, and replay procedures are not implemented |
 | Future Redis outage | Not applicable yet | Define whether a cache fails open to the database or a security limiter fails closed |
 
 Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain to be implemented and tested.
@@ -746,7 +761,8 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 | Hybrid retrieval and retrieval evaluation | PLANNED |
 | Tool-using agent and secure MCP integration | IN PROGRESS |
 | Redis cache/rate limiting | PLANNED |
-| Kafka events/outbox/retry/DLQ/idempotency | PLANNED |
+| Audit outbox and opt-in Kafka publisher | IN PROGRESS |
+| Kafka consumers, retry topics, DLQ, replay and end-to-end idempotency | PLANNED |
 | Reports and human-review workflow | PLANNED |
 | Real-time notifications | PLANNED |
 | Complete enterprise UI / theme / accessibility verification | IN PROGRESS |
@@ -760,6 +776,10 @@ Backups, restore drills, SLOs, alerting, and disaster-recovery procedures remain
 | Full Docker deployment | IN PROGRESS |
 | Kubernetes manifests/readiness validation | PLANNED |
 | Architecture/security/interview documentation | IN PROGRESS |
+
+## Architecture and setup documentation
+
+The current system and proposed boundaries are described in [system architecture](docs/architecture/system-architecture.md), [service boundaries](docs/architecture/service-boundaries.md), [employee lifecycle](docs/architecture/employee-lifecycle.md), and [role access matrix](docs/architecture/role-access-matrix.md). Setup and operational references: [Windows development](docs/setup/windows-development.md), [environment variables](docs/setup/environment-variables.md), [database ownership](docs/database/data-ownership.md), [API overview](docs/api-contracts/api-overview.md), [Kafka events](docs/event-contracts/kafka-events.md), [local AI/RAG/MCP](docs/ai-rag-mcp/local-ai-setup.md), [testing strategy](docs/testing/testing-strategy.md), and [implementation phases](docs/implementation-roadmap/implementation-phases.md). Each document distinguishes existing implementation from planned work.
 
 ### Documentation maintenance contract
 

@@ -1,61 +1,83 @@
+
 import { Routes } from '@angular/router';
 
-import { Dashboard } from './components/dashboard/dashboard';
-import { EmployeesPage } from './components/employees-page/employees-page';
-import { AttritionPrediction } from './components/attrition-prediction/attrition-prediction';
-import { HrAssistant } from './components/hr-assistant/hr-assistant';
-import { EmployeeProfile } from './components/employee-profile/employee-profile';
-import { SalaryPrediction } from './components/salary-prediction/salary-prediction';
-import { PerformancePrediction } from './components/performance-prediction/performance-prediction';
-import { PromotionPrediction } from './components/promotion-prediction/promotion-prediction';
-import { RiskIntelligence } from './components/risk-intelligence/risk-intelligence';
 import { authGuard } from './guards/auth.guard';
-import { Audit } from './components/audit/audit';
 import { ROLE_POLICY } from './services/role-policy.service';
-import { AccessRequired } from './components/access-required/access-required';
 
 export const routes: Routes = [
-  { path: 'access-required', component: AccessRequired },
-
+  {
+    path: 'access-required',
+    loadComponent: () =>
+      import('./components/access-required/access-required').then(module => module.AccessRequired)
+  },
   {
     path: '',
     redirectTo: 'dashboard',
     pathMatch: 'full'
   },
-
   {
     path: 'dashboard',
-    component: Dashboard,
+    loadComponent: () =>
+      import('./components/dashboard/dashboard').then(module => module.Dashboard),
     canActivate: [authGuard]
   },
-
-  {
-    path: 'employees',
-    component: EmployeesPage,
-    canActivate: [authGuard]
-  },
-
   {
     path: 'employees/:id',
-    component: EmployeeProfile,
+    loadComponent: () =>
+      import('./components/employee-profile/employee-profile').then(module => module.EmployeeProfile),
     canActivate: [authGuard]
   },
-
+  {
+    path: 'employees',
+    loadComponent: () =>
+      import('./components/employees-page/employees-page').then(module => module.EmployeesPage),
+    canActivate: [authGuard]
+  },
   {
     path: 'attrition-prediction',
-    component: AttritionPrediction,
+    loadComponent: () =>
+      import('./components/attrition-prediction/attrition-prediction').then(module => module.AttritionPrediction),
     canActivate: [authGuard]
   },
-  { path: 'salary-prediction', component: SalaryPrediction, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
-  { path: 'performance-prediction', component: PerformancePrediction, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
-  { path: 'promotion-prediction', component: PromotionPrediction, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
-  { path: 'risk-intelligence', component: RiskIntelligence, canActivate: [authGuard], data: { roles: ROLE_POLICY.sensitiveInsights } },
-  { path: 'audit', component: Audit, canActivate: [authGuard], data: { roles: ROLE_POLICY.audit } },
-
+  {
+    path: 'salary-prediction',
+    loadComponent: () =>
+      import('./components/salary-prediction/salary-prediction').then(module => module.SalaryPrediction),
+    canActivate: [authGuard],
+    data: { roles: ROLE_POLICY.sensitiveInsights }
+  },
+  {
+    path: 'performance-prediction',
+    loadComponent: () =>
+      import('./components/performance-prediction/performance-prediction').then(module => module.PerformancePrediction),
+    canActivate: [authGuard],
+    data: { roles: ROLE_POLICY.sensitiveInsights }
+  },
+  {
+    path: 'promotion-prediction',
+    loadComponent: () =>
+      import('./components/promotion-prediction/promotion-prediction').then(module => module.PromotionPrediction),
+    canActivate: [authGuard],
+    data: { roles: ROLE_POLICY.sensitiveInsights }
+  },
+  {
+    path: 'risk-intelligence',
+    loadComponent: () =>
+      import('./components/risk-intelligence/risk-intelligence').then(module => module.RiskIntelligence),
+    canActivate: [authGuard],
+    data: { roles: ROLE_POLICY.sensitiveInsights }
+  },
+  {
+    path: 'audit',
+    loadComponent: () =>
+      import('./components/audit/audit').then(module => module.Audit),
+    canActivate: [authGuard],
+    data: { roles: ROLE_POLICY.audit }
+  },
   {
     path: 'hr-assistant',
-    component: HrAssistant,
+    loadComponent: () =>
+      import('./components/hr-assistant/hr-assistant').then(module => module.HrAssistant),
     canActivate: [authGuard]
   }
-
 ];

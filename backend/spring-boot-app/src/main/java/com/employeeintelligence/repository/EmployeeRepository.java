@@ -17,7 +17,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             where e.tenantId = :tenantId and (cast(:query as string) is null
                 or lower(e.name) like lower(concat('%', cast(:query as string), '%'))
                 or lower(e.department) like lower(concat('%', cast(:query as string), '%'))
-                or lower(e.jobRole) like lower(concat('%', cast(:query as string), '%')))
+                or lower(e.jobRole) like lower(concat('%', cast(:query as string), '%'))
+                or cast(e.employeeNumber as string) like concat('%', cast(:query as string), '%'))
               and (cast(:department as string) is null or lower(e.department) = lower(cast(:department as string)))
             """)
     Page<Employee> search(@Param("tenantId") String tenantId, @Param("query") String query,

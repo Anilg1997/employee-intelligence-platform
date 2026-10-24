@@ -10,7 +10,7 @@ public class AuditController {
     private final AuditService auditService;
     public AuditController(AuditService auditService) { this.auditService = auditService; }
     @GetMapping("/events")
-    @PreAuthorize("@securityMode.demoMode or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN')")
+    @PreAuthorize("@securityMode.isDemoMode() or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN')")
     public Map<String,Object> events(@RequestParam(required=false) String action, @RequestParam(required=false) String result,
                                       @RequestParam(defaultValue="0") int page, @RequestParam(defaultValue="25") int size) {
         Page<?> found = auditService.find(action, result, PageRequest.of(Math.max(0,page), Math.min(Math.max(1,size),100), Sort.by(Sort.Direction.DESC,"timestamp")));

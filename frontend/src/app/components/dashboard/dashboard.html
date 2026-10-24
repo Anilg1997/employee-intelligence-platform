@@ -1,101 +1,338 @@
+
 <div class="dashboard">
   <header class="dashboard-header">
-    <div>
+    <div class="header-copy">
       <p class="eyebrow">WORKFORCE INTELLIGENCE</p>
-      <h2>Employee Intelligence Dashboard</h2>
-      <p class="dashboard-subtitle">A current view of the employee directory, organized by department.</p>
+
+      <h1>Employee Intelligence Dashboard</h1>
+
+      <p class="dashboard-subtitle">
+        Explore employee distribution and compare organizational headcount.
+      </p>
+
+      <a class="directory-link" routerLink="/employees">
+        <span>View Employee Directory</span>
+        <span aria-hidden="true">→</span>
+      </a>
     </div>
-    <span class="scope-badge">Current directory scope</span>
+
+    <button
+      type="button"
+      class="refresh-button"
+      (click)="loadDashboard()"
+      [disabled]="loading">
+      <span aria-hidden="true">↻</span>
+      {{ loading ? 'Refreshing…' : 'Refresh data' }}
+    </button>
   </header>
 
-  @if (loading) {
-    <section class="state-card loading" aria-live="polite" aria-busy="true">
-      <div class="loading-mark" aria-hidden="true"></div>
+  @if (loading && !dashboard) {
+    <section class="state-card" aria-live="polite" aria-busy="true">
+      <div class="loading-mark"></div>
       <div>
-        <h3>Loading workforce snapshot</h3>
-        <p>Fetching the latest employee directory summary.</p>
+        <h2>Loading workforce data</h2>
+        <p>Retrieving the latest summary from the backend.</p>
       </div>
     </section>
-  } @else if (errorMessage) {
+  } @else if (errorMessage && !dashboard) {
     <section class="state-card error" role="alert">
       <div>
-        <p class="state-kicker">DATA UNAVAILABLE</p>
-        <h3>We couldn't load the dashboard</h3>
-        <p>{{ errorMessage }} Check the API connection and try again.</p>
+        <h2>Dashboard data unavailable</h2>
+        <p>{{ errorMessage }}</p>
       </div>
-      <button type="button" class="retry-button" (click)="loadDashboard()">Retry</button>
+
+      <button
+        type="button"
+        class="refresh-button"
+        (click)="loadDashboard()">
+        Try again
+      </button>
     </section>
   } @else if (dashboard) {
-    <section class="metric-grid" aria-label="Workforce summary">
-      <article class="metric-card metric-card-primary">
-        <span class="metric-label">Total employees</span>
-        <strong>{{ dashboard.totalEmployees | number }}</strong>
-        <span class="metric-caption">In the current directory</span>
+    @if (errorMessage) {
+      <p class="inline-warning" role="status">
+        {{ errorMessage }}
+      </p>
+    }
+
+    <section class="metric-grid" aria-label="Workforce key metrics">
+      <article class="metric-card metric-primary">
+        <div class="metric-topline">
+          <span class="metric-label">Total employees</span>
+          <span class="metric-icon" aria-hidden="true">♙</span>
+        </div>
+
+        <strong class="metric-value">
+          {{ dashboard.totalEmployees | number }}
+        </strong>
+
+        <span class="metric-caption">Entire workforce</span>
       </article>
+
       <article class="metric-card">
-        <span class="metric-label">Departments</span>
-        <strong>{{ departmentCount | number }}</strong>
-        <span class="metric-caption">With directory records</span>
+        <div class="metric-topline">
+          <span class="metric-label">Departments</span>
+          <span class="metric-icon" aria-hidden="true">▦</span>
+        </div>
+
+        <strong class="metric-value">
+          {{ departmentCount | number }}
+        </strong>
+
+        <span class="metric-caption">
+          Total departments available
+        </span>
       </article>
+
       <article class="metric-card">
-        <span class="metric-label">Largest department</span>
-        <strong>{{ largestDepartment?.name || '—' }}</strong>
-        <span class="metric-caption">{{ largestDepartment ? (largestDepartment.count + ' employees') : 'No department data' }}</span>
+        <div class="metric-topline">
+          <span class="metric-label">
+            {{ selectedDepartment ? 'Selected department' : 'Largest department' }}
+          </span>
+          <span class="metric-icon" aria-hidden="true">↗</span>
+        </div>
+
+        <strong class="metric-value metric-value-text">
+          {{ largestDepartment?.name || '—' }}
+        </strong>
+
+        <span class="metric-caption">
+          {{ largestDepartment
+            ? (largestDepartment.count | number) + ' employees'
+            : 'No department data' }}
+        </span>
       </article>
+
       <article class="metric-card">
-        <span class="metric-label">Average department size</span>
-        <strong>{{ hasDepartmentData ? (averageDepartmentSize | number:'1.0-1') : '—' }}</strong>
-        <span class="metric-caption">Derived from this snapshot</span>
+        <div class="metric-topline">
+          <span class="metric-label">
+            {{ selectedDepartment ? 'Department headcount' : 'Average department size' }}
+          </span>
+          <span class="metric-icon" aria-hidden="true">◉</span>
+        </div>
+
+        <strong class="metric-value">
+          {{ averageDepartmentSize | number:'1.0-0' }}
+        </strong>
+
+        <span class="metric-caption">
+          {{ selectedDepartment
+            ? 'Employees in selected department'
+            : 'Employees per department on average' }}
+        </span>
       </article>
     </section>
 
-    @if (hasDepartmentData) {
-      <section class="panel department-panel">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">ORGANIZATIONAL MIX</p>
-            <h3>Department summary</h3>
-          </div>
-          <span class="panel-note">{{ departmentCount }} departments</span>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <caption class="sr-only">Employee count and share by department</caption>
-            <thead>
-              <tr><th scope="col">Department</th><th scope="col">Employees</th><th scope="col">Share of directory</th></tr>
-            </thead>
-            <tbody>
-              @for (department of departmentSummaries; track department.name) {
-                <tr>
-                  <th scope="row">{{ department.name }}</th>
-                  <td>{{ department.count | number }}</td>
-                  <td>
-                    <div class="share-cell">
-                      <span class="share-track"><span class="share-bar" [style.width.%]="department.share"></span></span>
-                      <span>{{ formatShare(department.share) }}</span>
-                    </div>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </section>
-    } @else {
-      <section class="state-card empty-state">
-        <p class="state-kicker">NO DIRECTORY DATA</p>
-        <h3>There are no department records yet</h3>
-        <p>Department insights will appear here when employee records are available.</p>
-      </section>
+    <section class="panel filter-panel" aria-label="Department filters">
+      <div class="filter-copy">
+        <p class="panel-kicker">EXPLORE WORKFORCE</p>
+        <h2>Department filter</h2>
+        <p class="panel-description">
+          Choose a department or click a chart segment or bar to filter the dashboard.
+        </p>
+      </div>
+
+      <div class="filter-controls">
+        <label for="departmentFilter">Department</label>
+
+        <select
+          id="departmentFilter"
+          class="department-select"
+          [value]="selectedDepartmentName"
+          (change)="onDepartmentFilterChange($event)">
+          <option value="">All departments</option>
+
+          @for (department of departmentSummaries; track department.name) {
+            <option [value]="department.name">
+              {{ department.name }}
+            </option>
+          }
+        </select>
+
+        <button
+          type="button"
+          class="reset-button"
+          [disabled]="!selectedDepartmentName"
+          (click)="clearDepartmentFilter()">
+          Reset filter
+        </button>
+      </div>
+    </section>
+
+    @if (selectedDepartment) {
+      <div class="selection-banner" role="status">
+        <span class="selection-dot"></span>
+
+        <span>
+          Showing <strong>{{ selectedDepartment.name }}</strong>:
+          {{ selectedDepartment.count | number }} employees,
+          {{ formatShare(selectedDepartment.share) }}
+          of the reported workforce.
+        </span>
+
+        <button
+          type="button"
+          class="clear-selection"
+          (click)="clearDepartmentFilter()"
+          aria-label="Clear selected department">
+          Clear
+        </button>
+      </div>
     }
 
-    <p class="data-note"><strong>Data scope:</strong> This view reflects the employee directory summary currently returned by the platform. Trends, attrition risk, and other workforce signals are not included in this snapshot.</p>
-  }
+    <section class="chart-grid" aria-label="Workforce analytics charts">
+      <article class="panel chart-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="panel-kicker">COMPOSITION</p>
+            <h2>Department distribution</h2>
+            <p class="panel-description">
+              {{ selectedDepartment
+                ? 'Selected department share of the total workforce.'
+                : 'Select a segment to focus on a department.' }}
+            </p>
+          </div>
 
-  @if (!loading && !errorMessage && !dashboard) {
-    <section class="state-card empty-state">
-      <h3>No dashboard data available</h3>
-      <p>There is no workforce snapshot to display.</p>
+          <span class="panel-badge">Live data</span>
+        </div>
+
+        @if (hasDepartmentData) {
+          <div class="doughnut-chart">
+            <canvas
+              baseChart
+              [type]="doughnutType"
+              [data]="doughnutData"
+              [options]="doughnutOptions"
+              aria-label="Interactive doughnut chart of employees by department">
+            </canvas>
+          </div>
+        } @else {
+          <div class="empty-state">
+            No department data is available.
+          </div>
+        }
+      </article>
+
+      <article class="panel chart-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="panel-kicker">HEADCOUNT</p>
+            <h2>Employees by department</h2>
+            <p class="panel-description">
+              {{ selectedDepartment
+                ? 'Click the bar again or reset to see every department.'
+                : 'Click a bar to filter the dashboard by department.' }}
+            </p>
+          </div>
+
+          <span class="panel-badge">Interactive</span>
+        </div>
+
+        @if (hasDepartmentData) {
+          <div
+            class="bar-chart"
+            [style.height.px]="barChartHeight">
+            <canvas
+              baseChart
+              [type]="barType"
+              [data]="barData"
+              [options]="barOptions"
+              aria-label="Interactive horizontal bar chart of employees by department">
+            </canvas>
+          </div>
+        } @else {
+          <div class="empty-state">
+            No department data is available.
+          </div>
+        }
+      </article>
+    </section>
+
+    <section class="panel department-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="panel-kicker">DEPARTMENT BREAKDOWN</p>
+          <h2>Workforce by department</h2>
+          <p class="panel-description">
+            {{ selectedDepartment
+              ? 'Details for the selected department.'
+              : 'Headcount and workforce share for every department.' }}
+          </p>
+        </div>
+
+        <span class="total-badge">
+          {{ visibleDepartmentCount | number }}
+          {{ visibleDepartmentCount === 1 ? 'department' : 'departments' }}
+        </span>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Department</th>
+              <th scope="col" class="number-cell">Employees</th>
+              <th scope="col">Workforce share</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (
+              department of visibleDepartmentSummaries;
+              track department.name
+            ) {
+              <tr>
+                <td>
+                  <button
+                    type="button"
+                    class="department-link"
+                    [class.active]="selectedDepartmentName === department.name"
+                    (click)="toggleDepartmentFilter(department.name)"
+                    [attr.aria-pressed]="selectedDepartmentName === department.name">
+                    {{ department.name }}
+                  </button>
+                </td>
+
+                <td class="number-cell">
+                  {{ department.count | number }}
+                </td>
+
+                <td>
+                  <div class="share-cell">
+                    <div
+                      class="share-track"
+                      role="progressbar"
+                      [attr.aria-label]="department.name + ' workforce share'"
+                      [attr.aria-valuenow]="department.share"
+                      aria-valuemin="0"
+                      aria-valuemax="100">
+                      <div
+                        class="share-fill"
+                        [style.width.%]="department.share">
+                      </div>
+                    </div>
+
+                    <span class="share-value">
+                      {{ formatShare(department.share) }}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="empty-table">
+                  No departments found.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <p class="data-note">
+        Figures reflect the dashboard summary API response.
+        Workforce shares use the reported total employee count.
+      </p>
     </section>
   }
 </div>

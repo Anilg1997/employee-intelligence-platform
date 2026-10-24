@@ -1,6 +1,7 @@
 package com.employeeintelligence.security;
 
 import com.employeeintelligence.api.controller.EmployeeController;
+import com.employeeintelligence.api.controller.AuditController;
 import com.employeeintelligence.api.controller.RagIngestionController;
 import com.employeeintelligence.api.EmployeeIntelligenceApiApplication;
 import com.employeeintelligence.api.service.AuditService;
@@ -23,10 +24,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = {EmployeeController.class, RagIngestionController.class})
+@WebMvcTest(controllers = {EmployeeController.class, AuditController.class, RagIngestionController.class})
 @Import(com.employeeintelligence.api.config.SecurityConfig.class)
 @ContextConfiguration(classes = EmployeeIntelligenceApiApplication.class)
-@TestPropertySource(properties = "security.auth.enabled=true")
+@TestPropertySource(properties = {
+        "spring.security.oauth2.resourceserver.jwt.issuer-uri=https://issuer.example"
+})
 class SecurityHttpAuthorizationTest {
 
     @Autowired
@@ -83,4 +86,38 @@ class SecurityHttpAuthorizationTest {
                         .param("source", "test"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void metricsRequireAuthenticationInSecureMode() throws Exception {
+        mockMvc.perform(get("/actuator/metrics"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void auditEventsRequireAuthenticationInSecureMode() throws Exception {
+        mockMvc.perform(get("/api/audit/events"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void managerCannotReadAuditEvents() throws Exception {
+        mockMvc.perform(get("/api/audit/events")
+                        .with(jwt().jwt(j -> j.claim("tenant_id", "acme"))
+                                .authorities(() -> "ROLE_HR_MANAGER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void hrAdminCanReadAuditEvents() throws Exception {
+        when(auditService.find(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(org.springframework.data.domain.Page.empty(
+                        org.springframework.data.domain.PageRequest.of(0, 25)));
+
+        mockMvc.perform(get("/api/audit/events")
+                        .with(jwt().jwt(j -> j.claim("tenant_id", "acme"))
+                                .authorities(() -> "ROLE_HR_ADMIN")))
+                .andExpect(status().isOk());
+    }
+
 }

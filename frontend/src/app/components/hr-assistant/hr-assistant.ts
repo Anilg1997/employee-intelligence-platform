@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import {
   RagService,
   RagResponse
 } from '../../services/rag.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-hr-assistant',
@@ -21,9 +22,15 @@ export class HrAssistant {
   loading = false;
   errorMessage = '';
 
-  constructor(private ragService: RagService) {}
+  constructor(
+    private readonly ragService: RagService,
+    private readonly cdr: ChangeDetectorRef
+  ) {}
 
   askQuestion(): void {
+    if (this.loading) {
+      return;
+    }
 
     this.errorMessage = '';
     this.response = null;
@@ -37,20 +44,19 @@ export class HrAssistant {
 
     this.loading = true;
 
-    this.ragService.askQuestion(question).subscribe({
+    this.ragService.askQuestion(question)
+      .pipe(finalize(() => {
+        this.loading = false;
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
 
       next: (result: RagResponse) => {
         this.response = result;
-        this.loading = false;
       },
 
-      error: (error: unknown) => {
-        console.error('HR Assistant error:', error);
-
-        this.errorMessage =
-          'Unable to get an answer from the HR Assistant.';
-
-        this.loading = false;
+      error: () => {
+        this.errorMessage = 'Unable to get an answer from the HR Assistant. Check policy documents, database, and Ollama availability, then retry.';
       }
     });
   }

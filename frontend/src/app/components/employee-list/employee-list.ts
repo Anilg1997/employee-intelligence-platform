@@ -148,13 +148,7 @@ predictionErrors: {
         this.loading = false;
       },
 
-      error: (error: unknown) => {
-
-        console.error(
-          'Failed to load employees:',
-          error
-        );
-
+      error: () => {
         this.errorMessage =
           'Failed to load employees.';
 
@@ -255,13 +249,7 @@ predictionErrors: {
           this.employeeChanged.emit();
         },
 
-        error: (error: unknown) => {
-
-          console.error(
-            'Failed to update employee:',
-            error
-          );
-
+        error: () => {
           this.errorMessage =
             'Failed to update employee.';
         }
@@ -306,13 +294,7 @@ predictionErrors: {
           this.employeeChanged.emit();
         },
 
-        error: (error: unknown) => {
-
-          console.error(
-            'Failed to delete employee:',
-            error
-          );
-
+        error: () => {
           this.errorMessage =
             'Failed to delete employee.';
         }
@@ -339,13 +321,7 @@ predictAttrition(employeeId: number): void {
         this.predictionLoadingId = null;
       },
 
-      error: (error: unknown) => {
-
-        console.error(
-          'Failed to assess employee attrition risk:',
-          error
-        );
-
+      error: () => {
         this.predictionErrors[employeeId] =
           'AI risk assessment failed.';
 
