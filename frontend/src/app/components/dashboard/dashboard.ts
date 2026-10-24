@@ -24,6 +24,13 @@ Chart.register(...registerables);
 export interface DashboardResponse {
   totalEmployees: number;
   departmentStatistics: Record<string, number>;
+  attritionLabeledEmployees?: number;
+  attritionCount?: number;
+  attritionRate?: number | null;
+  averageAge?: number | null;
+  averageMonthlyIncome?: number | null;
+  /** Optional: rendered only when a compatible backend adds this aggregate. */
+  performanceDistribution?: Record<string, number> | null;
 }
 
 export interface DepartmentSummary {
@@ -449,6 +456,34 @@ export class Dashboard implements OnInit {
         data: [...values]
       }]
     };
+  }
+
+  get attritionCount(): number {
+    return Math.max(0, this.dashboard?.attritionCount ?? 0);
+  }
+
+  get attritionLabeledEmployees(): number {
+    return Math.max(0, this.dashboard?.attritionLabeledEmployees ?? 0);
+  }
+
+  get attritionUnlabeledEmployees(): number {
+    return Math.max(0, (this.dashboard?.totalEmployees ?? 0) - this.attritionLabeledEmployees);
+  }
+
+  get attritionRetainedEmployees(): number {
+    return Math.max(0, this.attritionLabeledEmployees - this.attritionCount);
+  }
+
+  get hasPerformanceData(): boolean {
+    return Object.keys(this.dashboard?.performanceDistribution ?? {}).length > 0;
+  }
+
+  get performanceSummaries(): DepartmentSummary[] {
+    const distribution = this.dashboard?.performanceDistribution ?? {};
+    const total = Object.values(distribution).reduce((sum, count) => sum + Math.max(0, count), 0);
+    return Object.entries(distribution)
+      .map(([name, count]) => ({ name, count: Math.max(0, count), share: total > 0 ? (Math.max(0, count) / total) * 100 : 0 }))
+      .sort((first, second) => second.count - first.count || first.name.localeCompare(second.name));
   }
 
   formatShare(share: number): string {

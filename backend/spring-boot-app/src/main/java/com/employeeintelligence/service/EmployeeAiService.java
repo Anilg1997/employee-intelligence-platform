@@ -121,11 +121,15 @@ public class EmployeeAiService {
     }
 
     return new AttritionRiskResponse(
-            employeeId,
-            prediction.getAttrition_prediction(),
-            probability,
-            riskLevel
-    );
+             employeeId,
+             prediction.getAttrition_prediction(),
+             probability,
+             riskLevel,
+             prediction.getModel_version(),
+             prediction.getDataset(),
+             prediction.getTraining_provenance(),
+             prediction.getLimitations()
+     );
 }
 
     public Map<String, Object> toPredictionMap(Employee employee) {

@@ -1,9 +1,9 @@
 package com.employeeintelligence.api.service;
 
-import dev.langchain4j.model.embedding.EmbeddingModel;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import com.employeeintelligence.security.TenantContext;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
@@ -11,17 +11,21 @@ import java.util.Map;
 @Service
 public class RagDocumentService {
 
-    private final EmbeddingModel embeddingModel;
+    private final dev.langchain4j.model.embedding.EmbeddingModel embeddingModel;
     private final JdbcTemplate jdbcTemplate;
     private final TenantContext tenantContext;
+    private final HybridRagRetrievalService retrieval;
 
+    @Autowired
     public RagDocumentService(
-            EmbeddingModel embeddingModel,
-            JdbcTemplate jdbcTemplate, TenantContext tenantContext) {
+            dev.langchain4j.model.embedding.EmbeddingModel embeddingModel,
+            JdbcTemplate jdbcTemplate, TenantContext tenantContext,
+            HybridRagRetrievalService retrieval) {
 
         this.embeddingModel = embeddingModel;
         this.jdbcTemplate = jdbcTemplate;
         this.tenantContext = tenantContext;
+        this.retrieval = retrieval;
     }
 
     public void createDocument(
@@ -52,33 +56,7 @@ public class RagDocumentService {
                 embedding
         );
     }
-    public List<Map<String, Object>> searchSimilarDocuments(
-        String query,
-        int limit) {
-
-    List<Float> vector = embeddingModel
-            .embed(query)
-            .content()
-            .vectorAsList();
-
-    String embedding = vector.toString();
-
-    String sql = """
-            SELECT
-                id,
-                content,
-                metadata,
-                1 - (embedding <=> ?::vector) AS similarity
-            FROM rag_documents
-            WHERE tenant_id = ? AND embedding IS NOT NULL
-            ORDER BY embedding <=> ?::vector
-            LIMIT ?
-            """;
-
-    return jdbcTemplate.queryForList(
-            sql,
-            embedding, tenantContext.currentTenantId(), embedding,
-            limit
-    );
-}
+    public List<Map<String, Object>> searchSimilarDocuments(String query, int limit) {
+        return retrieval.search(query, limit, 0.0);
+    }
 }

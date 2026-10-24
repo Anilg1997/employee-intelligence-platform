@@ -16,6 +16,13 @@ least 3, and job level below 5. `Ready` requires at least 3 of 4 points. The
 reported `promotion_probability` is the fraction of satisfied rules (a rule
 score), **not** a calibrated probability.
 
+The `/predict/promotion` contract requires the complete, strictly typed employee
+feature set used by the aligned performance schema; unknown, missing, null,
+stringified, or fractional numeric values are rejected. Responses include the
+rule checks, `rule_score`, `decision_threshold`, model metadata, and limitations.
+The response is valid only when the score equals the fraction of true checks and
+`Ready` agrees with `rule_score >= decision_threshold`.
+
 No fitting, train/test split, persisted learned artifact, or promotion ground
 truth is used. This avoids leakage and makes the result reproducible, while
 keeping the policy auditable.

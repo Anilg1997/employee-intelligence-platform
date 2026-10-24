@@ -1,0 +1,21 @@
+:host { display: block; position: relative; }
+.notification-trigger { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border-subtle); border-radius: 7px; background: var(--surface-raised); color: var(--text-muted); cursor: pointer; font: inherit; font-size: 12px; font-weight: 650; padding: 7px 10px; }
+.notification-trigger:hover { color: var(--text-strong); background: var(--surface-hover); }
+.bell { font-size: 18px; line-height: 1; }
+.unread-badge { display: inline-grid; min-width: 18px; height: 18px; place-items: center; border-radius: 9px; background: var(--brand-primary); color: #fff; font-size: 10px; }
+.notification-popover { position: absolute; top: calc(100% + 10px); right: 0; z-index: 20; width: min(340px, calc(100vw - 36px)); border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--surface-raised); box-shadow: 0 12px 30px rgb(15 23 42 / 14%); }
+.popover-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; padding: 13px 14px 11px; border-bottom: 1px solid var(--border-subtle); color: var(--text-strong); font-size: 13px; }
+.popover-heading div { display: grid; gap: 3px; }
+.popover-heading span { color: var(--text-muted); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.popover-heading span.live { color: #067647; }
+.popover-heading a { color: var(--brand-primary); font-size: 11px; font-weight: 700; text-decoration: none; }
+ul { display: grid; gap: 1px; margin: 0; padding: 5px 0; list-style: none; }
+li { border-left: 3px solid transparent; }
+li.unread { border-left-color: var(--brand-primary); background: var(--brand-tint); }
+.notification-item { display: grid; width: 100%; gap: 3px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; font: inherit; text-align: left; padding: 10px 12px; }
+.notification-item:hover { background: var(--surface-hover); }
+.item-title { overflow: hidden; color: var(--text-strong); font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.item-body { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+time { color: var(--text-muted); font-size: 10px; }
+.panel-state { margin: 0; padding: 22px 14px; color: var(--text-muted); font-size: 12px; text-align: center; }
+@media (max-width: 720px) { .notification-label { display: none; } .notification-popover { right: -8px; } }

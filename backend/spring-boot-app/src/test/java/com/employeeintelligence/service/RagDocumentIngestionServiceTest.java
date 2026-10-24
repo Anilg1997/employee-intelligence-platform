@@ -60,7 +60,7 @@ class RagDocumentIngestionServiceTest {
         EmbeddingModel embeddingModel = mock(EmbeddingModel.class);
         Embedding embedding = mock(Embedding.class);
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
-        String source = "quarterly\\\"report\n\tfinal";
+        String source = "quarterly\\\"report final";
         when(embedding.vectorAsList()).thenReturn(List.of(0.1f));
         when(embeddingModel.embed("content")).thenReturn(Response.from(embedding));
         RagDocumentIngestionService service = new RagDocumentIngestionService(
@@ -76,5 +76,33 @@ class RagDocumentIngestionServiceTest {
         verify(jdbcTemplate).update(anyString(), eq("demo"), eq("content"), metadataCaptor.capture(), eq("[0.1]"));
         JsonNode metadata = new ObjectMapper().readTree(metadataCaptor.getValue());
         assertEquals(source, metadata.get("source").asText());
+    }
+
+    @Test
+    void rejectsUnsafeSourceMetadata() throws Exception {
+        Path trustedDirectory = Files.createTempDirectory("rag-documents");
+        Path document = Files.writeString(trustedDirectory.resolve("document.txt"), "content");
+        RagDocumentIngestionService service = new RagDocumentIngestionService(
+                mock(EmbeddingModel.class), mock(JdbcTemplate.class), trustedDirectory.toString(),
+                1024, "txt,md", new TenantContext(false));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.ingestDocument(document.toString(), "source\nforged"));
+    }
+
+    @Test
+    void boundsOversizedParagraphsIntoSafeChunks() throws Exception {
+        Path trustedDirectory = Files.createTempDirectory("rag-documents");
+        Path document = Files.writeString(trustedDirectory.resolve("document.txt"), "x".repeat(16001));
+        EmbeddingModel embeddingModel = mock(EmbeddingModel.class);
+        Embedding embedding = mock(Embedding.class);
+        JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
+        when(embedding.vectorAsList()).thenReturn(List.of(0.1f));
+        when(embeddingModel.embed(anyString())).thenReturn(Response.from(embedding));
+        RagDocumentIngestionService service = new RagDocumentIngestionService(
+                embeddingModel, jdbcTemplate, trustedDirectory.toString(), 20000, "txt,md", new TenantContext(false));
+
+        service.ingestDocument(document.toString(), "safe-source");
+
+        verify(jdbcTemplate, org.mockito.Mockito.times(3)).update(anyString(), eq("demo"), anyString(), anyString(), eq("[0.1]"));
     }
 }

@@ -57,20 +57,26 @@ public class ModelRegistryService {
             JsonNode threshold = metadata.get("threshold");
             if (threshold == null) threshold = root.get("threshold");
             if (threshold != null && threshold.isNumber()) metrics.put("threshold", threshold.numberValue());
+            Double thresholdValue = threshold != null && threshold.isNumber() ? threshold.doubleValue() : null;
 
             List<String> limitations = new ArrayList<>();
             JsonNode declaredLimitations = metadata.get("limitations");
             if (declaredLimitations != null && declaredLimitations.isArray()) {
                 declaredLimitations.forEach(value -> { if (value.isTextual()) limitations.add(value.textValue()); });
             }
-            return new ModelMetadata(artifact.name(), metadata.get("model_version").textValue(),
-                    metadata.get("algorithm").textValue(), isText(metadata, "status")
-                            ? metadata.get("status").textValue() : "AVAILABLE",
+            String version = metadata.get("model_version").textValue();
+            String status = isText(metadata, "status") ? metadata.get("status").textValue() : "AVAILABLE";
+            return new ModelMetadata(artifact.name(), version,
+                    metadata.get("algorithm").textValue(), status,
                     Collections.unmodifiableMap(metrics), List.copyOf(limitations),
                     textOrNull(metadata, "artifact_format"),
                     metadata.has("trained") && metadata.get("trained").isBoolean()
                             ? metadata.get("trained").booleanValue() : null,
-                    textOrNull(metadata, "target_type"));
+                    textOrNull(metadata, "target_type"),
+                    textOrNull(metadata, "dataset"),
+                    textOrNull(metadata, "trained_at_utc"),
+                    datasetVersion(metadata), thresholdValue,
+                    textOrNull(metadata, "deployed_version"));
         } catch (IOException | RuntimeException exception) {
             return unavailable(artifact.name());
         }
@@ -78,11 +84,19 @@ public class ModelRegistryService {
 
     private static ModelMetadata unavailable(String name) {
         return new ModelMetadata(name, null, null, "UNAVAILABLE", Map.of(),
-                List.of("Artifact is unavailable or malformed."), null, null, null);
+                List.of("Artifact is unavailable or malformed."),
+                null, null, null, null, null, null, null, null);
     }
 
     private static String textOrNull(JsonNode node, String field) {
         return isText(node, field) ? node.get(field).textValue() : null;
+    }
+
+    private static String datasetVersion(JsonNode metadata) {
+        String explicit = textOrNull(metadata, "dataset_version");
+        if (explicit != null) return explicit;
+        String hash = textOrNull(metadata, "dataset_sha256");
+        return hash == null ? null : "sha256:" + hash;
     }
 
     private static boolean isText(JsonNode node, String field) {

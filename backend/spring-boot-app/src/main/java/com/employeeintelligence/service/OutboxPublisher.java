@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
+import static com.employeeintelligence.observability.MetricsSupport.increment;
 
 @Service
 @ConditionalOnProperty(name = "outbox.publisher.enabled", havingValue = "true")
@@ -23,6 +26,8 @@ public class OutboxPublisher {
     private final int maxRetries;
     private final long ackTimeoutMs;
     private final long retryBackoffMs;
+    @Autowired(required = false)
+    private MeterRegistry meterRegistry;
 
     public OutboxPublisher(OutboxEventRepository repository,
                            KafkaTemplate<String, String> kafkaTemplate,
@@ -44,12 +49,14 @@ public class OutboxPublisher {
     @Transactional
     public void publishPending() {
         for (OutboxEvent event : repository.lockPending(batchSize)) {
+            increment(meterRegistry, "platform.kafka.outbox.events", "outcome", "claimed");
             Exception failure = null;
             for (int attempt = 1; attempt <= maxRetries; attempt++) {
                 try {
                     kafkaTemplate.send(topic, String.valueOf(event.getId()), event.getPayload())
                             .get(ackTimeoutMs, TimeUnit.MILLISECONDS);
                     event.markPublished();
+                    increment(meterRegistry, "platform.kafka.outbox.events", "outcome", "published");
                     failure = null;
                     break;
                 } catch (Exception ex) {
@@ -62,6 +69,7 @@ public class OutboxPublisher {
             }
             if (failure != null) {
                 event.markFailed(failure);
+                increment(meterRegistry, "platform.kafka.outbox.events", "outcome", "failed");
                 log.warn("Outbox event {} publish failed after {} attempt(s); retrying later", event.getId(), event.getAttempts());
             }
             repository.save(event);

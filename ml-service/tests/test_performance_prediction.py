@@ -56,3 +56,27 @@ def test_missing_artifact_returns_unavailable_without_training(tmp_path, monkeyp
     monkeypatch.setattr(performance, 'MODEL_PATH', tmp_path / 'missing.json')
     with pytest.raises(performance.PerformanceModelUnavailable):
         performance.load_performance_model()
+
+def test_performance_api_rejects_target_and_extra_fields():
+    from src.api import PerformanceData
+    from pydantic import ValidationError
+    row = pd.read_csv(performance.DATA_PATH).iloc[0].to_dict()
+    payload = {name: row[name] for name in performance.PERFORMANCE_FEATURES}
+    PerformanceData.model_validate(payload)
+    with pytest.raises(ValidationError):
+        PerformanceData.model_validate(dict(payload, PerformanceRating=3))
+    with pytest.raises(ValidationError):
+        PerformanceData.model_validate(dict(payload, Unexpected=1))
+
+def test_performance_output_rejects_probability_contract_violation():
+    from src.api import PerformancePredictionResponse
+    with pytest.raises(ValueError):
+        PerformancePredictionResponse.model_validate({
+            "performance_prediction": 3, "performance_probability": 0.9,
+            "class_probabilities": {"3": 0.8, "4": 0.2},
+            "model_version": "v1", "algorithm": "random-forest-classifier",
+            "dataset": "dataset", "training_provenance": "source",
+            "metrics": {"validation": {"accuracy": 0.8, "balanced_accuracy": 0.8, "f1_macro": 0.8},
+                        "test": {"accuracy": 0.8, "balanced_accuracy": 0.8, "f1_macro": 0.8}},
+            "limitations": ["Synthetic data only."]
+        })

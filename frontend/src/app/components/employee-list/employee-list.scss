@@ -175,6 +175,71 @@ tbody tr:last-child td {
   background: #f8fafc;
 }
 
+.actions button:disabled,
+.edit-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.danger-button {
+  color: #b91c1c;
+}
+
+.edit-row td {
+  padding: 0;
+  background: #f8fafc;
+}
+
+.edit-form {
+  padding: 20px 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.edit-form h4 {
+  margin: 0 0 16px;
+}
+
+.edit-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.edit-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.edit-fields input,
+.edit-fields select {
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-weight: 400;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.edit-actions button {
+  padding: 8px 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
 .analyzing {
   color: #64748b;
   font-size: 12px;
@@ -250,6 +315,10 @@ tbody tr:last-child td {
 
 @media (max-width: 600px) {
   .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-fields {
     grid-template-columns: 1fr;
   }
 }

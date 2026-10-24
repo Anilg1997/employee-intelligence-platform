@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 public class MlPredictionRequest {
 
@@ -15,6 +16,7 @@ public class MlPredictionRequest {
     private Integer age;
 
     @NotBlank
+    @Pattern(regexp = "Travel_Rarely|Travel_Frequently|Non-Travel")
     @JsonProperty("BusinessTravel")
     private String businessTravel;
 
@@ -25,6 +27,7 @@ public class MlPredictionRequest {
     private Integer dailyRate;
 
     @NotBlank
+    @Pattern(regexp = "Sales|Research & Development|Human Resources")
     @JsonProperty("Department")
     private String department;
 
@@ -41,6 +44,7 @@ public class MlPredictionRequest {
     private Integer education;
 
     @NotBlank
+    @Pattern(regexp = "Life Sciences|Medical|Marketing|Technical Degree|Human Resources|Other")
     @JsonProperty("EducationField")
     private String educationField;
 
@@ -51,6 +55,7 @@ public class MlPredictionRequest {
     private Integer environmentSatisfaction;
 
     @NotBlank
+    @Pattern(regexp = "Male|Female")
     @JsonProperty("Gender")
     private String gender;
 
@@ -73,6 +78,7 @@ public class MlPredictionRequest {
     private Integer jobLevel;
 
     @NotBlank
+    @Pattern(regexp = "Sales Executive|Research Scientist|Laboratory Technician|Manufacturing Director|Healthcare Representative|Manager|Sales Representative|Research Director|Human Resources")
     @JsonProperty("JobRole")
     private String jobRole;
 
@@ -83,6 +89,7 @@ public class MlPredictionRequest {
     private Integer jobSatisfaction;
 
     @NotBlank
+    @Pattern(regexp = "Single|Married|Divorced")
     @JsonProperty("MaritalStatus")
     private String maritalStatus;
 
@@ -105,6 +112,7 @@ public class MlPredictionRequest {
     private Integer numCompaniesWorked;
 
     @NotBlank
+    @Pattern(regexp = "Yes|No")
     @JsonProperty("OverTime")
     private String overTime;
 

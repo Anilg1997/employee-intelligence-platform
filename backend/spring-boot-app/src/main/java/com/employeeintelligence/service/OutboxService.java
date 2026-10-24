@@ -2,6 +2,7 @@ package com.employeeintelligence.api.service;
 
 import com.employeeintelligence.api.model.AuditEvent;
 import com.employeeintelligence.api.model.OutboxEvent;
+import com.employeeintelligence.api.notification.NotificationEvent;
 import com.employeeintelligence.api.repository.OutboxEventRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,6 +37,20 @@ public class OutboxService {
             repository.save(new OutboxEvent(audit.getTenantId(), "AuditEvent", "audit", audit.getId().toString(), objectMapper.writeValueAsString(payload)));
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Could not serialize audit outbox event", exception);
+        }
+    }
+
+    /**
+     * Producer integration point for future domain services. This does not make
+     * audit events notification events and is intentionally not called by any
+     * current risk, prediction, or reporting service.
+     */
+    public void enqueueNotification(NotificationEvent event) {
+        try {
+            repository.save(new OutboxEvent(event.tenantId(), event.eventType().wireValue(),
+                    "notification", event.eventId(), objectMapper.writeValueAsString(event.toPayload())));
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Could not serialize notification outbox event", exception);
         }
     }
 }

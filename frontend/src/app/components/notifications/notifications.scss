@@ -1,0 +1,26 @@
+.notifications-page { padding: 2rem 0; }
+.page-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.eyebrow { margin: 0 0 .45rem; color: #2563eb; font-size: .75rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+h1 { margin: 0; color: #172033; font-size: clamp(1.8rem, 4vw, 2.4rem); }
+.intro { max-width: 46rem; margin: .65rem 0 0; color: #667085; }
+button { cursor: pointer; font: inherit; }
+button:disabled { cursor: wait; opacity: .65; }
+.refresh-button, .read-button, .state button { border: 0; border-radius: 7px; background: #175cd3; color: #fff; padding: .65rem 1rem; font-weight: 650; }
+.stream-status { margin: 1.5rem 0 0; padding: .7rem 1rem; border: 1px solid #f5c36b; border-radius: 8px; background: #fff7e6; color: #7a4b00; }
+.stream-status.connected { border-color: #abefc6; background: #ecfdf3; color: #067647; }
+.state { margin: 2rem 0; padding: 2.5rem 1rem; border: 1px dashed #cbd5e1; border-radius: 10px; text-align: center; color: #667085; }
+.state.error { border-style: solid; border-color: #fecdca; background: #fffafa; color: #b42318; }
+.state button { margin-top: .4rem; }
+.inline-error { color: #b42318; }
+.notification-list { display: grid; gap: .8rem; margin: 1.5rem 0 0; padding: 0; list-style: none; }
+.notification-card { display: flex; align-items: start; justify-content: space-between; gap: 1.25rem; padding: 1.15rem 1.25rem; border: 1px solid #e4e7ec; border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgb(16 24 40 / 4%); }
+.notification-card.unread { border-left: 4px solid #2563eb; background: #f8fbff; }
+.notification-copy { min-width: 0; }
+.notification-meta { display: flex; align-items: center; gap: .75rem; color: #667085; font-size: .8rem; }
+.status { font-weight: 700; }
+.unread-status { color: #175cd3; }
+h2 { margin: .45rem 0 .25rem; color: #172033; font-size: 1.05rem; }
+.notification-card p { margin: 0; line-height: 1.5; }
+.read-button { flex: 0 0 auto; background: #eef2f6; color: #344054; }
+.read-indicator { flex: 0 0 auto; color: #067647; font-size: 1.2rem; font-weight: 800; }
+@media (max-width: 600px) { .page-heading, .notification-card { display: grid; } .refresh-button, .read-button { justify-self: start; } }

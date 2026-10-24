@@ -4,6 +4,9 @@ export interface RuntimeConfig {
   authEnabled: boolean;
   oidcAuthority: string;
   oidcClientId: string;
+  oidcRedirectUri: string;
+  oidcPostLogoutRedirectUri: string;
+  oidcScope: string;
 }
 
 declare global {
@@ -15,7 +18,10 @@ const defaults: RuntimeConfig = {
   mlApiBaseUrl: 'http://127.0.0.1:8000',
   authEnabled: false,
   oidcAuthority: '',
-  oidcClientId: ''
+  oidcClientId: '',
+  oidcRedirectUri: '',
+  oidcPostLogoutRedirectUri: '',
+  oidcScope: 'openid profile'
 };
 
 export const RUNTIME_CONFIG: RuntimeConfig = {

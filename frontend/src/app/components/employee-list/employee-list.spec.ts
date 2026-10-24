@@ -4,21 +4,23 @@ import { of, throwError } from 'rxjs';
 import { EmployeeList } from './employee-list';
 import { EmployeeService } from '../../services/employee';
 import { EmployeeAiService } from '../../services/employee-ai.service';
+import { RolePolicyService } from '../../services/role-policy.service';
 
 describe('EmployeeList', () => {
   let component: EmployeeList;
   let fixture: ComponentFixture<EmployeeList>;
-  let employeeService: { searchEmployees: ReturnType<typeof vi.fn> };
+  let employeeService: { searchEmployees: ReturnType<typeof vi.fn>; updateEmployee: ReturnType<typeof vi.fn>; deleteEmployee: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     employeeService = { searchEmployees: vi.fn(() => of({
       content: [], page: 0, size: 20, totalElements: 0, totalPages: 0
-    })) };
+    })), updateEmployee: vi.fn(), deleteEmployee: vi.fn() };
     await TestBed.configureTestingModule({
       imports: [EmployeeList],
       providers: [
         { provide: EmployeeService, useValue: employeeService },
-        { provide: EmployeeAiService, useValue: { assessRisk: vi.fn() } }
+        { provide: EmployeeAiService, useValue: { assessRisk: vi.fn() } },
+        { provide: RolePolicyService, useValue: { canMutateEmployees: vi.fn(() => true) } }
       ]
     }).compileComponents();
 
@@ -70,5 +72,31 @@ describe('EmployeeList', () => {
 
     expect(component.errorMessage).toBe('Failed to load employees.');
     expect(component.loading).toBe(false);
+  });
+
+  it('opens an edit draft and saves an edited employee', () => {
+    const employee = { id: 4, name: 'Ada', department: 'Sales', jobRole: 'Manager', age: 35 };
+    component.employees = [employee];
+    component.startEdit(employee);
+    component.editingEmployee!.name = 'Ada Lovelace';
+    employeeService.updateEmployee.mockReturnValue(of({ ...employee, name: 'Ada Lovelace' }));
+
+    component.saveEdit();
+
+    expect(employeeService.updateEmployee).toHaveBeenCalledWith(4, expect.objectContaining({ name: 'Ada Lovelace' }));
+    expect(component.editingId).toBeNull();
+    expect(component.editingEmployee).toBeNull();
+  });
+
+  it('does not mutate when the role policy denies employee mutations', () => {
+    const employee = { id: 4, name: 'Ada', department: 'Sales', jobRole: 'Manager', age: 35 };
+    const policy = TestBed.inject(RolePolicyService) as unknown as { canMutateEmployees: ReturnType<typeof vi.fn> };
+    policy.canMutateEmployees.mockReturnValue(false);
+    component.startEdit(employee);
+    employeeService.updateEmployee.mockReturnValue(of(employee));
+
+    component.saveEdit();
+
+    expect(employeeService.updateEmployee).not.toHaveBeenCalled();
   });
 });

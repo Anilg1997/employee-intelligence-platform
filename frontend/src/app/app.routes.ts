@@ -11,6 +11,11 @@ export const routes: Routes = [
       import('./components/access-required/access-required').then(module => module.AccessRequired)
   },
   {
+    path: 'auth/callback',
+    loadComponent: () =>
+      import('./components/auth-callback/auth-callback').then(module => module.AuthCallback)
+  },
+  {
     path: '',
     redirectTo: 'dashboard',
     pathMatch: 'full'
@@ -71,6 +76,46 @@ export const routes: Routes = [
     path: 'audit',
     loadComponent: () =>
       import('./components/audit/audit').then(module => module.Audit),
+    canActivate: [authGuard],
+    data: { roles: ROLE_POLICY.audit }
+  },
+  {
+    path: 'notifications',
+    loadComponent: () =>
+      import('./components/notifications/notifications').then(module => module.Notifications),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'reports',
+    loadComponent: () =>
+      import('./components/reports/reports').then(module => module.Reports),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'ai-operations',
+    loadComponent: () =>
+      import('./components/ai-operations/ai-operations').then(module => module.AiOperations),
+    canActivate: [authGuard],
+    data: { roles: ROLE_POLICY.sensitiveInsights }
+  },
+  {
+    path: 'system-health',
+    loadComponent: () =>
+      import('./components/system-health/system-health').then(module => module.SystemHealth),
+    canActivate: [authGuard],
+    data: { roles: ROLE_POLICY.audit }
+  },
+  {
+    path: 'administration',
+    loadComponent: () =>
+      import('./components/administration/administration').then(module => module.Administration),
+    canActivate: [authGuard],
+    data: { roles: ROLE_POLICY.audit }
+  },
+  {
+    path: 'knowledge',
+    loadComponent: () =>
+      import('./components/knowledge/knowledge').then(module => module.Knowledge),
     canActivate: [authGuard],
     data: { roles: ROLE_POLICY.audit }
   },

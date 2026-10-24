@@ -60,20 +60,33 @@ class EmployeeIntelligenceApiApplicationTests {
         ChatModel chatModel() {
             return mock(ChatModel.class);
         }
-
-        @Bean
-        @Primary
-        EmployeeAiAgent testEmployeeAiAgent() {
-            return mock(EmployeeAiAgent.class);
-        }
     }
 
 	@Test
     void contextLoads() {
 
-        assertEquals("5", flyway.info().current().getVersion().getVersion());
+        assertEquals("7", flyway.info().current().getVersion().getVersion());
         assertTrue(flyway.validateWithResult().validationSuccessful);
 	}
+
+    @Autowired private EmployeeAiAgent employeeAiAgent;
+    @Autowired private com.employeeintelligence.security.SecurityMode securityMode;
+    @Value("${local.server.port}") private int applicationPort;
+
+    @Test
+    void realAgentAndSecurityModeAreWiredAndDemoDirectoryIsAccessible() throws Exception {
+        assertNotNull(employeeAiAgent);
+        assertTrue(securityMode.isDemoMode());
+        var response = HttpClient.newHttpClient().send(HttpRequest.newBuilder(
+                URI.create("http://localhost:" + applicationPort + "/api/employees/search?size=1"))
+                .GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode(), response.body());
+        var models = HttpClient.newHttpClient().send(HttpRequest.newBuilder(
+                URI.create("http://localhost:" + applicationPort + "/api/ml/models"))
+                .GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, models.statusCode(), models.body());
+        assertTrue(models.body().contains("salary"));
+    }
 
     @Test
     void upgradesLegacyRowsWithoutLosingDataAndScopesUniquenessToTenant() {
@@ -89,7 +102,7 @@ class EmployeeIntelligenceApiApplicationTests {
 
             Flyway upgrade = Flyway.configure().dataSource(dataSource).schemas(legacy).defaultSchema(legacy).load();
             upgrade.migrate();
-            assertEquals("5", upgrade.info().current().getVersion().getVersion());
+            assertEquals("7", upgrade.info().current().getVersion().getVersion());
             assertEquals("Migration fixture", jdbc.queryForObject("SELECT name FROM " + legacy + ".employee WHERE tenant_id = 'demo'", String.class));
             assertEquals("Migration policy fixture", jdbc.queryForObject("SELECT content FROM " + legacy + ".rag_documents WHERE tenant_id = 'demo'", String.class));
             assertEquals("FIXTURE", jdbc.queryForObject("SELECT action FROM " + legacy + ".audit_events WHERE tenant_id = 'demo'", String.class));

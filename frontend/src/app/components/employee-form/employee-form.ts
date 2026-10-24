@@ -34,6 +34,8 @@ export class EmployeeForm {
   errorMessage = '';
   predictionNotice = '';
 
+  readonly departments = ['Human Resources', 'Research & Development', 'Sales'];
+
   prediction: EmployeeAiPrediction | null = null;
 
   constructor(

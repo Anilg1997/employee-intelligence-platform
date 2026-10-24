@@ -22,7 +22,9 @@ spec:
       containers:
         - name: backend
           image: ghcr.io/replace-me/employee-intelligence-backend:latest
-          ports: [{containerPort: 8080}]
+          ports:
+            - {containerPort: 8080, name: http}
+            - {containerPort: 8081, name: management}
           envFrom:
             - configMapRef: {name: employee-intelligence-config}
             - secretRef: {name: employee-intelligence-secrets}
@@ -30,11 +32,11 @@ spec:
             - name: SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE
               value: "10"
           readinessProbe:
-            httpGet: {path: /actuator/health/readiness, port: 8080}
+            httpGet: {path: /actuator/health/readiness, port: 8081}
             initialDelaySeconds: 30
             periodSeconds: 10
           livenessProbe:
-            httpGet: {path: /actuator/health/liveness, port: 8080}
+            httpGet: {path: /actuator/health/liveness, port: 8081}
             initialDelaySeconds: 60
             periodSeconds: 20
           resources:

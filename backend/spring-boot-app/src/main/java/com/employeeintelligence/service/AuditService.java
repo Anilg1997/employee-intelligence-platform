@@ -39,6 +39,10 @@ public class AuditService {
     public Page<AuditEvent> find(String action, String result, Pageable pageable) {
         return repository.findByTenantIdAndActionContainingIgnoreCaseAndResultContainingIgnoreCase(tenantContext.currentTenantId(), action == null ? "" : action, result == null ? "" : result, pageable);
     }
+    public Page<AuditEvent> findForEmployee(Long employeeId, Pageable pageable) {
+        return repository.findByTenantIdAndResourceTypeAndResourceId(
+                tenantContext.currentTenantId(), "employee", String.valueOf(employeeId), pageable);
+    }
     private static String safe(String value) { return value == null ? null : value.length() > 255 ? value.substring(0, 255) : value; }
     private static String sanitize(String value) {
         if (value == null) return null;

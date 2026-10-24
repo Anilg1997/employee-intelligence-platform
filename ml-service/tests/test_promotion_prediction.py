@@ -31,6 +31,12 @@ def test_promotion_json_contains_rules_and_honest_metadata():
     assert artifact["threshold"] == 0.75
 
 
+def test_direct_rule_evaluation_rejects_misaligned_inputs():
+    with pytest.raises(ValueError):
+        predict_promotion({"YearsAtCompany": 2, "YearsSinceLastPromotion": 2,
+                           "PerformanceRating": 3, "JobLevel": 2, "unexpected": 1})
+
+
 @pytest.mark.parametrize("tenure,since,rating,level", itertools.product([1, 2], [1, 2], [2, 3], [4, 5]))
 def test_all_rule_boundaries_preserve_score_and_threshold(tenure, since, rating, level):
     result = predict_promotion({"YearsAtCompany": tenure, "YearsSinceLastPromotion": since,

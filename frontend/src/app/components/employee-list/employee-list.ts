@@ -70,7 +70,7 @@ export class EmployeeList implements OnInit, OnChanges {
   // --------------------------------------------------
 
   editingId: number | null = null;
-  editingEmployee: Employee | null = null;
+  editingEmployee: (Employee & { age: number }) | null = null;
 
   // --------------------------------------------------
   // Employee details state
@@ -83,6 +83,7 @@ export class EmployeeList implements OnInit, OnChanges {
   // --------------------------------------------------
 
   predictionLoadingId: number | null = null;
+  mutationLoadingId: number | null = null;
 
 riskAssessments: {
   [employeeId: number]: AttritionRiskResponse;
@@ -184,7 +185,8 @@ predictionErrors: {
     this.editingId = employee.id ?? null;
 
     this.editingEmployee = {
-      ...employee
+      ...employee,
+      age: employee.age ?? 0
     };
   }
 
@@ -218,6 +220,7 @@ predictionErrors: {
   saveEdit(): void {
 
     if (
+      !this.policy.canMutateEmployees() ||
       this.editingId === null ||
       this.editingEmployee === null
     ) {
@@ -230,6 +233,8 @@ predictionErrors: {
       ...this.editingEmployee
     };
 
+    this.errorMessage = '';
+    this.mutationLoadingId = id;
     this.employeeService
       .updateEmployee(id, employeeToUpdate)
       .subscribe({
@@ -245,13 +250,16 @@ predictionErrors: {
 
           // Exit edit mode
           this.editingId = null;
-          this.editingEmployee = null;
-          this.employeeChanged.emit();
+           this.editingEmployee = null;
+           this.mutationLoadingId = null;
+          setTimeout(() => this.employeeChanged.emit());
         },
 
-        error: () => {
+        error: (error: unknown) => {
+          console.error('Failed to update employee:', error);
           this.errorMessage =
             'Failed to update employee.';
+          this.mutationLoadingId = null;
         }
       });
   }
@@ -262,6 +270,10 @@ predictionErrors: {
 
   deleteEmployee(id: number): void {
 
+    if (!this.policy.canMutateEmployees()) {
+      return;
+    }
+
     const confirmed = window.confirm(
       'Are you sure you want to delete this employee?'
     );
@@ -270,6 +282,8 @@ predictionErrors: {
       return;
     }
 
+    this.errorMessage = '';
+    this.mutationLoadingId = id;
     this.employeeService
       .deleteEmployee(id)
       .subscribe({
@@ -288,15 +302,18 @@ predictionErrors: {
           delete this.predictionErrors[id];
 
           // Close details if this employee was expanded
-          if (this.expandedId === id) {
-            this.expandedId = null;
-          }
-          this.employeeChanged.emit();
+           if (this.expandedId === id) {
+             this.expandedId = null;
+           }
+           this.mutationLoadingId = null;
+          setTimeout(() => this.employeeChanged.emit());
         },
 
-        error: () => {
+        error: (error: unknown) => {
+          console.error('Failed to delete employee:', error);
           this.errorMessage =
             'Failed to delete employee.';
+          this.mutationLoadingId = null;
         }
       });
   }

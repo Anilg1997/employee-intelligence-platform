@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from src.api import app
+import src.api as api
 from src import predict
 
 
@@ -48,3 +49,14 @@ def test_valid_attrition_prediction_still_works():
     assert response.status_code == 200
     assert response.json()["attrition_prediction"] in {"Yes", "No"}
     assert 0 <= response.json()["attrition_probability"] <= 1
+    assert {"model_version", "decision_threshold", "dataset", "training_provenance", "limitations"} <= response.json().keys()
+
+
+def test_attrition_response_contract_rejects_invalid_model_metadata(monkeypatch):
+    monkeypatch.setattr(api, "predict_attrition", lambda _: {
+        "attrition_prediction": "Maybe", "attrition_probability": 0.5,
+        "model_version": "v1", "decision_threshold": 0.55,
+        "dataset": "dataset", "training_provenance": "source", "limitations": []
+    })
+    response = TestClient(app, raise_server_exceptions=False).post("/predict", json=EMPLOYEE)
+    assert response.status_code == 500

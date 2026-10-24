@@ -1,0 +1,32 @@
+<div class="notification-panel">
+  <button class="notification-trigger" type="button" aria-haspopup="dialog" [attr.aria-expanded]="open" aria-controls="notification-popover" (click)="toggle()">
+    <span class="bell" aria-hidden="true">◌</span>
+    <span class="notification-label">Notifications</span>
+    @if (unreadCount() > 0) { <span class="unread-badge" aria-label="{{ unreadCount() }} unread notifications">{{ unreadCount() }}</span> }
+  </button>
+
+  @if (open) {
+    <section id="notification-popover" class="notification-popover" role="dialog" aria-label="Recent notifications">
+      <div class="popover-heading">
+        <div><strong>Recent notifications</strong><span [class.live]="streamState() === 'connected'">{{ streamState() === 'connected' ? 'Live' : 'Updates paused' }}</span></div>
+        <a routerLink="/notifications" (click)="open = false">View all</a>
+      </div>
+      @if (loading) { <p class="panel-state">Loading…</p> }
+      @else if (error) { <p class="panel-state">Notifications unavailable.</p> }
+      @else if (!notifications.length) { <p class="panel-state">You’re all caught up.</p> }
+      @else {
+        <ul>
+          @for (notification of notifications; track notification.id) {
+            <li [class.unread]="!notification.readAt">
+              <button type="button" class="notification-item" (click)="markAsRead(notification)">
+                <span class="item-title">{{ notification.title }}</span>
+                <span class="item-body">{{ notification.body }}</span>
+                <time [dateTime]="notification.createdAt">{{ notification.createdAt | date:'short' }}</time>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</div>

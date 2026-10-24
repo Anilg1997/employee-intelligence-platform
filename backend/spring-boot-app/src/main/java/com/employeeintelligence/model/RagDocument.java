@@ -6,6 +6,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -25,8 +27,9 @@ public class RagDocument {
     @Column(columnDefinition = "jsonb")
     private String metadata;
 
+    @JdbcTypeCode(SqlTypes.VECTOR)
     @Column(columnDefinition = "vector(768)")
-    private String embedding;
+    private float[] embedding;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -60,11 +63,11 @@ public class RagDocument {
         this.metadata = metadata;
     }
 
-    public String getEmbedding() {
+    public float[] getEmbedding() {
         return embedding;
     }
 
-    public void setEmbedding(String embedding) {
+    public void setEmbedding(float[] embedding) {
         this.embedding = embedding;
     }
 

@@ -1,10 +1,9 @@
-
 import os
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .predict import (
     predict_attrition,
@@ -26,11 +25,7 @@ from .promotion_model import (
     PromotionModelUnavailable,
     load_promotion_model,
 )
-
-
-# --------------------------------------------------
-# FastAPI application
-# --------------------------------------------------
+from .salary_contract import SalaryPredictionResponse
 
 app = FastAPI(
     title="Employee Attrition Prediction API",
@@ -64,7 +59,19 @@ app.add_middleware(
 # Employee attrition prediction request model
 # --------------------------------------------------
 
+class AttritionPredictionResponse(BaseModel):
+    attrition_prediction: Literal["Yes", "No"]
+    attrition_probability: float = Field(..., ge=0, le=1)
+    model_version: str = Field(..., min_length=1)
+    decision_threshold: float = Field(..., ge=0, le=1)
+    dataset: str = Field(..., min_length=1)
+    training_provenance: str = Field(..., min_length=1)
+    limitations: list[str]
+
+
 class EmployeeData(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
     Age: int = Field(..., ge=18, le=60)
 
     BusinessTravel: Literal[
@@ -135,6 +142,8 @@ class EmployeeData(BaseModel):
 # --------------------------------------------------
 
 class SalaryData(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
     Age: int = Field(..., ge=18, le=60)
 
     Department: Literal[
@@ -173,6 +182,8 @@ class SalaryData(BaseModel):
 # --------------------------------------------------
 
 class PerformanceData(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+
     Age: int = Field(..., ge=18, le=60)
 
     BusinessTravel: Literal[
@@ -242,12 +253,33 @@ class PerformanceData(BaseModel):
 # --------------------------------------------------
 
 class PromotionData(PerformanceData):
+    model_config = ConfigDict(strict=True, extra="forbid")
     PerformanceRating: int = Field(..., ge=1, le=4)
 
 
-# --------------------------------------------------
-# Health and readiness endpoints
-# --------------------------------------------------
+class PromotionPredictionResponse(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+    promotion_prediction: Literal["Ready", "Not ready"]
+    promotion_probability: float = Field(..., ge=0, le=1)
+    rule_score: float = Field(..., ge=0, le=1)
+    rule_checks: dict[str, bool] = Field(..., min_length=1)
+    model_version: str = Field(..., min_length=1)
+    algorithm: Literal["deterministic-business-rules"]
+    target_type: Literal["portfolio_demo_rule_target"]
+    decision_threshold: float = Field(..., ge=0, le=1)
+    limitations: list[str] = Field(..., min_length=1)
+
+    @model_validator(mode="after")
+    def validate_contract(self):
+        if (set(self.rule_checks) != {"tenure", "time_since_promotion", "performance", "level_headroom"}
+                or any(not isinstance(value, bool) for value in self.rule_checks.values())
+                or abs(self.rule_score - sum(self.rule_checks.values()) / len(self.rule_checks)) > 1e-6
+                or abs(self.promotion_probability - self.rule_score) > 1e-6
+                or self.promotion_prediction != ("Ready" if self.rule_score >= self.decision_threshold else "Not ready")
+                or any(not isinstance(item, str) or not item.strip() for item in self.limitations)
+                or not any("not a calibrated probability" in item.lower() for item in self.limitations)):
+            raise ValueError("Invalid promotion prediction contract")
+        return self
 
 @app.get("/")
 def home():
@@ -304,7 +336,7 @@ def readiness_check():
 # Attrition prediction endpoint
 # --------------------------------------------------
 
-@app.post("/predict")
+@app.post("/predict", response_model=AttritionPredictionResponse)
 def predict(employee: EmployeeData):
     try:
         return predict_attrition(employee.model_dump())
@@ -323,7 +355,7 @@ def predict(employee: EmployeeData):
 # Salary prediction endpoint
 # --------------------------------------------------
 
-@app.post("/predict/salary")
+@app.post("/predict/salary", response_model=SalaryPredictionResponse)
 def predict_salary_endpoint(employee: SalaryData):
     try:
         return predict_salary(employee.model_dump())
@@ -342,7 +374,33 @@ def predict_salary_endpoint(employee: SalaryData):
 # Performance prediction endpoint
 # --------------------------------------------------
 
-@app.post("/predict/performance")
+class PerformancePredictionResponse(BaseModel):
+    model_config = ConfigDict(strict=True, extra="forbid")
+    performance_prediction: Literal[1, 2, 3, 4]
+    performance_probability: float = Field(..., ge=0, le=1)
+    class_probabilities: dict[str, float]
+    model_version: str = Field(..., min_length=1)
+    algorithm: str = Field(..., min_length=1)
+    dataset: str = Field(..., min_length=1)
+    training_provenance: str = Field(..., min_length=1)
+    metrics: dict[str, dict[str, float]]
+    limitations: list[str] = Field(..., min_length=1)
+
+    @model_validator(mode="after")
+    def validate_contract(self):
+        if (not self.class_probabilities or not set(self.class_probabilities) <= {"1", "2", "3", "4"}
+                or any(not 0 <= probability <= 1 for probability in self.class_probabilities.values())
+                or abs(sum(self.class_probabilities.values()) - 1.0) > 1e-6
+                or abs(self.performance_probability - self.class_probabilities.get(str(self.performance_prediction), -1)) > 1e-6
+                or set(self.metrics) != {"validation", "test"}
+                or any(set(values) != {"accuracy", "balanced_accuracy", "f1_macro"}
+                       or any(not 0 <= metric <= 1 for metric in values.values()) for values in self.metrics.values())
+                or any(not item.strip() for item in self.limitations)):
+            raise ValueError("Invalid performance prediction contract")
+        return self
+
+
+@app.post("/predict/performance", response_model=PerformancePredictionResponse)
 def predict_performance_endpoint(employee: PerformanceData):
     try:
         return predict_performance(employee.model_dump())
@@ -361,7 +419,7 @@ def predict_performance_endpoint(employee: PerformanceData):
 # Promotion prediction endpoint
 # --------------------------------------------------
 
-@app.post("/predict/promotion")
+@app.post("/predict/promotion", response_model=PromotionPredictionResponse)
 def predict_promotion_endpoint(employee: PromotionData):
     try:
         return predict_promotion(employee.model_dump())

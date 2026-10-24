@@ -8,4 +8,5 @@ export interface PromotionPredictionResponse {
   algorithm: string;
   target_type: string;
   limitations: string[];
+  decision_threshold: number;
 }

@@ -64,19 +64,19 @@
 
   @if (loading) {
 
-    <div class="loading">
+    <div class="loading" role="status" aria-live="polite">
       Loading employees...
     </div>
 
   } @else if (errorMessage) {
 
-    <div class="error">
+      <div class="error" role="alert">
       {{ errorMessage }}
     </div>
 
   } @else if (employees.length === 0) {
 
-    <div class="empty">
+    <div class="empty" role="status">
       No employees found.
     </div>
 
@@ -153,10 +153,10 @@
 
                 <div class="actions">
 
-                  <!-- Employee Details -->
-                   @if (policy.canMutateEmployees()) { <button
-                     type="button"
-                     (click)="toggleDetails(employee.id!)">
+                    <!-- Employee Details -->
+                    <button
+                      type="button"
+                      (click)="toggleDetails(employee.id!)">
 
                     {{
                       expandedId === employee.id
@@ -164,7 +164,22 @@
                         : 'Details'
                     }}
 
-                   </button> }
+                    </button>
+                    @if (policy.canMutateEmployees()) {
+                      <button
+                        type="button"
+                        (click)="startEdit(employee)"
+                        [disabled]="mutationLoadingId === employee.id">
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        class="danger-button"
+                        (click)="deleteEmployee(employee.id!)"
+                        [disabled]="mutationLoadingId === employee.id">
+                        {{ mutationLoadingId === employee.id ? 'Deleting...' : 'Delete' }}
+                      </button>
+                    }
                    <a class="profile-link" [routerLink]="['/employees', employee.id]">
                      View profile
                    </a>
@@ -245,6 +260,40 @@
               </td>
 
             </tr>
+
+            @if (editingId === employee.id && editingEmployee; as draft) {
+              <tr class="edit-row">
+                <td colspan="9">
+                  <form class="edit-form" (ngSubmit)="saveEdit()" aria-label="Edit employee">
+                    <h4>Edit {{ employee.name }}</h4>
+                    <div class="edit-fields">
+                      <label [for]="'edit-name-' + employee.id">Name
+                        <input [id]="'edit-name-' + employee.id" name="name" [(ngModel)]="draft.name" required>
+                      </label>
+                      <label [for]="'edit-department-' + employee.id">Department
+                        <select [id]="'edit-department-' + employee.id" name="department" [(ngModel)]="draft.department" required>
+                          @for (department of departments; track department) {
+                            <option [value]="department">{{ department }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label [for]="'edit-role-' + employee.id">Job role
+                        <input [id]="'edit-role-' + employee.id" name="jobRole" [(ngModel)]="draft.jobRole" required>
+                      </label>
+                      <label [for]="'edit-age-' + employee.id">Age
+                        <input [id]="'edit-age-' + employee.id" name="age" type="number" min="18" [(ngModel)]="draft.age" required>
+                      </label>
+                    </div>
+                    <div class="edit-actions">
+                      <button type="submit" [disabled]="mutationLoadingId === employee.id || !draft.name || !draft.department || !draft.jobRole || draft.age < 18">
+                        {{ mutationLoadingId === employee.id ? 'Saving...' : 'Save changes' }}
+                      </button>
+                      <button type="button" (click)="cancelEdit()" [disabled]="mutationLoadingId === employee.id">Cancel</button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+            }
 
             <!-- Employee Details -->
 

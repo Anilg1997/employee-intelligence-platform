@@ -18,8 +18,10 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 if __package__:
     from .json_models import export_pipeline, load_artifact
+    from .salary_contract import SalaryPredictionResponse
 else:
     from json_models import export_pipeline, load_artifact
+    from salary_contract import SalaryPredictionResponse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_PATH = BASE_DIR / "data" / "raw" / "employee_data.csv"
@@ -101,8 +103,11 @@ def _load_salary_model(path):
         raise SalaryModelUnavailable("Salary model unavailable; run python -m src.train_salary_model explicitly.")
     try:
         artifact = load_artifact(path)
-        if artifact["metadata"]["model_version"] != MODEL_VERSION:
+        metadata = artifact["metadata"]
+        if metadata["model_version"] != MODEL_VERSION or metadata["algorithm"] != ALGORITHM \
+                or metadata["features"] != SALARY_FEATURES or metadata["target"] != "MonthlyIncome":
             raise ValueError("Incompatible model version")
+        _response(metadata, 0.0)
         return artifact
     except Exception as exc:
         raise SalaryModelUnavailable("Salary model artifact is invalid or incompatible.") from exc
@@ -112,9 +117,19 @@ def load_salary_model():
     return _load_salary_model(str(MODEL_PATH))
 
 
+def _response(metadata, estimate):
+    return SalaryPredictionResponse.model_validate({"estimated_monthly_income": round(estimate, 2),
+            "model_version": metadata["model_version"], "algorithm": metadata["algorithm"],
+            "dataset": metadata["dataset"],
+            "training_provenance": f"trained_at_utc={metadata['trained_at_utc']};dataset_sha256={metadata['dataset_sha256']}",
+            "metrics": metadata["metrics"], "limitations": metadata["limitations"]}).model_dump()
+
+
 def predict_salary(employee_data: dict) -> dict:
     artifact = load_salary_model()
-    model = artifact["model"]
-    estimate = float(model.predict(pd.DataFrame([{name: employee_data[name] for name in SALARY_FEATURES}]))[0])
-    return {"estimated_monthly_income": round(max(0, estimate), 2),
-            "model_version": artifact["metadata"]["model_version"], "algorithm": artifact["metadata"]["algorithm"]}
+    try:
+        estimate = float(artifact["model"].predict(pd.DataFrame([
+            {name: employee_data[name] for name in SALARY_FEATURES}]))[0])
+        return _response(artifact["metadata"], estimate)
+    except (ValueError, TypeError, KeyError, OverflowError) as exc:
+        raise SalaryModelUnavailable("Salary prediction output is invalid.") from exc

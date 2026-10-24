@@ -1,0 +1,16 @@
+<section class="ops-page" aria-labelledby="health-title">
+  <header class="page-heading"><div><p class="eyebrow">Operations</p><h1 id="health-title">System health</h1><p>Read-only status from Spring Boot Actuator.</p></div><button type="button" (click)="load()" [disabled]="loading || metricLoading">Refresh</button></header>
+  @if (loading) { <p class="state" role="status">Checking health endpoints…</p> }
+  @if (error) { <p class="notice error" role="alert">{{ error }}</p> }
+  @if (health && !loading) {
+    <div class="summary-card"><span>Overall status</span><strong [class.good]="health.status === 'UP'">{{ health.status || 'Unavailable' }}</strong></div>
+    <div class="card-grid">@for (entry of entries(); track entry[0]) { <article class="card"><h2>{{ entry[0] }}</h2><p>{{ entry[1].status || 'Unavailable' }}</p></article> }</div>
+    @if (!entries().length) { <p class="muted">Component details are not exposed by this deployment.</p> }
+  }
+  <div class="card"><h2>Actuator metrics</h2>
+    @if (metrics.length) { <ul class="metric-list">@for (metric of metrics; track metric) { <li><button type="button" [disabled]="metricLoading" (click)="inspectMetric(metric)">{{ metric }}</button></li> }</ul> } @else { <p class="muted">No metric names are available.</p> }
+    @if (metricLoading) { <p role="status">Loading measurements…</p> }
+    @if (metricError) { <p role="alert">{{ metricError }}</p> }
+    @if (metricData) { <h3>{{ selectedMetric }}</h3><pre>{{ metricData | json }}</pre> }
+  </div>
+</section>

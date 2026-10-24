@@ -136,7 +136,7 @@
 
         <div class="detail-item">
           <span>Overtime</span>
-          <strong>{{ display(e.overtime) }}</strong>
+          <strong>{{ display(e.overTime) }}</strong>
         </div>
 
         <div class="detail-item">
@@ -174,6 +174,61 @@
       <p class="note">
         This is the recorded dataset status, not a prediction of future attrition.
       </p>
+    </section>
+
+    <section class="profile-card intelligence-card">
+      <div class="card-heading">
+        <div><p class="eyebrow">Employee intelligence</p><h2>Risk and decision support</h2></div>
+        <span class="model-badge">Live risk APIs</span>
+      </div>
+      <p class="decision-support-note"><strong>Decision-support only.</strong> These model signals are estimates based on available records; they do not explain causality or make employment decisions. Review the underlying record and apply human judgment.</p>
+
+      @if (riskLoading) {
+        <div class="risk-state" aria-live="polite"><strong>Assessing attrition risk</strong><p>Generating the latest risk signal for this employee.</p></div>
+      } @else if (riskErrorMessage) {
+        <div class="risk-state risk-error" role="alert"><strong>Risk assessment unavailable</strong><p>{{ riskErrorMessage }}</p></div>
+      } @else if (riskAssessment) {
+        <div class="risk-result" [class.risk-high]="riskAssessment.riskLevel === 'High Risk'" [class.risk-medium]="riskAssessment.riskLevel === 'Medium Risk'" [class.risk-low]="riskAssessment.riskLevel === 'Low Risk'">
+          <div><span class="risk-label">Risk level</span><strong>{{ riskAssessment.riskLevel }}</strong></div>
+          <div><span class="risk-label">Model prediction</span><strong>{{ riskAssessment.prediction }}</strong></div>
+          <div><span class="risk-label">Probability</span><strong>{{ (riskAssessment.probability * 100).toFixed(2) }}%</strong></div>
+        </div>
+      }
+
+      @if (summaryLoading) {
+        <div class="risk-state" aria-live="polite"><strong>Building employee 360 summary</strong><p>Combining current attrition, performance, and promotion signals.</p></div>
+      } @else if (summaryErrorMessage) {
+        <div class="risk-state risk-error" role="alert"><strong>360 summary unavailable</strong><p>{{ summaryErrorMessage }}</p></div>
+      } @else if (riskSummary) {
+        <div class="risk-result risk-summary-result">
+          <div><span class="risk-label">Overall risk</span><strong>{{ (riskSummary.overallRisk * 100).toFixed(1) }}%</strong></div>
+          <div><span class="risk-label">Performance risk</span><strong>{{ (riskSummary.performanceRisk * 100).toFixed(1) }}%</strong></div>
+          <div><span class="risk-label">Promotion readiness</span><strong>{{ (riskSummary.promotionReadiness * 100).toFixed(1) }}%</strong></div>
+        </div>
+        @if (riskSummary.limitations.length) {
+          <ul class="risk-limitations">@for (limitation of riskSummary.limitations; track limitation) { <li>{{ limitation }}</li> }</ul>
+        }
+      }
+    </section>
+
+    <section class="profile-card timeline-card">
+      <div class="card-heading"><div><p class="eyebrow">Employee history</p><h2>Timeline &amp; audit</h2></div><span class="model-badge">Audit history</span></div>
+      @if (timelineLoading) {
+        <div class="timeline-state" aria-live="polite"><strong>Loading timeline</strong><p>Retrieving audit events associated with this employee.</p></div>
+      } @else if (timelineErrorMessage) {
+        <div class="timeline-state timeline-error" role="alert"><strong>Timeline unavailable</strong><p>{{ timelineErrorMessage }}</p></div>
+      } @else if (!timelineEvents.length) {
+        <div class="timeline-state"><strong>No timeline events yet</strong><p>No audit events are currently associated with this employee.</p></div>
+      } @else {
+        <ol class="timeline-list">
+          @for (event of timelineEvents; track event.id) {
+            <li class="timeline-item">
+              <div class="timeline-marker" aria-hidden="true"></div>
+              <div><p class="timeline-time">{{ formatTimestamp(event.timestamp) }}</p><strong>{{ event.action }}</strong><p>{{ event.result }} · {{ event.actorSubject }}</p>@if (event.metadata) { <small>{{ event.metadata }}</small> }</div>
+            </li>
+          }
+        </ol>
+      }
     </section>
   </ng-container>
 </div>

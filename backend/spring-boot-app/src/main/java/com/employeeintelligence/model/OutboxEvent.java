@@ -72,4 +72,9 @@ public class OutboxEvent {
         // Keep broker responses and event payloads out of the database and logs.
         this.lastError = exception.getClass().getSimpleName();
     }
+
+    public void requeueForReplay() {
+        if (publishedAt != null || lastError == null) throw new IllegalStateException("Only failed outbox events can be replayed");
+        this.lastError = null;
+    }
 }

@@ -71,4 +71,13 @@ describe('EmployeeForm', () => {
     expect(component.predictionNotice).toContain('prediction was skipped');
     expect(component.employee.age).toBeNull();
   });
+
+  it('renders the complete fictional department list', () => {
+    fixture.detectChanges();
+
+    const options = Array.from(fixture.nativeElement.querySelectorAll('#department option'))
+      .map(option => (option as HTMLOptionElement).textContent?.trim());
+    expect(options).toEqual(['Select a department', 'Human Resources', 'Research & Development', 'Sales']);
+    expect(options).toEqual(['Select a department', 'Human Resources', 'Research & Development', 'Sales']);
+  });
 });

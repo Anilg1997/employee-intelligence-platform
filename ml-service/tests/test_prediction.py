@@ -87,3 +87,12 @@ def test_probability_range():
     probability = result["attrition_probability"]
 
     assert 0 <= probability <= 1
+
+
+def test_prediction_exposes_artifact_metadata_and_limitations():
+    result = predict_attrition(sample_employee)
+
+    assert result["model_version"] == "attrition-service-current"
+    assert result["decision_threshold"] == 0.55
+    assert result["dataset"] == "IBM HR synthetic employee_data.csv"
+    assert result["limitations"]

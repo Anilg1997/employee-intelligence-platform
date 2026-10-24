@@ -11,6 +11,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import com.employeeintelligence.api.service.AuditService;
@@ -20,6 +21,7 @@ import com.employeeintelligence.security.TenantFilter;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 
 @Configuration
+@org.springframework.context.annotation.Import(com.employeeintelligence.security.SecurityMode.class)
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -39,7 +41,13 @@ public class SecurityConfig {
 
     @Bean
     @Profile("secure")
-    SecurityFilterChain oidcSecurityFilterChain(HttpSecurity http, ObjectProvider<AuditService> audit, TenantContext tenants) throws Exception {
+    SecurityFilterChain oidcSecurityFilterChain(
+            HttpSecurity http,
+            ObjectProvider<AuditService> audit,
+            TenantContext tenants,
+            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:${security.oauth2.issuer-uri:}}")
+                    String issuerUri) throws Exception {
+        validateIssuerUri(issuerUri);
         return http.csrf(csrf -> csrf.disable())
                 .addFilterAfter(new TenantFilter(tenants), BearerTokenAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
@@ -59,7 +67,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/agent/ask", "/api/rag/ask", "/api/ai/chat")
                         .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
                         .requestMatchers("/api/audit/**", "/api/rag/ingestion/**", "/api/rag/documents/**")
-                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN")
+                         .hasAnyRole("SUPER_ADMIN", "HR_ADMIN")
+                        .requestMatchers("/api/notifications/**")
+                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions.accessDeniedHandler((request, response, denied) -> {
                     AuditService service = audit.getIfAvailable();
@@ -68,6 +78,20 @@ public class SecurityConfig {
                 }))
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .build();
+    }
+
+    static void validateIssuerUri(String value) {
+        try {
+            java.net.URI uri = java.net.URI.create(value == null ? "" : value);
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null
+                    || uri.getRawUserInfo() != null || uri.getRawQuery() != null
+                    || uri.getRawFragment() != null || uri.getPort() == 0 || uri.getPort() > 65535) {
+                throw new IllegalArgumentException();
+            }
+        } catch (IllegalArgumentException invalid) {
+            // Do not echo the supplied value: a malformed URI may contain secrets.
+            throw new IllegalStateException("Secure authentication requires an HTTPS OIDC issuer URI with a host and no credentials, query or fragment");
+        }
     }
 
     /** Maps the provider's conventional `roles` claim to Spring ROLE_ authorities. */

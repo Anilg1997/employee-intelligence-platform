@@ -22,6 +22,9 @@ def test_salary_model_artifact_and_contract():
     assert result["estimated_monthly_income"] > 0
     assert result["model_version"] == "salary-regression-v2"
     assert result["algorithm"] == "random-forest-regressor"
+    assert result["dataset"] == "IBM HR synthetic employee_data.csv"
+    assert set(result["metrics"]) == {"validation", "test"}
+    assert result["limitations"]
 
 
 def test_target_is_not_a_salary_feature():
@@ -103,3 +106,18 @@ def test_missing_artifact_returns_service_unavailable(tmp_path, monkeypatch):
         "MaritalStatus": "Single", "OverTime": "No", "StockOptionLevel": 1,
     })
     assert response.status_code == 503
+
+
+def test_salary_input_contract_rejects_out_of_range_literal_and_extra_fields():
+    from src.api import SalaryData
+    from pydantic import ValidationError
+    payload = {"Age": 35, "Department": "Sales", "JobLevel": 2, "JobRole": "Sales Executive",
+               "TotalWorkingYears": 10, "YearsAtCompany": 5, "Education": 3, "PercentSalaryHike": 15,
+               "PerformanceRating": 3, "Gender": "Female", "MaritalStatus": "Single", "OverTime": "No",
+               "StockOptionLevel": 1}
+    SalaryData.model_validate(payload)
+    for key, value in (("Age", 17), ("Department", "sales"), ("OverTime", "Sometimes"), ("unexpected", 1)):
+        invalid = dict(payload)
+        invalid[key] = value
+        with pytest.raises(ValidationError):
+            SalaryData.model_validate(invalid)

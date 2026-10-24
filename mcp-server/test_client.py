@@ -1,10 +1,9 @@
 import asyncio
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-
-
 async def main():
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
     server_params = StdioServerParameters(
         command="python",
         args=["server.py"],

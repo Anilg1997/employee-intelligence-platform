@@ -1,20 +1,12 @@
-
-import {
-  Component,
-  OnInit,
-  ChangeDetectorRef
-} from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 
 import { Employee } from '../../models/employee';
+import { MlPredictionRequest } from '../../models/ml-prediction-request';
+import { MlPredictionResponse } from '../../models/ml-prediction-response';
 import { EmployeeService } from '../../services/employee';
-import {
-  AttritionMlService,
-  AttritionFeatures,
-  AttritionPredictionResponse
-} from '../../services/attrition-ml.service';
-import { toAttritionPredictionFeatures } from '../../services/prediction-features';
+import { MlPredictionService } from '../../services/ml-prediction';
 
 @Component({
   selector: 'app-attrition-prediction',
@@ -26,183 +18,139 @@ import { toAttritionPredictionFeatures } from '../../services/prediction-feature
 export class AttritionPrediction implements OnInit {
   employees: Employee[] = [];
   selectedEmployeeId: number | null = null;
-  prediction: AttritionPredictionResponse | null = null;
-
-  loading = false;
-  loadingEmployees = false;
+  prediction: MlPredictionResponse | null = null;
+  employeesLoading = true;
+  predictionLoading = false;
   errorMessage = '';
+  employeeErrorMessage = '';
+  modelUnavailable = false;
+  missingFields: string[] = [];
   modelStatus: 'checking' | 'ready' | 'unavailable' = 'checking';
 
   constructor(
     private readonly employeeService: EmployeeService,
-    private readonly attritionMlService: AttritionMlService,
+    private readonly mlPredictionService: MlPredictionService,
     private readonly cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadEmployees();
-    this.checkModelReadiness();
   }
 
-  private loadEmployees(): void {
-    this.loadingEmployees = true;
+  loadEmployees(): void {
+    this.employeesLoading = true;
+    this.employeeErrorMessage = '';
+    this.employeeService.getEmployees().pipe(
+      finalize(() => {
+        this.employeesLoading = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: employees => {
+        this.employees = employees.filter(employee => Number.isInteger(employee.id));
+        this.selectedEmployeeId = this.employees[0]?.id ?? null;
+      },
+      error: () => {
+        this.employeeErrorMessage = 'Unable to load employees for prediction.';
+      }
+    });
+  }
+
+  clearPrediction(): void {
+    this.prediction = null;
     this.errorMessage = '';
-
-    this.employeeService.getEmployees()
-      .pipe(
-        finalize(() => {
-          this.loadingEmployees = false;
-          this.cdr.detectChanges();
-        })
-      )
-      .subscribe({
-        next: (employees) => {
-          this.employees = employees.filter(
-            employee => employee.id !== undefined
-          );
-
-          this.selectedEmployeeId = this.employees[0]?.id ?? null;
-
-          if (this.employees.length === 0) {
-            this.errorMessage =
-              'No employees are available for prediction.';
-          }
-
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.errorMessage =
-            'Unable to load employees. Check that Spring Boot is running.';
-          this.cdr.detectChanges();
-        }
-      });
+    this.modelUnavailable = false;
+    this.missingFields = [];
   }
 
-  private checkModelReadiness(): void {
-    this.attritionMlService.checkReadiness().subscribe({
-      next: (readiness) => {
-        this.modelStatus = this.hasReadyAttritionModel(readiness)
-          ? 'ready'
-          : 'unavailable';
+  predict(): void {
+    if (this.predictionLoading || this.employeesLoading) return;
+    this.clearPrediction();
+    const employee = this.employees.find(item => item.id === this.selectedEmployeeId);
+    if (!employee) {
+      this.errorMessage = 'Select an employee first.';
+      return;
+    }
+    const request = this.toPredictionRequest(employee);
+    if (!request) {
+      this.errorMessage = 'This employee does not have all fields required by the attrition model.';
+      return;
+    }
+
+    this.predictionLoading = true;
+    this.errorMessage = '';
+    this.mlPredictionService.predict(request).pipe(finalize(() => {
+      this.predictionLoading = false;
+      this.cdr.detectChanges();
+    })).subscribe({
+      next: result => {
+        if (!this.isValidResult(result)) {
+          this.errorMessage = 'The model returned an invalid prediction. No estimate is available. Please try again.';
+          this.modelStatus = 'unavailable';
+        } else {
+          this.prediction = result;
+          this.modelStatus = 'ready';
+        }
         this.cdr.detectChanges();
       },
       error: (error: unknown) => {
-        const body = this.isRecord(error) ? error['error'] : undefined;
-        const detail = this.isRecord(body) ? body['detail'] : undefined;
-        this.modelStatus = this.hasReadyAttritionModel(detail)
-          ? 'ready'
-          : 'unavailable';
+        this.modelUnavailable = typeof error === 'object' && error !== null
+          && 'status' in error && error.status === 503;
+        this.modelStatus = this.modelUnavailable ? 'unavailable' : 'checking';
+        this.errorMessage = this.modelUnavailable
+          ? 'The attrition model is currently unavailable. No prediction was returned.'
+          : 'Prediction failed. Check that the backend services are running and the employee data is valid.';
         this.cdr.detectChanges();
       }
     });
   }
 
-  predict(): void {
-    if (this.loading) {
-      return;
-    }
-
-    const employee = this.employees.find(
-      item => item.id === this.selectedEmployeeId
-    );
-
-    if (!employee) {
-      this.errorMessage = 'Select an employee first.';
-      this.cdr.detectChanges();
-      return;
-    }
-
-    let request: AttritionFeatures;
-
-    try {
-      request = toAttritionPredictionFeatures(employee);
-    } catch (error: unknown) {
-      this.prediction = null;
-
-      this.errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Employee data is incomplete or invalid.';
-
-      this.cdr.detectChanges();
-      return;
-    }
-
-    this.loading = true;
-    this.errorMessage = '';
-    this.prediction = null;
-
-    this.cdr.detectChanges();
-
-    this.attritionMlService.predict(request)
-      .pipe(
-        finalize(() => {
-          this.loading = false;
-          this.cdr.detectChanges();
-        })
-      )
-      .subscribe({
-        next: (result: AttritionPredictionResponse) => {
-          if (
-            !result ||
-            !['Yes', 'No'].includes(result.attrition_prediction) ||
-            typeof result.attrition_probability !== 'number' ||
-            !Number.isFinite(result.attrition_probability) ||
-            result.attrition_probability < 0 ||
-            result.attrition_probability > 1
-          ) {
-            this.prediction = null;
-            this.errorMessage =
-              'The ML API returned an invalid prediction response.';
-
-            this.cdr.detectChanges();
-            return;
-          }
-
-          this.prediction = result;
-          this.errorMessage = '';
-
-          this.cdr.detectChanges();
-        },
-        error: (error: unknown) => {
-          this.prediction = null;
-          const status = this.httpStatus(error);
-
-          if (status === 0) {
-            this.errorMessage =
-              'Cannot connect to the ML service. Check that it is running and its URL is configured correctly.';
-          } else if (status === 422) {
-            this.errorMessage =
-              'The ML service rejected the employee data. Verify the source record against the model requirements.';
-          } else {
-            this.errorMessage =
-              `Prediction failed${status ? ` (HTTP ${status})` : ''}.`;
-          }
-
-          this.cdr.detectChanges();
-        }
-      });
+  private isValidResult(result: MlPredictionResponse | null | undefined): result is MlPredictionResponse {
+    return !!result && ['Yes', 'No'].includes(result.attrition_prediction)
+      && Number.isFinite(result.attrition_probability)
+      && result.attrition_probability >= 0 && result.attrition_probability <= 1
+      && (result.decision_threshold === undefined
+        || (Number.isFinite(result.decision_threshold) && result.decision_threshold >= 0 && result.decision_threshold <= 1))
+      && (result.limitations === undefined || Array.isArray(result.limitations));
   }
 
-  private httpStatus(error: unknown): number | undefined {
-    if (typeof error !== 'object' || error === null || !('status' in error)) {
-      return undefined;
-    }
-
-    const status = error.status;
-    return typeof status === 'number' ? status : undefined;
-  }
-
-  private hasReadyAttritionModel(value: unknown): boolean {
-    if (!this.isRecord(value)) {
-      return false;
-    }
-
-    const models = value['models'];
-    return this.isRecord(models) && models['attrition'] === 'ready';
-  }
-
-  private isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null;
+  private toPredictionRequest(employee: Employee): MlPredictionRequest | null {
+    const values: Record<string, string | number | null | undefined> = {
+      Age: employee.age,
+      BusinessTravel: employee.businessTravel,
+      DailyRate: employee.dailyRate,
+      Department: employee.department,
+      DistanceFromHome: employee.distanceFromHome,
+      Education: employee.education,
+      EducationField: employee.educationField,
+      EnvironmentSatisfaction: employee.environmentSatisfaction,
+      Gender: employee.gender,
+      HourlyRate: employee.hourlyRate,
+      JobInvolvement: employee.jobInvolvement,
+      JobLevel: employee.jobLevel,
+      JobRole: employee.jobRole,
+      JobSatisfaction: employee.jobSatisfaction,
+      MaritalStatus: employee.maritalStatus,
+      MonthlyIncome: employee.monthlyIncome,
+      MonthlyRate: employee.monthlyRate,
+      NumCompaniesWorked: employee.numCompaniesWorked,
+      OverTime: employee.overTime,
+      PercentSalaryHike: employee.percentSalaryHike,
+      PerformanceRating: employee.performanceRating,
+      RelationshipSatisfaction: employee.relationshipSatisfaction,
+      StockOptionLevel: employee.stockOptionLevel,
+      TotalWorkingYears: employee.totalWorkingYears,
+      TrainingTimesLastYear: employee.trainingTimesLastYear,
+      WorkLifeBalance: employee.workLifeBalance,
+      YearsAtCompany: employee.yearsAtCompany,
+      YearsInCurrentRole: employee.yearsInCurrentRole,
+      YearsSinceLastPromotion: employee.yearsSinceLastPromotion,
+      YearsWithCurrManager: employee.yearsWithCurrManager
+    };
+    this.missingFields = Object.entries(values)
+      .filter(([, value]) => value === undefined || value === null || value === ''
+        || (typeof value === 'number' && !Number.isFinite(value)))
+      .map(([field]) => field);
+    return this.missingFields.length ? null : values as unknown as MlPredictionRequest;
   }
 }

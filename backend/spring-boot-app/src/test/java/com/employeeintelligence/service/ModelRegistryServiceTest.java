@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.employeeintelligence.api.dto.ModelMetadata;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,9 +48,13 @@ class ModelRegistryServiceTest {
         Path directory = Files.createTempDirectory("model-registry-salary");
         write(directory, "employee_salary_model.json", "{" +
                 "\"metadata\":{\"model_version\":\"salary-v2\",\"algorithm\":\"rf\",\"metrics\":{" +
-                "\"test\":{\"mae\":840.6,\"r2\":0.93}}}}");
+                "\"test\":{\"mae\":840.6,\"r2\":0.93}},\"dataset\":\"IBM HR synthetic employee_data.csv\","
+                + "\"trained_at_utc\":\"2026-10-13T00:00:00Z\",\"dataset_sha256\":\"abc123\"}}");
         ModelMetadata salary = new ModelRegistryService(mapper, directory).list().get(1);
         assertEquals(840.6, ((java.util.Map<?, ?>) salary.metrics().get("test")).get("mae"));
+        assertEquals("IBM HR synthetic employee_data.csv", salary.dataset());
+        assertEquals("2026-10-13T00:00:00Z", salary.trainedAtUtc());
+        assertEquals("sha256:abc123", salary.datasetVersion());
     }
 
     @Test
@@ -73,6 +78,17 @@ class ModelRegistryServiceTest {
         assertNull(models.get(0).version());
         assertEquals("UNAVAILABLE", models.get(1).status());
         assertEquals("UNAVAILABLE", models.get(3).status());
+    }
+
+    @Test
+    void returnsStableAndDefensivelyImmutableMetadata() throws Exception {
+        Path directory = Files.createTempDirectory("model-registry-immutable");
+        write(directory, "employee_attrition_model.json", "{\"metadata\":{\"model_version\":\"v1\",\"algorithm\":\"lr\",\"metrics\":{\"z\":1,\"a\":2}}}");
+
+        ModelMetadata metadata = new ModelRegistryService(mapper, directory).list().get(0);
+        assertEquals(List.of("a", "z"), metadata.metrics().keySet().stream().toList());
+        assertThrows(UnsupportedOperationException.class, () -> metadata.metrics().put("new", 1));
+        assertThrows(UnsupportedOperationException.class, () -> metadata.limitations().add("new"));
     }
 
     private static void write(Path directory, String fileName, String contents) throws Exception {
