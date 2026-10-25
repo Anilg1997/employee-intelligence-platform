@@ -48,6 +48,8 @@ public final class EmployeeMapper {
         employee.setYearsInCurrentRole(request.yearsInCurrentRole());
         employee.setYearsSinceLastPromotion(request.yearsSinceLastPromotion());
         employee.setYearsWithCurrManager(request.yearsWithCurrManager());
+        employee.setEmploymentStatus(request.employmentStatus());
+        employee.setHireDate(request.hireDate());
         return employee;
     }
 
@@ -65,6 +67,7 @@ public final class EmployeeMapper {
                 employee.getRelationshipSatisfaction(), employee.getStandardHours(), employee.getStockOptionLevel(),
                 employee.getTotalWorkingYears(), employee.getTrainingTimesLastYear(), employee.getWorkLifeBalance(),
                 employee.getYearsAtCompany(), employee.getYearsInCurrentRole(),
-                employee.getYearsSinceLastPromotion(), employee.getYearsWithCurrManager());
+                employee.getYearsSinceLastPromotion(), employee.getYearsWithCurrManager(),
+                employee.getEmploymentStatus(), employee.getHireDate());
     }
 }

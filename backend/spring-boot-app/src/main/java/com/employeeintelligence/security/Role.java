@@ -6,5 +6,9 @@ public enum Role {
     HR_ADMIN,
     HR_MANAGER,
     HR_ANALYST,
-    EMPLOYEE
+    EMPLOYEE,
+    MANAGER,
+    HR,
+    ADMIN,
+    DIRECTOR
 }

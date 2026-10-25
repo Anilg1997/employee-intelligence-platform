@@ -61,6 +61,8 @@ public class Employee {
     private Integer yearsInCurrentRole;
     private Integer yearsSinceLastPromotion;
     private Integer yearsWithCurrManager;
+    private String employmentStatus;
+    private java.time.LocalDate hireDate;
 
     public Employee() {
     }
@@ -174,4 +176,9 @@ public class Employee {
     public void setYearsSinceLastPromotion(Integer yearsSinceLastPromotion) { this.yearsSinceLastPromotion = yearsSinceLastPromotion; }
     public Integer getYearsWithCurrManager() { return yearsWithCurrManager; }
     public void setYearsWithCurrManager(Integer yearsWithCurrManager) { this.yearsWithCurrManager = yearsWithCurrManager; }
+
+    public String getEmploymentStatus() { return employmentStatus; }
+    public void setEmploymentStatus(String employmentStatus) { this.employmentStatus = employmentStatus; }
+    public java.time.LocalDate getHireDate() { return hireDate; }
+    public void setHireDate(java.time.LocalDate hireDate) { this.hireDate = hireDate; }
 }

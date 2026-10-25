@@ -41,5 +41,7 @@ public record EmployeeRequest(
         @PositiveOrZero Integer yearsAtCompany,
         @PositiveOrZero Integer yearsInCurrentRole,
         @PositiveOrZero Integer yearsSinceLastPromotion,
-        @PositiveOrZero Integer yearsWithCurrManager) {
+        @PositiveOrZero Integer yearsWithCurrManager,
+        @Size(max = 255) String employmentStatus,
+        @PositiveOrZero java.time.LocalDate hireDate) {
 }

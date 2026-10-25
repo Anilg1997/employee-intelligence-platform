@@ -37,5 +37,7 @@ public record EmployeeResponse(
         Integer yearsAtCompany,
         Integer yearsInCurrentRole,
         Integer yearsSinceLastPromotion,
-        Integer yearsWithCurrManager) {
+        Integer yearsWithCurrManager,
+        String employmentStatus,
+        java.time.LocalDate hireDate) {
 }

@@ -9,9 +9,9 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import com.employeeintelligence.api.service.AuditService;
@@ -25,17 +25,26 @@ import org.springframework.security.oauth2.server.resource.web.authentication.Be
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+    public SecurityConfig(Environment environment) {
+    }
+
     @Bean
     TenantContext tenantContext(Environment environment) {
         return new TenantContext(!environment.acceptsProfiles(Profiles.of("local")));
     }
+
     @Bean
     @Profile("local")
     SecurityFilterChain localSecurityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/metrics", "/actuator/prometheus").permitAll()
-                        .anyRequest().permitAll())
+                        .requestMatchers("/api/auth/**", "/api/invitations/**", "/api/employees/search").permitAll()
+                        .anyRequest().authenticated())
+                .formLogin(form -> form
+                        .loginPage("/login").permitAll()
+                        .defaultSuccessUrl("/api/dashboard/summary", true)
+                        .passwordParameter("password").permitAll())
                 .build();
     }
 
@@ -44,32 +53,21 @@ public class SecurityConfig {
     SecurityFilterChain oidcSecurityFilterChain(
             HttpSecurity http,
             ObjectProvider<AuditService> audit,
-            TenantContext tenants,
-            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:${security.oauth2.issuer-uri:}}")
-                    String issuerUri) throws Exception {
-        validateIssuerUri(issuerUri);
+            TenantContext tenants) throws Exception {
         return http.csrf(csrf -> csrf.disable())
-                .addFilterAfter(new TenantFilter(tenants), BearerTokenAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health/**", "/actuator/info",
-                                "/api/health", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                        .requestMatchers("/actuator/health/**", "/actuator/info", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/actuator/metrics/**", "/actuator/prometheus").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/employees", "/api/employees/**", "/api/dashboard/**")
-                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
-                        .requestMatchers(HttpMethod.POST, "/api/employees", "/api/employees/**")
-                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/api/employees/**")
-                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/employees/**")
-                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER")
-                        .requestMatchers("/api/ml/**", "/api/ai/employees/**")
-                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
-                        .requestMatchers("/api/agent/ask", "/api/rag/ask", "/api/ai/chat")
-                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
-                        .requestMatchers("/api/audit/**", "/api/rag/ingestion/**", "/api/rag/documents/**")
-                         .hasAnyRole("SUPER_ADMIN", "HR_ADMIN")
-                        .requestMatchers("/api/notifications/**")
-                        .hasAnyRole("SUPER_ADMIN", "HR_ADMIN", "HR_MANAGER", "HR_ANALYST")
+                        .hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/employees/**").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/employees").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/employees/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/employees/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard/**").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/ml/predict").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_SUPER_ADMIN")
+                        .requestMatchers("/api/audit/**", "/api/rag/ingestion/**", "/api/rag/documents/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN")
+                        .requestMatchers("/api/notifications/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "role_hr_admin", "role_hr_manager", "role_hr_analyst")
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions.accessDeniedHandler((request, response, denied) -> {
                     AuditService service = audit.getIfAvailable();
@@ -77,6 +75,7 @@ public class SecurityConfig {
                     response.sendError(403);
                 }))
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
 
@@ -89,7 +88,6 @@ public class SecurityConfig {
                 throw new IllegalArgumentException();
             }
         } catch (IllegalArgumentException invalid) {
-            // Do not echo the supplied value: a malformed URI may contain secrets.
             throw new IllegalStateException("Secure authentication requires an HTTPS OIDC issuer URI with a host and no credentials, query or fragment");
         }
     }

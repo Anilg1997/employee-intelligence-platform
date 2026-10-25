@@ -222,3 +222,37 @@ ml-service/models/*.pkl
 ml-service/models/*.pickle
 ml-service/models/*.joblib
 ml-service/models/*.pki
+
+# --------------------------------------------------------------------------
+# Java / Maven
+# --------------------------------------------------------------------------
+
+target/
+*.jar
+*.war
+
+# --------------------------------------------------------------------------
+# Node / frontend
+# --------------------------------------------------------------------------
+
+node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+
+# --------------------------------------------------------------------------
+# IDE / OS artifacts
+# --------------------------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# --------------------------------------------------------------------------
+# Local scratch SQL exports (not production DB dumps)
+# --------------------------------------------------------------------------
+
+*.sql
+!backend/spring-boot-app/src/main/resources/db/migration/*.sql
+!ml-service/data/raw/*.csv
