@@ -36,4 +36,6 @@ export interface Employee {
   yearsInCurrentRole?: number;
   yearsSinceLastPromotion?: number;
   yearsWithCurrManager?: number;
+  employmentStatus?: string;
+  hireDate?: string | Date;
 }

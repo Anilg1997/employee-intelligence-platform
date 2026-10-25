@@ -4,7 +4,7 @@ import { OIDC_AUTHORITY, OIDC_CLIENT_ID } from '../config/auth.config';
 import { RUNTIME_CONFIG } from '../config/runtime.config';
 import { UserManager, WebStorageStateStore, User } from 'oidc-client-ts';
 
-export const APP_ROLES = ['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER', 'HR_ANALYST', 'EMPLOYEE'] as const;
+export const APP_ROLES = ['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER', 'HR_ANALYST', 'EMPLOYEE', 'MANAGER', 'ADMIN', 'DIRECTOR'] as const;
 export type AppRole = typeof APP_ROLES[number];
 export interface AuthState { authenticated: boolean; token: string | null; roles: AppRole[]; expiresAt: number | null; demo: boolean; }
 

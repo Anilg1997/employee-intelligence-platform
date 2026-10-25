@@ -96,7 +96,20 @@
             <th>Monthly Income</th>
             <th>Overtime</th>
             <th>Attrition</th>
+            <th>Employment Status</th>
+            <th>Hire Date</th>
             <th>Actions</th>
+              <td>
+                <span>{{ employee.employmentStatus || "Not set" }}</span>
+              </td>
+
+              <td>
+
+                <span>{{ employee.hireDate | date:'shortDate' || "Not set" }}</span>
+
+              </td>
+            <th>Employment Status</th>
+            <th>Hire Date</th>
           </tr>
         </thead>
 

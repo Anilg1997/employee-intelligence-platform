@@ -4,7 +4,8 @@ import { AppRole, AuthService } from './auth.service';
 export const ROLE_POLICY = {
   audit: ['SUPER_ADMIN', 'HR_ADMIN'] as AppRole[],
   employeeMutations: ['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER'] as AppRole[],
-  sensitiveInsights: ['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER', 'HR_ANALYST'] as AppRole[]
+  sensitiveInsights: ['SUPER_ADMIN', 'HR_ADMIN', 'HR_MANAGER', 'HR_ANALYST'] as AppRole[],
+  directorOnly: ['DIRECTOR', 'SUPER_ADMIN'] as AppRole[]
 };
 
 @Injectable({ providedIn: 'root' })
