@@ -8,10 +8,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src ./src
 COPY models ./models
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser \
+RUN addgroup --gid 10001 appgroup \
+    && adduser --uid 10001 --ingroup appgroup --disabled-password --gecos "" appuser \
     && chown -R appuser:appgroup /app
 
 EXPOSE 8000
 USER appuser
+ENV HOME=/tmp
 
 CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]
