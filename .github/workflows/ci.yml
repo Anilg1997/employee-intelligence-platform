@@ -142,19 +142,19 @@ jobs:
         run: docker build --tag employee-intelligence-backend:ci ./backend/spring-boot-app
       - name: Build MCP image
         run: docker build --tag employee-intelligence-mcp:ci ./mcp-server
-      - uses: aquasecurity/trivy-action@0.28.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: employee-intelligence-ml:ci
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
-      - uses: aquasecurity/trivy-action@0.28.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: employee-intelligence-mcp:ci
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '1'
-      - uses: aquasecurity/trivy-action@0.28.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: employee-intelligence-backend:ci
           severity: CRITICAL,HIGH
