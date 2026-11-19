@@ -24,8 +24,8 @@ Expected answer contract includes source references. Evaluate source relevance, 
 
 ## MCP
 
-`mcp-server/` is a separate Python adapter. It is not an identity provider or authorization bypass. Before exposure, replace hard-coded service configuration, propagate authenticated identity safely, allowlist each tool, minimize returned fields, enforce per-tool authorization/timeouts, and audit tool calls. Do not grant shell, arbitrary filesystem, or unrestricted database access.
+`mcp-server/` is a separate Python adapter with an opt-in Compose profile. Its Spring base URL, optional bearer token, role capability filter, tool allowlist, and bounded timeouts are environment-configured. The role filter is not caller authentication: the configured bearer token is shared by the adapter, so caller-specific identity propagation, rate limiting, sensitive-field filtering, and tool-call auditing are still required before public or multi-user deployment. Do not grant shell, arbitrary filesystem, or unrestricted database access.
 
 ## Health and tests
 
-Use Spring readiness at `http://localhost:8081/actuator/health/readiness`, FastAPI `/ready`, and the MCP health behavior only after confirming its current implementation. Run existing RAG/agent tests before model-backed acceptance. Do not treat successful model startup as evidence of answer quality.
+Use Spring readiness at `http://localhost:8081/actuator/health/readiness` and FastAPI `/ready`. The MCP server starts after backend readiness in Compose; its client handshake and tool listing are the available protocol-level checks. Run existing RAG/agent tests before model-backed acceptance. Do not treat successful model startup as evidence of answer quality.

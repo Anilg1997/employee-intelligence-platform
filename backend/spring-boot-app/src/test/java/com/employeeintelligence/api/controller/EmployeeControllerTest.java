@@ -55,7 +55,8 @@ class EmployeeControllerTest {
              "percentSalaryHike":15,"performanceRating":3,"relationshipSatisfaction":2,
              "standardHours":80,"stockOptionLevel":0,"totalWorkingYears":10,
              "trainingTimesLastYear":3,"workLifeBalance":4,"yearsAtCompany":8,
-             "yearsInCurrentRole":5,"yearsSinceLastPromotion":2,"yearsWithCurrManager":6}
+             "yearsInCurrentRole":5,"yearsSinceLastPromotion":2,"yearsWithCurrManager":6,
+             "employmentStatus":null,"hireDate":null}
             """;
 
     @Autowired

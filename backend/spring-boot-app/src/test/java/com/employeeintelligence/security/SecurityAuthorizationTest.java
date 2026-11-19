@@ -11,7 +11,7 @@ class SecurityAuthorizationTest {
     @Test
     void exposesTheDefinedRoleContract() {
         assertArrayEquals(new Role[] { Role.SUPER_ADMIN, Role.HR_ADMIN, Role.HR_MANAGER,
-                Role.HR_ANALYST, Role.EMPLOYEE }, Role.values());
+                Role.HR_ANALYST, Role.EMPLOYEE, Role.MANAGER, Role.HR, Role.ADMIN, Role.DIRECTOR }, Role.values());
     }
 
     @Test

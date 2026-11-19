@@ -7,6 +7,7 @@ import {
   OnChanges,
   SimpleChanges
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -22,7 +23,7 @@ import {
 @Component({
   selector: 'app-employee-list',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [DatePipe, FormsModule, RouterLink],
   templateUrl: './employee-list.html',
   styleUrl: './employee-list.scss'
 })

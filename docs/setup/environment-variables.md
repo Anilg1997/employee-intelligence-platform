@@ -15,6 +15,9 @@
 | `CORS_ALLOWED_ORIGINS` | Spring | Exact local Angular origins by default |
 | `ML_SERVICE_URL` | Spring | `http://127.0.0.1:8000` local; `http://ml-service:8000` in Compose |
 | `ML_SERVICE_PORT`, `BACKEND_PORT`, `BACKEND_MANAGEMENT_PORT`, `POSTGRES_PORT` | Compose host binding | `8000`, `8080`, `8081`, `5432`; loopback-bound |
+| `MCP_SERVER_PORT`, `MCP_HOST`, `MCP_PORT` | MCP/Compose | `8001`; MCP is opt-in with the `mcp` profile and host publication stays loopback-bound |
+| `MCP_ROLE`, `MCP_ALLOWED_TOOLS` | MCP | `employee` policy-only capability filter by default; intersecting allowlist; neither represents caller identity or grants Spring authorization |
+| `SPRING_API_BASE_URL`, `SPRING_API_BEARER_TOKEN` | MCP | Compose uses `http://backend:8080`; optional forwarded bearer token must be supplied privately for secure Spring mode and must be authorized for each enabled endpoint |
 | `EMPLOYEE_IMPORT_ENABLED`, `EMPLOYEE_IMPORT_FILE` | Spring/Compose | Disabled, empty path by default |
 | `RAG_INGESTION_DIRECTORY`, `RAG_INGESTION_MAX_FILE_SIZE_BYTES`, `RAG_INGESTION_ALLOWED_EXTENSIONS` | Spring | Local documents path, bounded size, restricted file extensions |
 | `OLLAMA_BASE_URL` | Spring | Host-local default; use `http://ollama:11434` for Compose AI profile |

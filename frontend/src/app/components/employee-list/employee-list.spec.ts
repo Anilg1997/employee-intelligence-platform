@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
+import { provideRouter } from '@angular/router';
 
 import { EmployeeList } from './employee-list';
 import { EmployeeService } from '../../services/employee';
@@ -18,6 +19,7 @@ describe('EmployeeList', () => {
     await TestBed.configureTestingModule({
       imports: [EmployeeList],
       providers: [
+        provideRouter([]),
         { provide: EmployeeService, useValue: employeeService },
         { provide: EmployeeAiService, useValue: { assessRisk: vi.fn() } },
         { provide: RolePolicyService, useValue: { canMutateEmployees: vi.fn(() => true) } }
@@ -63,6 +65,34 @@ describe('EmployeeList', () => {
     expect(component.totalElements).toBe(21);
     expect(component.totalPages).toBe(2);
     expect(component.currentPage).toBe(1);
+  });
+
+  it('renders lifecycle fields in cells aligned with the table headers', async () => {
+    fixture.destroy();
+    employeeService.searchEmployees.mockReturnValue(of({
+      content: [{
+        id: 8,
+        name: 'Ada',
+        department: 'Engineering',
+        jobRole: 'Developer',
+        employmentStatus: 'ACTIVE',
+        hireDate: '2024-01-15'
+      }],
+      page: 0,
+      size: 20,
+      totalElements: 1,
+      totalPages: 1
+    }));
+    fixture = TestBed.createComponent(EmployeeList);
+    component = fixture.componentInstance;
+    await fixture.whenStable();
+
+    const headerCount = fixture.nativeElement.querySelectorAll('thead th').length;
+    const cells = fixture.nativeElement.querySelector('tbody tr').querySelectorAll('td');
+
+    expect(cells.length).toBe(headerCount);
+    expect(cells[8].textContent).toContain('ACTIVE');
+    expect(cells[9].textContent.trim()).not.toBe('');
   });
 
   it('shows an error when the search fails', () => {

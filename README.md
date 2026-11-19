@@ -40,7 +40,7 @@ The platform brings those concerns into a common workflow: find an employee, ins
 | Workforce Risk Intelligence | IN PROGRESS | Deterministic, non-calibrated composite with formula/version metadata, LOW/MEDIUM/HIGH interpretation, provenance, limitation deduplication, audit metadata, and accessible Angular states; Java verification remains pending in the current environment |
 | HR Knowledge Assistant / RAG | IN PROGRESS | Document ingestion, semantic retrieval, answer/source contract; live and security validation remain |
 | Agentic AI | IN PROGRESS | LangChain4j tool registration and agent endpoint |
-| MCP | IN PROGRESS | Four tool definitions; secure identity propagation and runtime verification remain |
+| MCP | IN PROGRESS | Seven tools map to existing Spring endpoints; opt-in Compose packaging, fixed upstream configuration, bounded timeouts, and capability filtering are available; local SDK/protocol handshake is verified, while caller-specific identity, tool auditing, and production deployment verification remain |
 | AI Reports / Real-Time Alerts | IN PROGRESS | Tenant-scoped persisted employee/department/workforce reports, report UI, status, limitations, and human-review state exist; AI generation, progress events, and real domain producers remain |
 | Audit | IN PROGRESS | Selected events, persistence, paged reads and UI; coverage/durability incomplete |
 | AI Governance | IN PROGRESS | Version/limitation metadata and decision-support disclosures; review/override workflow planned |
@@ -218,8 +218,11 @@ The Python server in [mcp-server/server.py](mcp-server/server.py) defines:
 | `assess_attrition_risk` | Read employee attrition-risk assessment |
 | `search_hr_policy` | Submit a RAG question |
 | `get_department_statistics` | Read dashboard summary |
+| `search_employees` | Search the existing paged employee endpoint |
+| `get_workforce_metrics` | Read dashboard workforce metrics |
+| `list_reports` | Read persisted reports |
 
-The adapter uses HTTP timeouts, but currently has a hard-coded backend URL and no caller token/tenant propagation. Its SDK dependency is unpinned, so runtime compatibility must be checked. Backend RBAC does not by itself implement MCP authentication, tool allowlisting by principal, rate limiting, sensitive-field filtering, or MCP execution audit.
+The adapter uses a configured Spring base URL, optional forwarded bearer token, per-tool bounded HTTP timeouts, a tool allowlist, and a configured role capability filter. The role and shared token do not identify individual MCP callers; caller-specific authentication/tenant propagation, rate limiting, sensitive-field filtering, and MCP execution auditing remain incomplete. The optional Compose `mcp` profile binds its published port to host loopback.
 
 The Java agent's tools are currently in-process wrappers, not demonstrated MCP client calls. Secure agent-to-MCP integration and additional search/report tools are **PLANNED**. Authorization must be determined by verified identity and server policy, never by the LLM.
 
@@ -607,7 +610,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe server.py
 ```
 
-The configured bind address is `127.0.0.1:8001`. These are the intended launch commands, not proof that the currently unpinned SDK exports the server API used by the code. Do not expose this adapter publicly or use it as an authorization bypass.
+The host process binds to `127.0.0.1:8001` by default. To run it with the local Compose stack, use `docker compose --profile mcp up --build`; `MCP_ROLE=employee` exposes policy search only. Set a more privileged capability filter only for a trusted local demo. The adapter is not caller authentication or an authorization bypass; do not expose it publicly.
 
 ## Environment Variables
 

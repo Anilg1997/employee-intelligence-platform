@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import com.employeeintelligence.api.dto.EmployeePageResponse;
@@ -104,6 +105,32 @@ class EmployeeServiceTest {
         assertEquals("Anil", result.getName());
 
         verify(employeeRepository).findByIdAndTenantId(1L, "demo");
+    }
+
+    @Test
+    void shouldUpdateLifecycleFieldsWithinTheCurrentTenant() {
+        Employee employee = new Employee("Anil", "Research & Development", "Research Scientist", 30);
+        LocalDate hireDate = LocalDate.of(2024, 2, 1);
+        when(employeeRepository.findByIdAndTenantId(1L, "demo")).thenReturn(Optional.of(employee));
+        when(employeeRepository.save(employee)).thenReturn(employee);
+
+        assertSame(employee, employeeService.updateEmploymentStatus(1L, "ACTIVE"));
+        assertEquals("ACTIVE", employee.getEmploymentStatus());
+        assertSame(employee, employeeService.updateHireDate(1L, hireDate));
+        assertEquals(hireDate, employee.getHireDate());
+        verify(employeeRepository, times(2)).findByIdAndTenantId(1L, "demo");
+        verify(employeeRepository, times(2)).save(employee);
+    }
+
+    @Test
+    void shouldNotUpdateLifecycleFieldsForAnEmployeeInAnotherTenant() {
+        when(employeeRepository.findByIdAndTenantId(99L, "demo")).thenReturn(Optional.empty());
+
+        assertThrows(EmployeeNotFoundException.class,
+                () -> employeeService.updateEmploymentStatus(99L, "ACTIVE"));
+        assertThrows(EmployeeNotFoundException.class,
+                () -> employeeService.updateHireDate(99L, LocalDate.of(2024, 2, 1)));
+        verify(employeeRepository, never()).save(any(Employee.class));
     }
 
     @Test

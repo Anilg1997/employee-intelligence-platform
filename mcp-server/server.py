@@ -219,4 +219,6 @@ def list_reports(size: int = 50) -> str:
 
 
 if __name__ == "__main__":
-    asyncio.run(mcp.run_streamable_http_async(host="127.0.0.1", port=8001))
+    host = os.getenv("MCP_HOST", "127.0.0.1")
+    port = int(os.getenv("MCP_PORT", "8001"))
+    asyncio.run(mcp.run_streamable_http_async(host=host, port=port))

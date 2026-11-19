@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -82,6 +83,21 @@ public class EmployeeService {
         return employeeRepository.findByIdAndTenantId(id, tenantContext.currentTenantId())
                 .orElseThrow(() -> new EmployeeNotFoundException(id));
     }
+
+    @CacheEvict(cacheNames = "dashboard", keyGenerator = "tenantCacheKeyGenerator")
+    public Employee updateEmploymentStatus(Long id, String employmentStatus) {
+        Employee employee = getEmployeeById(id);
+        employee.setEmploymentStatus(employmentStatus);
+        return employeeRepository.save(employee);
+    }
+
+    @CacheEvict(cacheNames = "dashboard", keyGenerator = "tenantCacheKeyGenerator")
+    public Employee updateHireDate(Long id, LocalDate hireDate) {
+        Employee employee = getEmployeeById(id);
+        employee.setHireDate(hireDate);
+        return employeeRepository.save(employee);
+    }
+
  @CacheEvict(cacheNames = "dashboard", keyGenerator = "tenantCacheKeyGenerator")
  public Employee updateEmployee(Long id, Employee updatedEmployee) {
 

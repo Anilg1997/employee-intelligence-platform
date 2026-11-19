@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/metrics", "/actuator/prometheus").permitAll()
                         .requestMatchers("/api/auth/**", "/api/invitations/**", "/api/employees/search").permitAll()
-                        .anyRequest().authenticated())
+                        .anyRequest().permitAll())
                 .formLogin(form -> form
                         .loginPage("/login").permitAll()
                         .defaultSuccessUrl("/api/dashboard/summary", true)
@@ -59,15 +59,19 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health/**", "/actuator/info", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/actuator/metrics/**", "/actuator/prometheus").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/employees", "/api/employees/**", "/api/dashboard/**")
-                        .hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/employees/**").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_SUPER_ADMIN")
+                        .hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR",
+                                "ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER", "ROLE_HR_ANALYST")
+                        .requestMatchers(HttpMethod.GET, "/api/employees/**").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR",
+                                "ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER", "ROLE_HR_ANALYST")
                         .requestMatchers(HttpMethod.POST, "/api/employees").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/employees/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/employees/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER")
-                        .requestMatchers(HttpMethod.GET, "/api/dashboard/**").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_SUPER_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/ml/predict").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR", "ROLE_SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard/**").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR",
+                                "ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER", "ROLE_HR_ANALYST")
+                        .requestMatchers(HttpMethod.GET, "/api/ml/predict").hasAnyAuthority("ROLE_EMPLOYEE", "ROLE_MANAGER", "ROLE_HR", "ROLE_ADMIN", "ROLE_DIRECTOR",
+                                "ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER", "ROLE_HR_ANALYST")
                         .requestMatchers("/api/audit/**", "/api/rag/ingestion/**", "/api/rag/documents/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN")
-                        .requestMatchers("/api/notifications/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "role_hr_admin", "role_hr_manager", "role_hr_analyst")
+                        .requestMatchers("/api/notifications/**").hasAnyAuthority("ROLE_SUPER_ADMIN", "ROLE_HR_ADMIN", "ROLE_HR_MANAGER", "ROLE_HR_ANALYST")
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions.accessDeniedHandler((request, response, denied) -> {
                     AuditService service = audit.getIfAvailable();

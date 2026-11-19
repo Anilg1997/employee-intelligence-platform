@@ -5,10 +5,6 @@ import com.employeeintelligence.api.dto.EmployeeResponse;
 import com.employeeintelligence.api.dto.EmployeePageResponse;
 import com.employeeintelligence.api.mapper.EmployeeMapper;
 import com.employeeintelligence.api.service.EmployeeService;
-import com.employeeintelligence.api.repository.EmployeeRepository;
-import com.employeeintelligence.api.model.Employee;
-import com.employeeintelligence.api.exception.EmployeeNotFoundException;
-import com.employeeintelligence.security.TenantContext;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import com.employeeintelligence.api.service.AuditService;
 import com.employeeintelligence.api.service.Employee360Service;
 import com.employeeintelligence.api.dto.Employee360Response;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/employees")
@@ -25,16 +22,12 @@ public class EmployeeController {
     private final EmployeeService employeeService;
     private final AuditService auditService;
     private final Employee360Service employee360Service;
-    private final EmployeeRepository employeeRepository;
-    private final TenantContext tenantContext;
 
     public EmployeeController(EmployeeService employeeService, AuditService auditService,
-                              Employee360Service employee360Service, EmployeeRepository employeeRepository, TenantContext tenantContext) {
+                              Employee360Service employee360Service) {
         this.employeeService = employeeService;
         this.auditService = auditService;
         this.employee360Service = employee360Service;
-        this.employeeRepository = employeeRepository;
-        this.tenantContext = tenantContext;
     }
 
     @GetMapping
@@ -99,10 +92,7 @@ public class EmployeeController {
     public ResponseEntity<EmployeeResponse> updateEmployeeStatus(
             @PathVariable Long id,
             @RequestParam String employmentStatus) {
-        Employee existingEmployee = employeeRepository.findByIdAndTenantId(id, tenantContext.currentTenantId())
-                .orElseThrow(() -> new EmployeeNotFoundException(id));
-        existingEmployee.setEmploymentStatus(employmentStatus);
-        Employee updated = employeeRepository.save(existingEmployee);
+        var updated = employeeService.updateEmploymentStatus(id, employmentStatus);
         auditService.record("EMPLOYEE_STATUS_UPDATE", "employee", id, "SUCCESS", "updated employment status to: " + employmentStatus);
         return ResponseEntity.ok(EmployeeMapper.toResponse(updated));
     }
@@ -111,11 +101,8 @@ public class EmployeeController {
     @PreAuthorize("@securityMode.isDemoMode() or hasAnyAuthority('ROLE_SUPER_ADMIN', 'ROLE_HR_ADMIN', 'ROLE_HR_MANAGER')")
     public ResponseEntity<EmployeeResponse> updateEmployeeHireDate(
             @PathVariable Long id,
-            @RequestParam java.time.LocalDate hireDate) {
-        Employee existingEmployee = employeeRepository.findByIdAndTenantId(id, tenantContext.currentTenantId())
-                .orElseThrow(() -> new EmployeeNotFoundException(id));
-        existingEmployee.setHireDate(hireDate);
-        Employee updated = employeeRepository.save(existingEmployee);
+            @RequestParam LocalDate hireDate) {
+        var updated = employeeService.updateHireDate(id, hireDate);
         auditService.record("EMPLOYEE_HIRE_DATE_UPDATE", "employee", id, "SUCCESS", "updated hire date to: " + hireDate);
         return ResponseEntity.ok(EmployeeMapper.toResponse(updated));
     }
