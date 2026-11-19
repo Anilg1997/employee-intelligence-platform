@@ -63,6 +63,7 @@ class NotificationIntegrationTest {
     static void isolatedDatabase(DynamicPropertyRegistry properties) {
         properties.add("spring.flyway.schemas", () -> SCHEMA);
         properties.add("spring.flyway.default-schema", () -> SCHEMA);
+        properties.add("spring.flyway.init-sqls[0]", () -> "SET search_path TO " + SCHEMA + ", public");
         properties.add("spring.flyway.baseline-on-migrate", () -> "false");
         properties.add("spring.jpa.properties.hibernate.default_schema", () -> SCHEMA);
         properties.add("spring.datasource.hikari.connection-init-sql", () -> "SET search_path TO " + SCHEMA + ", public");
