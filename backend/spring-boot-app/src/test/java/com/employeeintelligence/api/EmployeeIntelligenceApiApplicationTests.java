@@ -36,6 +36,7 @@ class EmployeeIntelligenceApiApplicationTests {
     static void isolatedDatabase(DynamicPropertyRegistry properties) {
         properties.add("spring.flyway.schemas", () -> SCHEMA);
         properties.add("spring.flyway.default-schema", () -> SCHEMA);
+        properties.add("spring.flyway.init-sqls[0]", () -> "SET search_path TO " + SCHEMA + ", public");
         properties.add("spring.flyway.baseline-on-migrate", () -> "false");
         properties.add("spring.jpa.properties.hibernate.default_schema", () -> SCHEMA);
         properties.add("spring.datasource.hikari.connection-init-sql", () -> "SET search_path TO " + SCHEMA + ", public");
@@ -65,7 +66,7 @@ class EmployeeIntelligenceApiApplicationTests {
 	@Test
     void contextLoads() {
 
-        assertEquals("7", flyway.info().current().getVersion().getVersion());
+        assertEquals("8", flyway.info().current().getVersion().getVersion());
         assertTrue(flyway.validateWithResult().validationSuccessful);
 	}
 
@@ -102,7 +103,7 @@ class EmployeeIntelligenceApiApplicationTests {
 
             Flyway upgrade = Flyway.configure().dataSource(dataSource).schemas(legacy).defaultSchema(legacy).load();
             upgrade.migrate();
-            assertEquals("7", upgrade.info().current().getVersion().getVersion());
+            assertEquals("8", upgrade.info().current().getVersion().getVersion());
             assertEquals("Migration fixture", jdbc.queryForObject("SELECT name FROM " + legacy + ".employee WHERE tenant_id = 'demo'", String.class));
             assertEquals("Migration policy fixture", jdbc.queryForObject("SELECT content FROM " + legacy + ".rag_documents WHERE tenant_id = 'demo'", String.class));
             assertEquals("FIXTURE", jdbc.queryForObject("SELECT action FROM " + legacy + ".audit_events WHERE tenant_id = 'demo'", String.class));
