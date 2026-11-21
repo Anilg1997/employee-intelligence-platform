@@ -111,7 +111,7 @@ The table lists technologies present in source/configuration, not a blanket depl
 
 | Category | Technology | Purpose |
 | --- | --- | --- |
-| Backend | Java 21 target, Spring Boot 4.0.8, Spring MVC | Business REST API and service orchestration |
+| Backend | Java 21 target, Spring Boot 4.0.10, Spring MVC | Business REST API and service orchestration |
 | Persistence | Spring Data JPA, Hibernate, JDBC | Entity persistence and vector SQL |
 | Security | Spring Security, OAuth2 Resource Server | JWT validation configuration and role checks |
 | Database | PostgreSQL 17, pgvector | Employee/audit records and embeddings |

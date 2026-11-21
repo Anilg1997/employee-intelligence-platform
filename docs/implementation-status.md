@@ -36,7 +36,7 @@
 
 ## Existing working functionality (regression baseline)
 
-### Backend (Spring Boot 4.0.8, Java 21)
+### Backend (Spring Boot 4.0.10, Java 21)
 
 - Application: `com.employeeintelligence.api.EmployeeIntelligenceApiApplication`
 - Base package: `com.employeeintelligence`
@@ -207,8 +207,8 @@ Existing subdirectories already present and preserved:
 
 | Component | Version / baseline | Notes |
 | --- | --- | --- |
-| Java target | 21 | Spring Boot parent 4.0.8 targets Java 21 |
-| Spring Boot | 4.0.8 | Parent POM; includes Spring Security, WebMVC, Data JPA, Validation, Actuator, OAuth2 Resource Server, Kafka, Flyway, Cache, Redis |
+| Java target | 21 | Spring Boot parent 4.0.10 targets Java 21 |
+| Spring Boot | 4.0.10 | Parent POM; includes Spring Security, WebMVC, Data JPA, Validation, Actuator, OAuth2 Resource Server, Kafka, Flyway, Cache, Redis |
 | Springdoc OpenAPI | 2.8.13 | Compatibility with Spring Boot 4.x not yet verified |
 | LangChain4j | 1.20.0 / 1.20.0-beta30 | Core + Ollama + MCP + Spring Boot 4 starter |
 | Testcontainers | 1.21.3 | PostgreSQL, Kafka, JUnit Jupiter |
